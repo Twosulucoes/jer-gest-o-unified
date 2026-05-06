@@ -5692,6 +5692,7 @@ export type Database = {
           gender: string
           guardian_name: string | null
           guardian_phone: string | null
+          guardian_relationship: string | null
           id: string
           institution_id: string | null
           is_active: boolean
@@ -5721,6 +5722,7 @@ export type Database = {
           gender?: string
           guardian_name?: string | null
           guardian_phone?: string | null
+          guardian_relationship?: string | null
           id?: string
           institution_id?: string | null
           is_active?: boolean
@@ -5750,6 +5752,7 @@ export type Database = {
           gender?: string
           guardian_name?: string | null
           guardian_phone?: string | null
+          guardian_relationship?: string | null
           id?: string
           institution_id?: string | null
           is_active?: boolean

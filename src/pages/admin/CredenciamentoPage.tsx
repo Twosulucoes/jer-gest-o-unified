@@ -141,6 +141,7 @@ interface CredentialParticipantRow {
     // Cadastrais civis (vínculos) vivem em people (Fase A2).
     guardian_name: string | null;
     guardian_phone: string | null;
+    guardian_relationship: string | null;
     coach_name: string | null;
     coach_phone: string | null;
   } | null;
@@ -321,7 +322,7 @@ export default function CredenciamentoPage() {
   // `vw_person_logistics_consumption` expõe os mesmos FKs ao schema cache,
   // tornando o hint pelo nome da constraint AMBÍGUO (PGRST201 → 400 Bad Request).
   const PARTICIPANT_SELECT = `id, status, participant_type, credentialed_at, credentialed_by, person_id, delegation_id,
-    person:people!person_id(full_name, cpf, photo_url, guardian_name, guardian_phone, coach_name, coach_phone),
+    person:people!person_id(full_name, cpf, photo_url, guardian_name, guardian_phone, guardian_relationship, coach_name, coach_phone),
     delegation:delegations!delegation_id(id, institution_id, institutions(name))`;
 
   const {
@@ -746,18 +747,14 @@ export default function CredenciamentoPage() {
     if (
       tempGuardianData.name !== (selectedForCred.person?.guardian_name || "") ||
       tempGuardianData.phone !== (selectedForCred.person?.guardian_phone || "") ||
-      tempGuardianData.relationship !== (selectedForCred.person?.coach_name || "")
+      tempGuardianData.relationship !== (selectedForCred.person?.guardian_relationship || "")
     ) {
-      // Cadastrais civis vivem em people (Fase A2). Atualiza pelo person_id
-      // do participante. Mantém coach_phone como null para consistência com
-      // o comportamento anterior (relationship é gravado em coach_name).
       const { error } = await supabase
         .from("people")
         .update({
           guardian_name: tempGuardianData.name,
           guardian_phone: tempGuardianData.phone,
-          coach_name: tempGuardianData.relationship,
-          coach_phone: null,
+          guardian_relationship: tempGuardianData.relationship,
         })
         .eq("id", selectedForCred.person_id);
       
@@ -1688,7 +1685,7 @@ export default function CredenciamentoPage() {
             // Fetch the updated data — cadastrais civis vivem em people (Fase A2).
             const { data } = await (supabase as any)
               .from("participants")
-              .select("people(guardian_name, guardian_phone, coach_name)")
+              .select("people(guardian_name, guardian_phone, guardian_relationship)")
               .eq("id", pId)
               .single();
 
@@ -1697,7 +1694,7 @@ export default function CredenciamentoPage() {
               setTempGuardianData({
                 name: person.guardian_name || "",
                 phone: person.guardian_phone || "",
-                relationship: person.coach_name || "",
+                relationship: person.guardian_relationship || "",
               });
             }
             setGuardianConfirmOpen(true);
