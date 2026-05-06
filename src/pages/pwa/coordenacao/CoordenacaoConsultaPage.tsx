@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import { isVoucherQr } from "@/lib/voucherScan";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,6 +74,12 @@ export default function CoordenacaoConsultaPage() {
 
   const handleScan = useCallback(async (payload: string) => {
     setScannerOpen(false);
+    // Voucher tem fluxo próprio nos módulos operacionais, não na consulta.
+    // Mensagem clara evita o toast genérico "QR não reconhecido".
+    if (isVoucherQr(payload)) {
+      toast.info("Este QR é um voucher — use o módulo correspondente (Alimentação/Transporte) para consultá-lo.");
+      return;
+    }
     setLoading(true);
     try {
       const resolved = await resolveQrCredential(payload);

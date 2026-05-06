@@ -2,48 +2,33 @@ import { describe, it, expect } from "vitest";
 import { generateCredentialCode, generateQrCodeValue } from "./credentialUtils";
 
 describe("generateCredentialCode", () => {
-  it("starts with JER-", () => {
-    expect(generateCredentialCode()).toMatch(/^JER-/);
+  it("starts with J", () => {
+    expect(generateCredentialCode()).toMatch(/^J/);
   });
 
-  it("matches the format JER-{base36}-{4chars}", () => {
-    expect(generateCredentialCode()).toMatch(/^JER-[A-Z0-9]+-[A-Z0-9]{4}$/);
+  it("matches the format J + 5 numeric digits", () => {
+    expect(generateCredentialCode()).toMatch(/^J\d{5}$/);
   });
 
-  it("generates unique codes on each call", () => {
+  it("has length 6", () => {
+    expect(generateCredentialCode()).toHaveLength(6);
+  });
+
+  it("generates many distinct codes (high but not perfect uniqueness — 100k universe)", () => {
+    // 50 amostras dentro de 100k tem probabilidade de colisão ~1.2%.
+    // Vai falhar raramente; aceitamos um set quase cheio.
     const codes = new Set(Array.from({ length: 50 }, generateCredentialCode));
-    expect(codes.size).toBe(50);
-  });
-
-  it("contains only uppercase alphanumeric characters after JER-", () => {
-    const code = generateCredentialCode();
-    const withoutPrefix = code.slice(4); // remove "JER-"
-    expect(withoutPrefix).toMatch(/^[A-Z0-9-]+$/);
+    expect(codes.size).toBeGreaterThanOrEqual(48);
   });
 });
 
 describe("generateQrCodeValue", () => {
-  it("returns the canonical jer: format", () => {
-    const result = generateQrCodeValue("event-1", "participant-2", "JER-ABC-1234");
-    expect(result).toBe("jer:event-1:participant-2:JER-ABC-1234");
+  it("returns the credential_code itself (no prefix, no HMAC)", () => {
+    const result = generateQrCodeValue("event-1", "participant-2", "J04382");
+    expect(result).toBe("J04382");
   });
 
-  it("starts with jer:", () => {
-    expect(generateQrCodeValue("e", "p", "c")).toMatch(/^jer:/);
-  });
-
-  it("includes all three segments separated by colons", () => {
-    const result = generateQrCodeValue("evt", "part", "code");
-    const parts = result.split(":");
-    expect(parts).toHaveLength(4);
-    expect(parts[0]).toBe("jer");
-    expect(parts[1]).toBe("evt");
-    expect(parts[2]).toBe("part");
-    expect(parts[3]).toBe("code");
-  });
-
-  it("preserves special characters in ids", () => {
-    const result = generateQrCodeValue("evt-123", "part-456", "JER-M1ABC-K7X9");
-    expect(result).toBe("jer:evt-123:part-456:JER-M1ABC-K7X9");
+  it("ignores the event/participant args and returns the code as-is", () => {
+    expect(generateQrCodeValue("anything", "whatever", "J99999")).toBe("J99999");
   });
 });

@@ -252,7 +252,7 @@ export default function ArbitragemHomePage() {
       {/* Atalhos */}
       <PwaActionGrid
         actions={[
-          { label: "Minha Agenda", icon: Calendar, to: "/pwa/arbitragem/agenda" },
+          { label: "Minha Agenda", description: "Suas escalações de hoje", icon: Calendar, to: "/pwa/arbitragem/agenda", featured: true },
           { label: "Indisponibilidades", icon: AlertTriangle, to: "/pwa/arbitragem/indisponibilidade" },
           { label: "Meu Perfil", icon: ShieldCheck, to: "/pwa/arbitragem/perfil" },
           { label: "Ao Vivo", icon: Radio, to: "/pwa/resultados" },

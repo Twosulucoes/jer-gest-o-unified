@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { generateCredentialCode, generateSignedQrCodeValue } from "@/lib/credentialUtils";
+import { issueCredentialWithRetry } from "@/lib/credentialUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -475,19 +475,22 @@ export default function CredenciamentoPage() {
   // Fluxo unificado: registrar presença + emitir credencial em um único passo
   const credentialMutation = useMutation({
     mutationFn: async ({ participantId, externalCode }: { participantId: string; externalCode?: string }) => {
-      const isExternal = !!externalCode;
-      const credentialCode = externalCode || generateCredentialCode();
-      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
-
-      const { error } = await (supabase as any).rpc("issue_participant_credential", {
-        p_event_id: selectedEventId,
-        p_participant_id: participantId,
-        p_credential_code: credentialCode,
-        p_qr_code_value: qrCodeValue,
-        p_user_id: user?.id,
-        p_binding_source: isExternal ? "external" : "manual",
-      });
-      if (error) throw error;
+      if (externalCode) {
+        // Caminho externo: o code vem do operador (pulseira/cartão), sem retry.
+        const qrCodeValue = externalCode;
+        const { error } = await (supabase as any).rpc("issue_participant_credential", {
+          p_event_id: selectedEventId,
+          p_participant_id: participantId,
+          p_credential_code: externalCode,
+          p_qr_code_value: qrCodeValue,
+          p_user_id: user?.id,
+          p_binding_source: "external",
+        });
+        if (error) throw error;
+        return;
+      }
+      // Caminho interno: gera J##### e tenta de novo em colisão UNIQUE.
+      await issueCredentialWithRetry(selectedEventId, participantId, user?.id ?? "");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
@@ -511,18 +514,7 @@ export default function CredenciamentoPage() {
 
   const emitCredentialMutation = useMutation({
     mutationFn: async (participantId: string) => {
-      const credentialCode = generateCredentialCode();
-      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
-
-      const { error } = await (supabase as any).rpc("issue_participant_credential", {
-        p_event_id: selectedEventId,
-        p_participant_id: participantId,
-        p_credential_code: credentialCode,
-        p_qr_code_value: qrCodeValue,
-        p_user_id: user?.id,
-        p_binding_source: "manual",
-      });
-      if (error) throw error;
+      await issueCredentialWithRetry(selectedEventId, participantId, user?.id ?? "");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
@@ -542,19 +534,9 @@ export default function CredenciamentoPage() {
   const reissueMutation = useMutation({
     mutationFn: async (participantId: string) => {
       const existing = activeCredMap.get(participantId);
-      const credentialCode = generateCredentialCode();
-      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, participantId, credentialCode);
-
-      const { error } = await (supabase as any).rpc("issue_participant_credential", {
-        p_event_id: selectedEventId,
-        p_participant_id: participantId,
-        p_credential_code: credentialCode,
-        p_qr_code_value: qrCodeValue,
-        p_user_id: user?.id,
-        p_binding_source: "manual",
-        p_revoke_id: existing?.id ?? null,
+      await issueCredentialWithRetry(selectedEventId, participantId, user?.id ?? "", {
+        revokeId: existing?.id ?? null,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
@@ -700,28 +682,19 @@ export default function CredenciamentoPage() {
         blocked++;
         continue;
       }
-      const credentialCode = generateCredentialCode();
-      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, id, credentialCode);
-      const { error } = await (supabase as any).rpc("issue_participant_credential", {
-        p_event_id: selectedEventId,
-        p_participant_id: id,
-        p_credential_code: credentialCode,
-        p_qr_code_value: qrCodeValue,
-        p_user_id: user?.id,
-        p_binding_source: "manual",
-      });
-      if (error) {
+      try {
+        await issueCredentialWithRetry(selectedEventId, id, user?.id ?? "");
+        success++;
+      } catch (error) {
         console.error(`[Batch] Error issuing for ${id}:`, error);
         errors++;
-      } else {
-        success++;
       }
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
     queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
     queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-    
+
     if (success > 0) toast.success(`${success} credencial(is) emitida(s) com sucesso.`);
     if (blocked > 0) toast.error(`${blocked} participante(s) bloqueado(s) por irregularidade.`);
     if (errors > 0) toast.error(`${errors} erro(s) inesperado(s). Verifique o console.`);
@@ -736,21 +709,12 @@ export default function CredenciamentoPage() {
         blocked++;
         continue;
       }
-      const credentialCode = generateCredentialCode();
-      const qrCodeValue = await generateSignedQrCodeValue(selectedEventId, id, credentialCode);
-      const { error } = await (supabase as any).rpc("issue_participant_credential", {
-        p_event_id: selectedEventId,
-        p_participant_id: id,
-        p_credential_code: credentialCode,
-        p_qr_code_value: qrCodeValue,
-        p_user_id: user?.id,
-        p_binding_source: "manual",
-      });
-      if (error) {
+      try {
+        await issueCredentialWithRetry(selectedEventId, id, user?.id ?? "");
+        success++;
+      } catch (error) {
         console.error(`[Batch] Error issuing for ${id}:`, error);
         errors++;
-      } else {
-        success++;
       }
     }
     setBatchProcessing(false);
