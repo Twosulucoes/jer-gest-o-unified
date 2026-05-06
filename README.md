@@ -10,6 +10,12 @@ O **JER Gestão** é uma plataforma robusta de gestão operacional para os Jogos
 
 ## 🚀 Novidades Recentes (Maio 2026)
 
+### Vouchers — Pacote P2 (auditoria etapa Hqy0B-p2, branch `claude/audit-vouchers-module-Hqy0B-p2`)
+- **RPCs canônicas:** `revoke_voucher_v1`, `revoke_voucher_batch_v1`, `reissue_voucher_v1`. Atomic + lock pessimista + idempotente. Frontend migrado.
+- **Trigger BEFORE UPDATE:** `revalidate_voucher_validity_on_update` recalcula `valid_from/valid_until` se `target_*_id` ou `target_date` mudarem (defesa em profundidade).
+- **Mensagens limpas:** `humanizeVoucherError` traduz erros técnicos (RLS, PostgREST, 22023, 404) para PT-BR operacional. `console.log("DEBUG:")` removidos.
+- **Estados UI:** skeleton durante loading + empty state informativo (com sugestão de ajuste de filtro) na lista de vouchers e de lotes.
+
 ### Vouchers — Pacote P1 (auditoria etapa Hqy0B-p1, branch `claude/audit-vouchers-module-Hqy0B-p1`)
 - **Filtros operacionais completos:** listagem e auditoria ganham filtros por **Dia** (default = hoje), **Janela/viagem/local** (dependente do escopo), **Origem** (online/offline) e **Operador** (dropdown dinâmico na auditoria), com indicador da etapa ativa.
 - **Audit trigger DB:** mudanças de status em `service_vouchers` (revoke/expire/unrevoke) gravam automaticamente em `service_voucher_audit` com `event_type`, `event_stage_id`, motivo e dados de reemissão. Trigger anti-spoof força `issuer_id = auth.uid()`.

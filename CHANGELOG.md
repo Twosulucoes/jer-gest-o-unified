@@ -4,6 +4,13 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Unreleased]
 
+### Added — Vouchers (P2, auditoria etapa Hqy0B-p2)
+- **[Vouchers]** RPCs canônicas dedicadas: `revoke_voucher_v1(p_voucher_id, p_reason)`, `revoke_voucher_batch_v1(p_batch_id, p_reason)` e `reissue_voucher_v1(p_voucher_id, p_reason, p_new_qr)`. Atomic, com lock pessimista e idempotência (segundo clique não duplica reissue nem reinicia revogação). RLS aplicada via `SECURITY INVOKER`.
+- **[Vouchers]** Trigger `revalidate_voucher_validity_on_update` em `service_vouchers`: BEFORE UPDATE recalcula `valid_from`/`valid_until` quando `target_*_id` ou `target_date` mudam (defesa em profundidade para manutenção manual via SQL).
+- **[Vouchers]** Frontend `VouchersPage` migrado para as RPCs canônicas (revoke/reissue). Mensagens de erro técnicas (RLS, PostgREST, 404, schema) substituídas por PT-BR operacional via helper `humanizeVoucherError`.
+- **[Vouchers]** Estados de UI completos: skeleton durante loading e empty state informativo (com sugestão de ajuste de filtro) tanto na lista de vouchers quanto na lista de lotes.
+- **[Vouchers]** Logs `console.log("DEBUG: ...")` removidos de produção.
+
 ### Added — Vouchers (P1, auditoria etapa Hqy0B-p1)
 - **[Vouchers]** Filtros completos na listagem: **Dia** (date picker, default = hoje), **Janela/viagem/local** (lista da etapa ativa, dependente do escopo), **Status**, **Escopo**, **Tipo**, busca textual. Indicador visual da etapa ativa e do dia filtrado.
 - **[Vouchers]** Filtros completos na auditoria: **Dia** (default = hoje), **Resultado** (sucesso/recusa), **Serviço**, **Origem** (online/offline), **Operador** (dropdown dinâmico). Indicador de etapa ativa e contagem de registros.

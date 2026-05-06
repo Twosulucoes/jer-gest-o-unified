@@ -43,6 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus,
   Printer,
@@ -144,6 +145,35 @@ function genQrValue() {
   let code = "";
   for (let i = 0; i < 6; i++) code += alpha[Math.floor(Math.random() * alpha.length)];
   return `voucher:${code}`;
+}
+
+// Traduz mensagens técnicas (RLS, PostgREST, 22023) em PT-BR humano para
+// operadores de campo. Mantém a mensagem original quando já é humana.
+function humanizeVoucherError(err: any): string {
+  const raw = (err?.message || String(err) || "").toString();
+  const low = raw.toLowerCase();
+  if (low.includes("permission denied") || low.includes("row-level security") || low.includes("rls")) {
+    return "Sem permissão para esta ação na etapa atual.";
+  }
+  if (low.includes("voucher de alojamento exige target_date") || low.includes("voucher de alojamento exige")) {
+    return "Voucher de alojamento exige a data — selecione o dia antes de salvar.";
+  }
+  if (low.includes("janela já encerrada") || low.includes("janela do voucher original já fechou")) {
+    return "Janela já fechou — emita um voucher novo na próxima janela em vez de reemitir.";
+  }
+  if (low.includes("não é possível revogar voucher")) {
+    return "Esse voucher não pode ser revogado neste estado.";
+  }
+  if (low.includes("não é possível emitir voucher")) {
+    return "Não é possível emitir: a janela informada já fechou.";
+  }
+  if (low.includes("not found") || low.includes("0 rows") || low.includes("404")) {
+    return "Voucher não encontrado ou sem permissão.";
+  }
+  if (low.includes("network") || low.includes("failed to fetch") || low.includes("offline")) {
+    return "Sem conexão com o servidor — tente novamente.";
+  }
+  return raw || "Erro inesperado.";
 }
 
 // -------- Helper: Format Instance Info --------
@@ -309,42 +339,41 @@ export default function VouchersPage() {
     mutationFn: async () => {
       if (!revokeTarget && !revokeBatchTarget) throw new Error("Nenhum alvo selecionado");
       if (!revokeReason.trim()) throw new Error("Informe o motivo");
-      
+
       const reason = revokeReason.trim();
-      const now = new Date().toISOString();
 
       if (revokeTarget) {
-        const { error } = await supabase
-          .from("service_vouchers")
-          .update({
-            status: "revoked",
-            revoked_at: now,
-            revoke_reason: reason,
-          })
-          .eq("id", revokeTarget.id);
+        // RPC canônica: idempotente, lock pessimista, audit via trigger DB.
+        const { data, error } = await supabase.rpc("revoke_voucher_v1" as any, {
+          p_voucher_id: revokeTarget.id,
+          p_reason: reason,
+        });
         if (error) throw error;
+        return data;
       } else if (revokeBatchTarget) {
-        const { error } = await supabase
-          .from("service_vouchers")
-          .update({
-            status: "revoked",
-            revoked_at: now,
-            revoke_reason: `[Lote] ${reason}`,
-          })
-          .eq("batch_id", revokeBatchTarget.id)
-          .eq("status", "active");
+        const { data, error } = await supabase.rpc("revoke_voucher_batch_v1" as any, {
+          p_batch_id: revokeBatchTarget.id,
+          p_reason: reason,
+        });
         if (error) throw error;
+        return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
       queryClient.invalidateQueries({ queryKey: ["voucher-batches"] });
-      toast.success(revokeBatchTarget ? "Lote revogado" : "Voucher revogado");
+      if (revokeBatchTarget) {
+        toast.success(`Lote revogado — ${data?.revoked_count ?? 0} voucher(s) afetado(s)`);
+      } else if (data?.noop) {
+        toast.info("Voucher já estava revogado.");
+      } else {
+        toast.success("Voucher revogado");
+      }
       setRevokeTarget(null);
       setRevokeBatchTarget(null);
       setRevokeReason("");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(humanizeVoucherError(e)),
   });
 
   const reissueMutation = useMutation({
@@ -352,71 +381,39 @@ export default function VouchersPage() {
       if (!reissueTarget) throw new Error("Voucher não selecionado");
       if (!revokeReason.trim()) throw new Error("Informe o motivo da reemissão");
 
-      const oldV = reissueTarget;
-      const now = new Date().toISOString();
-      const reason = `[Reemissão] ${revokeReason.trim()}`;
+      // RPC canônica: revoga antigo + cria novo em UMA transação, com lock
+      // pessimista. Idempotente — duplo-clique não cria 2 reissues.
+      const { data, error } = await supabase.rpc("reissue_voucher_v1" as any, {
+        p_voucher_id: reissueTarget.id,
+        p_reason: revokeReason.trim(),
+        p_new_qr: genQrValue(),
+      });
+      if (error) throw error;
 
-      // Invariante de voucher: 1 evento × 1 etapa × 1 dia × 1 janela.
-      // Reemissão NÃO faz sentido para janela já encerrada — quem perdeu o
-      // QR depois que a janela fechou não pode mais consumir; tem que ser
-      // emitido um voucher do PRÓXIMO lote/janela. O trigger
-      // derive_voucher_validity já recusaria com 22023, mas barramos
-      // antes para mensagem clara.
-      if (oldV.valid_until && new Date(oldV.valid_until) < new Date()) {
-        throw new Error("Janela do voucher original já fechou — emita um voucher novo na janela atual em vez de reemitir.");
+      // Carrega o novo voucher para impressão.
+      const newId = (data as any)?.new_voucher_id;
+      if (newId) {
+        const { data: newV } = await (supabase
+          .from("service_vouchers") as any)
+          .select("*")
+          .eq("id", newId)
+          .single();
+        return { result: data, newV: newV as VoucherRow | null };
       }
-
-      // 1. Invalida o antigo
-      const { error: updErr } = await supabase
-        .from("service_vouchers")
-        .update({
-          status: "revoked",
-          revoked_at: now,
-          revoke_reason: reason,
-        })
-        .eq("id", oldV.id);
-      if (updErr) throw updErr;
-
-      // 2. Cria o novo. event_stage_id é NOT NULL desde a Fase F1 — copia do antigo.
-      // valid_from é deixado null deliberadamente: o trigger
-      // derive_voucher_validity recalcula da janela-alvo.
-      const { data: newV, error: insErr } = await (supabase
-        .from("service_vouchers") as any)
-        .insert({
-          event_id: oldV.event_id,
-          event_stage_id: oldV.event_stage_id,
-          participant_id: oldV.participant_id,
-          eventual_person_id: oldV.eventual_person_id,
-          qr_code_value: genQrValue(),
-          status: "active",
-          voucher_type: oldV.voucher_type,
-          is_nominal: oldV.is_nominal,
-          label: oldV.label,
-          scope_meals: oldV.scope_meals,
-          scope_transport: oldV.scope_transport,
-          scope_lodging: oldV.scope_lodging,
-          target_meal_window_id: oldV.target_meal_window_id,
-          target_trip_id: oldV.target_trip_id,
-          target_facility_id: oldV.target_facility_id,
-          target_date: oldV.target_date,
-          max_uses: oldV.max_uses,
-          replaces_voucher_id: oldV.id,
-          reissued_at: now,
-          notes: `Reemissão de ${oldV.qr_code_value}. Motivo: ${revokeReason.trim()}`
-        })
-        .select()
-        .single();
-      if (insErr) throw insErr;
-      return newV as VoucherRow;
+      return { result: data, newV: null };
     },
-    onSuccess: (newV) => {
+    onSuccess: ({ result, newV }: any) => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
-      toast.success("Voucher reemitido com sucesso");
+      if (result?.noop) {
+        toast.info("Voucher já havia sido reemitido. Carregando o novo.");
+      } else {
+        toast.success("Voucher reemitido com sucesso");
+      }
       setReissueTarget(null);
       setRevokeReason("");
-      handlePrintIndividual(newV); // Imprime o novo imediatamente
+      if (newV) handlePrintIndividual(newV);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(humanizeVoucherError(e)),
   });
 
   const handlePrintIndividual = async (v: VoucherRow) => {
@@ -581,54 +578,83 @@ export default function VouchersPage() {
             </div>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {isLoading ? <Loader2 className="animate-spin m-auto" /> : filteredVouchers.map((v) => {
-              const p = v.eventual_person_id ? eventualsMap.get(v.eventual_person_id) : null;
-              const status = STATUS_LABEL[v.status] || { label: v.status, variant: "outline" };
-              return (
-                <Card key={v.id} className="p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="min-w-0">
-                      <p className="font-semibold truncate">{p?.full_name || v.label || "Voucher Anônimo"}</p>
-                      <p className="text-[10px] text-muted-foreground">{getServiceInstanceLabel(v, instances)}</p>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : filteredVouchers.length === 0 ? (
+            <Card className="py-12 text-center text-sm text-muted-foreground">
+              <p className="font-medium">Nenhum voucher encontrado para os filtros aplicados.</p>
+              <p className="mt-1 text-xs">
+                {dayFilter
+                  ? `Tente limpar o filtro de dia (atual: ${dayFilter}) ou alterar o status.`
+                  : "Tente ajustar status, escopo ou tipo."}
+              </p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredVouchers.map((v) => {
+                const p = v.eventual_person_id ? eventualsMap.get(v.eventual_person_id) : null;
+                const status = STATUS_LABEL[v.status] || { label: v.status, variant: "outline" };
+                return (
+                  <Card key={v.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="min-w-0">
+                        <p className="font-semibold truncate">{p?.full_name || v.label || "Voucher Anônimo"}</p>
+                        <p className="text-[10px] text-muted-foreground">{getServiceInstanceLabel(v, instances)}</p>
+                      </div>
+                      <Badge variant={status.variant as any}>{status.label}</Badge>
                     </div>
-                    <Badge variant={status.variant as any}>{status.label}</Badge>
-                  </div>
-                  <div className="text-[11px] font-mono bg-muted p-1 rounded text-center">{v.qr_code_value}</div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => handlePrintIndividual(v)}><Printer className="h-3 w-3 mr-1"/> Etiqueta</Button>
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setHistoryVoucher(v)}><History className="h-3 w-3 mr-1"/> Usos</Button>
-                    {v.status === 'active' && (
-                      <>
-                        <Button size="sm" variant="ghost" className="text-primary" title="Reemitir" onClick={() => setReissueTarget(v)}><History className="h-3 w-3"/></Button>
-                        <Button size="sm" variant="ghost" className="text-destructive" title="Revogar" onClick={() => setRevokeTarget(v)}><Ban className="h-3 w-3"/></Button>
-                      </>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                    <div className="text-[11px] font-mono bg-muted p-1 rounded text-center">{v.qr_code_value}</div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => handlePrintIndividual(v)}><Printer className="h-3 w-3 mr-1"/> Etiqueta</Button>
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => setHistoryVoucher(v)}><History className="h-3 w-3 mr-1"/> Usos</Button>
+                      {v.status === 'active' && (
+                        <>
+                          <Button size="sm" variant="ghost" className="text-primary" title="Reemitir" onClick={() => setReissueTarget(v)}><History className="h-3 w-3"/></Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" title="Revogar" onClick={() => setRevokeTarget(v)}><Ban className="h-3 w-3"/></Button>
+                        </>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="batches" className="mt-6">
-          <div className="space-y-4">
-            {batches.map(b => (
-              <Card key={b.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold">{b.label || "Lote sem nome"}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {getServiceInstanceLabel(b, instances)} • {b.quantity} vouchers • {format(new Date(b.created_at), "dd/MM/yy HH:mm")}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handlePrintBatch(b.id)}><Printer className="h-3.5 w-3.5 mr-1" /> Imprimir</Button>
-                  <Button size="sm" variant="ghost" title="Revogar Lote" className="text-destructive" onClick={() => setRevokeBatchTarget(b)}><Ban className="h-3.5 w-3.5" /></Button>
-                </div>
-              </Card>
-            ))}
-            {batches.length === 0 && <p className="text-center text-muted-foreground py-12">Nenhum lote emitido.</p>}
-          </div>
+          {loadingBatches ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : batches.length === 0 ? (
+            <Card className="py-12 text-center text-sm text-muted-foreground">
+              <p className="font-medium">Nenhum lote emitido na etapa atual.</p>
+              <p className="mt-1 text-xs">Use "Novo Lote" para gerar vouchers anônimos em massa.</p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {batches.map(b => (
+                <Card key={b.id} className="p-4 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold">{b.label || "Lote sem nome"}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {getServiceInstanceLabel(b, instances)} • {b.quantity} vouchers • {format(new Date(b.created_at), "dd/MM/yy HH:mm")}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handlePrintBatch(b.id)}><Printer className="h-3.5 w-3.5 mr-1" /> Imprimir</Button>
+                    <Button size="sm" variant="ghost" title="Revogar Lote" className="text-destructive" onClick={() => setRevokeBatchTarget(b)}><Ban className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -718,7 +744,6 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
 
   const mutation = useMutation({
     mutationFn: async () => {
-      console.log("DEBUG: Iniciando emissão de voucher individual...");
       const vType = isNominal ? "nominal" : "aggregate";
       
       if (!stageId) throw new Error("Selecione uma etapa antes de emitir voucher.");
@@ -759,7 +784,6 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
         throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
       }
 
-      console.log("DEBUG: Enviando payload ao Supabase:", JSON.stringify(payload, null, 2));
 
       const sanitizedAuditPayload = {
         event_id: eventId,
@@ -775,11 +799,9 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
       try {
         const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
         if (error) {
-          console.error("DEBUG: Erro retornado pelo Supabase (vouchers):", error);
           throw error;
         }
         
-        console.log("DEBUG: Voucher inserido com sucesso. Gravando auditoria...");
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
@@ -790,7 +812,6 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
 
         return data;
       } catch (err: any) {
-        console.error("DEBUG: Exceção capturada no fluxo de emissão:", err);
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
@@ -812,25 +833,9 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
       }
     },
     onError: (err: any) => {
-      console.error("DEBUG: Erro detalhado na emissão:", err);
-      let errorMsg = err.message || "Erro desconhecido";
-      
-      // Mapeamento de erros técnicos para mensagens amigáveis e específicas
-      if (errorMsg.includes("voucher_type") || errorMsg.includes("column \"voucher_type\"")) {
-        errorMsg = "Erro: Coluna 'voucher_type' não encontrada. O banco de dados precisa ser sincronizado.";
-      } else if (errorMsg.includes("permission denied") || errorMsg.includes("new row violates row-level security")) {
-        errorMsg = "Erro de Permissão (RLS): Seu usuário não tem autorização para gravar nesta tabela ou a política de acesso falhou.";
-      } else if (errorMsg.includes("DATABASE_SCHEMA_INCONSISTENT")) {
-        errorMsg = `Inconsistência Crítica: ${errorMsg.split(':').pop()?.trim() || "Colunas obrigatórias ausentes no banco."}`;
-      } else if (errorMsg.includes("NOMINAL_VOUCHER_REQUIRED_HOLDER")) {
-        errorMsg = "Erro de Negócio: Vouchers nominais exigem a seleção de um portador (participante ou eventual).";
-      } else if (errorMsg.includes("404") || errorMsg.includes("not found")) {
-        errorMsg = "Erro 404: Endpoint ou recurso de banco de dados não localizado. Tente atualizar a página.";
-      }
-
       toast.error("Falha na emissão", {
-        description: errorMsg,
-        duration: 10000,
+        description: humanizeVoucherError(err),
+        duration: 8000,
       });
     }
   });
@@ -928,7 +933,6 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
 
   const mutation = useMutation({
     mutationFn: async () => {
-      console.log("DEBUG: Iniciando emissão de lote...");
       if (!serviceType) {
         throw new Error("Selecione o tipo de serviço.");
       }
@@ -985,14 +989,11 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
           target_date: targetDate,
         }));
 
-        console.log(`DEBUG: Inserindo ${quantity} vouchers individuais...`);
         const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
         if (vErr) {
-          console.error("DEBUG: Erro ao inserir vouchers do lote:", vErr);
           throw vErr;
         }
 
-        console.log("DEBUG: Lote concluído. Gravando auditoria...");
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
@@ -1001,7 +1002,6 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
           status: 'success'
         });
       } catch (err: any) {
-        console.error("DEBUG: Exceção capturada no fluxo de lote:", err);
         await supabase.from("service_voucher_audit").insert({
           event_id: eventId,
           issuer_id: user?.id,
@@ -1020,20 +1020,9 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
       qc.invalidateQueries({ queryKey: ["voucher-batches"] });
     },
     onError: (err: any) => {
-      console.error("DEBUG: Erro detalhado no lote:", err);
-      let errorMsg = err.message || "Erro desconhecido";
-      
-      if (errorMsg.includes("service_type") || errorMsg.includes("column \"service_type\"")) {
-        errorMsg = "Erro no Lote: Coluna 'service_type' não encontrada no banco de dados.";
-      } else if (errorMsg.includes("permission denied") || errorMsg.includes("row-level security")) {
-        errorMsg = "Permissão Negada: Falha nas políticas de segurança (RLS) ao tentar criar lotes.";
-      } else if (errorMsg.includes("foreign key constraint")) {
-        errorMsg = "Erro de Integridade: Referência a evento ou usuário inválida.";
-      }
-
       toast.error("Erro ao emitir lote", {
-        description: errorMsg,
-        duration: 10000,
+        description: humanizeVoucherError(err),
+        duration: 8000,
       });
     }
   });
