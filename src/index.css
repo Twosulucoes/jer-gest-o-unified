@@ -13,12 +13,12 @@
 @layer base {
   :root {
     /* === JER Design System — Light Tokens (Default) === */
-    --bg: #f8fafc;
+    --bg: #fdfdfd;
     --surface: #ffffff;
-    --surface2: #f1f5f9;
-    --surface3: #e2e8f0;
-    --text: #0f172a;
-    --muted-text: #64748b;
+    --surface2: #f8f9fa;
+    --surface3: #f1f3f5;
+    --text: #1a1a1a;
+    --muted-text: #6b7280;
 
     /* === Cores semânticas de status === */
     --amber: 39 100% 47%;
@@ -28,8 +28,8 @@
     --purple: 263 100% 60%;
 
     /* Accent dinâmico por módulo */
-    --module-accent: 39 100% 47%;
-    --module-accent-soft: 39 100% 47%;
+    --module-accent: 215 90% 50%;
+    --module-accent-soft: 215 90% 50%;
 
     /* === Paleta core === */
     --background: 210 40% 98%;      /* #f8fafc */
@@ -60,7 +60,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 39 100% 47%;
 
-    --radius: 0.875rem;
+    --radius: 1rem;
 
     /* === Sidebar === */
     --sidebar-background: 0 0% 100%;
@@ -231,7 +231,7 @@
 
   /* Container raiz dark de uma tela operacional */
   .op-screen {
-    @apply min-h-[100dvh] bg-background text-foreground;
+    @apply min-h-[100dvh] bg-background text-foreground selection:bg-primary/20;
     background:
       radial-gradient(1100px 600px at 100% -10%, hsl(var(--module-accent) / 0.06), transparent 60%),
       radial-gradient(900px 500px at -10% 110%, hsl(212 100% 60% / 0.05), transparent 60%),

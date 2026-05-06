@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_4px_12px_-2px_rgba(var(--primary),0.3)] hover:shadow-[0_8px_20px_-4px_rgba(var(--primary),0.4)] hover:-translate-y-0.5",
+          "bg-primary text-primary-foreground shadow-[0_8px_16px_-4px_rgba(var(--primary),0.25)] hover:shadow-[0_12px_24px_-6px_rgba(var(--primary),0.35)] hover:-translate-y-0.5",
         gradient:
           "btn-gradient btn-shine text-white shadow-lg hover:shadow-glow hover:-translate-y-0.5",
         sport:
