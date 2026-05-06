@@ -44,7 +44,7 @@ export const ROUTE_DATA_MAPPING: RouteDataRequirement[] = [
     tables: [
       // participants é tabela de PARTICIPAÇÃO (event-scoped). Dados cadastrais
       // (nome, CPF, nascimento, gênero, etc.) ficam em `people`, JOIN via person_id.
-      { name: "participants", columns: ["id", "person_id", "status", "delegation_id", "event_id", "participant_type", "enrollment_class"], joins: ["delegations", "people"] },
+      { name: "participants", columns: ["id", "person_id", "status", "delegation_id", "event_id", "participant_type"], joins: ["delegations", "people"] },
       { name: "delegations", columns: ["id", "institution_id"] },
       { name: "people", columns: ["id", "full_name", "cpf", "birth_date", "gender"] }
     ]
