@@ -1,8 +1,21 @@
 # Auditoria de Fechamento — Módulo de Voucher JER Gestão
 
-> **Auditoria 2026-05-06 (etapa Hqy0B):** revisão completa identificou 7 bloqueadores P0 (B1‑B7).
-> **Estado:** 🟡 P0 corrigidos no branch `claude/audit-vouchers-module-Hqy0B` — pendente revisão e merge.
-> Histórico anterior: ✅ FECHADO 2026-04-28 (regredido por mudança de RPC; ver detalhes abaixo).
+> **Auditoria 2026-05-06 (etapa Hqy0B-p1):** P0 já mergeado (#115). Pacote **P1** em PR aberta `claude/audit-vouchers-module-Hqy0B-p1`.
+> **Estado:** 🟢 P0 mergeado / 🟡 P1 pendente revisão.
+> Histórico: ✅ FECHADO 2026-04-28 → regressão por mudança de RPC → P0 mergeado em 2026‑05‑06 → P1 (filtros, audit, RLS).
+
+## Auditoria 2026-05-06 (Hqy0B-p1) — Pacote P1
+
+| Frente | Mudança | Migration / Arquivo |
+|---|---|---|
+| Denormalização | `event_stage_id` em `service_voucher_batches` e `service_voucher_attempts` (com backfill via voucher) + índices. Trigger `fill_attempt_event_stage_id` mantém preenchimento em novos inserts. | `20260507000000_voucher_p1_stage_scope_and_audit.sql` |
+| Audit trigger | `log_voucher_status_change` em `service_vouchers` registra revoke/expire/unrevoke em `service_voucher_audit` com `event_type`, `old_status`/`new_status`, `revoke_reason`, `replaces_voucher_id`, `reissued_at`. | mesma migration |
+| Anti-spoof | Trigger `enforce_audit_issuer_id` força `issuer_id = auth.uid()` em `service_voucher_audit`. | mesma migration |
+| RLS por etapa | Policies novas em `service_vouchers`/`batches`/`uses`/`attempts` usando `check_user_stage_access(event_stage_id)`. Operacionais (transporte/alimentacao/alojamento) só enxergam vouchers das etapas atribuídas em `user_stage_assignments`; admin/secretaria/super_admin/coordenacao_tecnica bypassam. | mesma migration |
+| Filtros listagem | **Dia** (default hoje), **Escopo** (já existia), **Janela/viagem/local** (dependente do escopo, lista da etapa ativa), **Status**/**Tipo**/Busca. Indicador visual etapa ativa + dia. | `src/pages/admin/VouchersPage.tsx` |
+| Filtros auditoria | **Dia** (default hoje), **Resultado**, **Serviço**, **Origem (online/offline)**, **Operador** (dropdown dinâmico). Indicador etapa ativa + contagem. | `src/pages/admin/VoucherAuditoriaPage.tsx` |
+
+---
 
 ## Auditoria 2026-05-06 — Bloqueadores P0 corrigidos
 

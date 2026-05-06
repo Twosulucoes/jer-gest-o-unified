@@ -170,9 +170,12 @@ export default function VouchersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("active");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  // Default "hoje" para reduzir erro humano em etapa ativa.
+  const [dayFilter, setDayFilter] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [instanceFilter, setInstanceFilter] = useState<string>("all");
 
   const [issueOpen, setIssueOpen] = useState(false);
   const [batchIssueOpen, setBatchIssueOpen] = useState(false);
@@ -184,7 +187,7 @@ export default function VouchersPage() {
   const [revokeReason, setRevokeReason] = useState("");
 
   const { data: vouchers = [], isLoading } = useQuery({
-    queryKey: ["vouchers", eventId, stageId, statusFilter, scopeFilter, typeFilter],
+    queryKey: ["vouchers", eventId, stageId, statusFilter, scopeFilter, typeFilter, dayFilter, instanceFilter],
     queryFn: async () => {
       // Auto-expira: marca como 'expired' todos os vouchers cujo valid_until
       // já passou. Vouchers são canonical-mente "1 evento × 1 etapa × 1 dia ×
@@ -197,15 +200,18 @@ export default function VouchersPage() {
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
         .limit(500);
-      // Lei de escopo: voucher pertence à ETAPA. Quando a UI tem stage
-      // ativa, filtra; sem stage não bloqueia (super admin que opera
-      // sem etapa selecionada continua vendo todos).
       if (stageId) q = q.eq("event_stage_id", stageId);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (scopeFilter === "transport") q = q.eq("scope_transport", true);
       if (scopeFilter === "meals") q = q.eq("scope_meals", true);
       if (scopeFilter === "lodging") q = q.eq("scope_lodging", true);
       if (typeFilter !== "all") q = q.eq("voucher_type", typeFilter);
+      if (dayFilter) q = q.eq("target_date", dayFilter);
+      if (instanceFilter !== "all") {
+        if (scopeFilter === "meals") q = q.eq("target_meal_window_id", instanceFilter);
+        else if (scopeFilter === "transport") q = q.eq("target_trip_id", instanceFilter);
+        else if (scopeFilter === "lodging") q = q.eq("target_facility_id", instanceFilter);
+      }
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as VoucherRow[];
@@ -216,30 +222,14 @@ export default function VouchersPage() {
   const { data: batches = [], isLoading: loadingBatches } = useQuery({
     queryKey: ["voucher-batches", eventId, stageId],
     queryFn: async () => {
-      // Filtra lotes da etapa atual via os vouchers gerados (batches não
-      // têm event_stage_id direto; o escopo é herdado dos vouchers do lote).
-      // TODO: migration aditiva para denormalizar event_stage_id em
-      // service_voucher_batches eliminaria essa sub-query.
-      let stageBatchIds: string[] | null = null;
-      if (stageId) {
-        const { data: rels } = await (supabase.from("service_vouchers") as any)
-          .select("batch_id")
-          .eq("event_id", eventId)
-          .eq("event_stage_id", stageId)
-          .not("batch_id", "is", null);
-        const ids = new Set<string>();
-        (rels ?? []).forEach((r: any) => r.batch_id && ids.add(r.batch_id as string));
-        stageBatchIds = Array.from(ids);
-        // Etapa selecionada mas zero lotes vinculados → curto-circuito
-        if (stageBatchIds.length === 0) return [] as BatchRow[];
-      }
-
+      // event_stage_id agora denormalizado em service_voucher_batches
+      // (migration 20260507000000). Filtro direto, sem subquery.
       let q = supabase
         .from("service_voucher_batches")
         .select("*")
         .eq("event_id", eventId)
         .order("created_at", { ascending: false });
-      if (stageBatchIds) q = q.in("id", stageBatchIds);
+      if (stageId) q = q.eq("event_stage_id", stageId);
       const { data, error } = await q;
       if (error) throw error;
       return data as BatchRow[];
@@ -248,13 +238,17 @@ export default function VouchersPage() {
   });
 
   const { data: instances = { meals: [], trips: [], locations: [] } } = useQuery({
-    queryKey: ["voucher-instances", eventId],
+    queryKey: ["voucher-instances", eventId, stageId],
     queryFn: async () => {
-      const [meals, trips, locations] = await Promise.all([
-        supabase.from("meal_windows").select("id, label, service_date, location").eq("event_id", eventId),
-        supabase.from("transport_trips").select("id, scheduled_at, route_id, routes(name)").eq("event_id", eventId),
-        supabase.from("lodging_locations").select("id, name").eq("event_id", eventId),
-      ]);
+      let mealsQ = supabase.from("meal_windows").select("id, label, service_date, location, start_time, end_time").eq("event_id", eventId);
+      let tripsQ = supabase.from("transport_trips").select("id, scheduled_at, route_id, routes(name)").eq("event_id", eventId);
+      let locsQ = supabase.from("lodging_locations").select("id, name").eq("event_id", eventId);
+      if (stageId) {
+        mealsQ = mealsQ.eq("event_stage_id", stageId);
+        tripsQ = tripsQ.eq("event_stage_id", stageId);
+        locsQ = locsQ.eq("event_stage_id", stageId);
+      }
+      const [meals, trips, locations] = await Promise.all([mealsQ, tripsQ, locsQ]);
       return {
         meals: meals.data ?? [],
         trips: (trips.data as any[]) ?? [],
@@ -263,6 +257,25 @@ export default function VouchersPage() {
     },
     enabled: !!eventId,
   });
+
+  const instanceOptions = useMemo(() => {
+    if (scopeFilter === "meals") {
+      return instances.meals.map((m: any) => ({
+        id: m.id,
+        label: `${m.label} — ${m.service_date}${m.start_time ? ` ${m.start_time.slice(0, 5)}` : ""}`,
+      }));
+    }
+    if (scopeFilter === "transport") {
+      return instances.trips.map((t: any) => ({
+        id: t.id,
+        label: `${t.routes?.name || "Viagem"} — ${format(new Date(t.scheduled_at), "dd/MM HH:mm")}`,
+      }));
+    }
+    if (scopeFilter === "lodging") {
+      return instances.locations.map((l: any) => ({ id: l.id, label: l.name }));
+    }
+    return [];
+  }, [scopeFilter, instances]);
 
   const { data: eventualsMap = new Map<string, any>() } = useQuery({
     queryKey: ["vouchers-eventuals", vouchers.map(v => v.eventual_person_id).filter(Boolean)],
@@ -481,10 +494,31 @@ export default function VouchersPage() {
 
         <TabsContent value="vouchers" className="space-y-6 mt-6">
           <Card className="p-4">
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 items-end">
               <div className="flex-1 min-w-[240px] relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Buscar por nome ou código..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase text-muted-foreground">Dia</Label>
+                <div className="flex gap-1">
+                  <Input
+                    type="date"
+                    value={dayFilter}
+                    onChange={(e) => setDayFilter(e.target.value)}
+                    className="w-[160px]"
+                  />
+                  {dayFilter && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDayFilter("")}
+                      title="Limpar filtro de dia"
+                    >
+                      ×
+                    </Button>
+                  )}
+                </div>
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px]">
@@ -498,7 +532,13 @@ export default function VouchersPage() {
                   <SelectItem value="exhausted">Esgotados</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={scopeFilter} onValueChange={setScopeFilter}>
+              <Select
+                value={scopeFilter}
+                onValueChange={(v) => {
+                  setScopeFilter(v);
+                  setInstanceFilter("all");
+                }}
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -509,6 +549,21 @@ export default function VouchersPage() {
                   <SelectItem value="lodging">Alojamento</SelectItem>
                 </SelectContent>
               </Select>
+              {scopeFilter !== "all" && instanceOptions.length > 0 && (
+                <Select value={instanceFilter} onValueChange={setInstanceFilter}>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue placeholder="Janela/viagem/local" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas instâncias</SelectItem>
+                    {instanceOptions.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
@@ -519,6 +574,10 @@ export default function VouchersPage() {
                   <SelectItem value="nominal">Nominais</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="mt-2 text-[10px] text-muted-foreground">
+              {stageId ? "Filtrando pela etapa ativa" : "Sem etapa ativa — mostrando todas as etapas do evento"}
+              {dayFilter ? ` · Dia ${dayFilter}` : " · Todos os dias"}
             </div>
           </Card>
 
@@ -892,10 +951,11 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
       };
 
       try {
-        console.log("DEBUG: Criando registro do lote...");
+        if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
         const targetDate = serviceType === "lodging" ? lodgingDate : null;
-        const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
+        const { data: batch, error: bErr } = await (supabase.from("service_voucher_batches") as any).insert({
           event_id: eventId,
+          event_stage_id: stageId,
           label,
           service_type: serviceType,
           quantity,
@@ -907,7 +967,6 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
 
         if (bErr) throw bErr;
 
-        if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
         const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
           event_id: eventId,
           event_stage_id: stageId,

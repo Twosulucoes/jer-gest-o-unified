@@ -2,99 +2,213 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useStageScope } from "@/hooks/useStageScope";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Download, History, ArrowLeft, Filter, FileSpreadsheet } from "lucide-react";
+import {
+  Search,
+  History,
+  ArrowLeft,
+  FileSpreadsheet,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { voucherErrorMessage } from "@/lib/voucherMessages";
 
+type ServiceFilter = "all" | "meals" | "transport" | "lodging";
+type OriginFilter = "all" | "online" | "offline";
+
 export default function VoucherAuditoriaPage() {
   const eventId = useActiveEventId();
+  const { stageId } = useStageScope();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [outcomeFilter, setOutcomeFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
+  const [originFilter, setOriginFilter] = useState<OriginFilter>("all");
+  const [dayFilter, setDayFilter] = useState<string>(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [operatorFilter, setOperatorFilter] = useState<string>("all");
+
+  const { data: instances = { meals: [], trips: [], locations: [] } } = useQuery({
+    queryKey: ["voucher-audit-instances", eventId, stageId],
+    queryFn: async () => {
+      let mealsQ = supabase
+        .from("meal_windows")
+        .select("id, label, service_date")
+        .eq("event_id", eventId);
+      let tripsQ = supabase
+        .from("transport_trips")
+        .select("id, scheduled_at, route_id, routes(name)")
+        .eq("event_id", eventId);
+      let locsQ = supabase
+        .from("lodging_locations")
+        .select("id, name")
+        .eq("event_id", eventId);
+      if (stageId) {
+        mealsQ = mealsQ.eq("event_stage_id", stageId);
+        tripsQ = tripsQ.eq("event_stage_id", stageId);
+        locsQ = locsQ.eq("event_stage_id", stageId);
+      }
+      const [meals, trips, locations] = await Promise.all([mealsQ, tripsQ, locsQ]);
+      return {
+        meals: meals.data ?? [],
+        trips: (trips.data as any[]) ?? [],
+        locations: locations.data ?? [],
+      };
+    },
+    enabled: !!eventId,
+  });
 
   const { data: operations = [], isLoading } = useQuery({
-    queryKey: ["voucher-audit-ops", eventId, typeFilter, outcomeFilter],
+    queryKey: [
+      "voucher-audit-ops",
+      eventId,
+      stageId,
+      outcomeFilter,
+      serviceFilter,
+      originFilter,
+      dayFilter,
+      operatorFilter,
+    ],
     queryFn: async () => {
-      // 1. Busca tentativas de validação (auditoria operacional)
-      let qAttempts = supabase
-        .from("service_voucher_attempts")
-        .select(`
+      let q = (supabase.from("service_voucher_attempts") as any)
+        .select(
+          `
           *,
           voucher:service_vouchers(
             qr_code_value,
             is_nominal,
+            event_stage_id,
+            target_meal_window_id,
+            target_trip_id,
+            target_facility_id,
+            target_date,
             eventual_person:service_eventual_people(full_name),
             batch:service_voucher_batches(label)
           ),
           operator:profiles(full_name)
-        `)
+        `,
+        )
         .eq("event_id", eventId)
-        .order("attempted_at", { ascending: false });
-      
-      if (outcomeFilter !== "all") qAttempts = qAttempts.eq("outcome", outcomeFilter);
+        .order("attempted_at", { ascending: false })
+        .limit(1000);
 
-      const { data: attempts, error: attErr } = await qAttempts;
-      if (attErr) throw attErr;
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      if (outcomeFilter !== "all") q = q.eq("outcome", outcomeFilter);
+      if (serviceFilter !== "all") q = q.eq("service_kind", serviceFilter);
+      if (originFilter === "online") q = q.eq("is_offline", false);
+      if (originFilter === "offline") q = q.eq("is_offline", true);
+      if (operatorFilter !== "all") q = q.eq("attempted_by", operatorFilter);
+      if (dayFilter) {
+        const start = `${dayFilter}T00:00:00.000Z`;
+        const end = `${dayFilter}T23:59:59.999Z`;
+        q = q.gte("attempted_at", start).lte("attempted_at", end);
+      }
 
-      // 2. Mapeia para um formato unificado
-      return (attempts || []).map((a: any) => ({
+      const { data, error } = await q;
+      if (error) throw error;
+
+      return (data || []).map((a: any) => ({
         id: a.id,
         timestamp: a.attempted_at,
-        type: a.outcome === 'success' ? 'CONSUMO' : 'TENTATIVA RECUSADA',
+        type: a.outcome === "success" ? "CONSUMO" : "TENTATIVA RECUSADA",
         service: a.service_kind,
-        details: a.outcome === 'success' ? 'Sucesso' : voucherErrorMessage(a.reason, 'pt', { 
-          used_at: a.metadata?.used_at, 
-          operator_name: a.metadata?.operator_name,
-          correct_instance: a.metadata?.correct_instance,
-          revocation_reason: a.metadata?.revocation_reason,
-          valid_until: a.metadata?.valid_until
-        }).text,
-        identifier: a.voucher?.eventual_person?.full_name || a.voucher?.qr_code_value || a.qr_value,
-        operator: a.operator?.full_name || 'Sistema',
+        details:
+          a.outcome === "success"
+            ? "Sucesso"
+            : voucherErrorMessage(a.reason, "pt", {
+                used_at: a.metadata?.used_at,
+                operator_name: a.metadata?.operator_name,
+                correct_instance: a.metadata?.correct_instance,
+                revocation_reason: a.metadata?.revocation_reason,
+                valid_until: a.metadata?.valid_until,
+              }).text,
+        identifier:
+          a.voucher?.eventual_person?.full_name ||
+          a.voucher?.batch?.label ||
+          a.voucher?.qr_code_value ||
+          a.qr_value,
+        operator_id: a.attempted_by,
+        operator: a.operator?.full_name || "Sistema",
         is_offline: a.is_offline,
         offline_at: a.offline_at,
-        tone: a.outcome === 'success' ? 'success' : 'destructive'
+        tone: a.outcome === "success" ? "success" : "destructive",
       }));
     },
-    enabled: !!eventId
+    enabled: !!eventId,
   });
 
-  const filtered = operations.filter(op => 
-    !search || 
-    op.identifier?.toLowerCase().includes(search.toLowerCase()) ||
-    op.operator?.toLowerCase().includes(search.toLowerCase())
+  const operatorOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    operations.forEach((op: any) => {
+      if (op.operator_id && !seen.has(op.operator_id)) {
+        seen.set(op.operator_id, op.operator);
+      }
+    });
+    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+  }, [operations]);
+
+  const filtered = operations.filter(
+    (op: any) =>
+      !search ||
+      op.identifier?.toLowerCase().includes(search.toLowerCase()) ||
+      op.operator?.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleExport = () => {
     toast.info("Exportação para CSV iniciada...");
-    const headers = ["Data/Hora", "Tipo", "Serviço", "Identificador", "Detalhes", "Operador"];
-    const rows = filtered.map(f => [
+    const headers = [
+      "Data/Hora",
+      "Tipo",
+      "Origem",
+      "Serviço",
+      "Identificador",
+      "Detalhes",
+      "Operador",
+    ];
+    const rows = filtered.map((f: any) => [
       format(new Date(f.timestamp), "dd/MM/yyyy HH:mm"),
       f.type,
+      f.is_offline ? "OFFLINE" : "ONLINE",
       f.service,
       f.identifier,
       f.details,
-      f.operator
+      f.operator,
     ]);
-    
-    const csv = "\uFEFF" + [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+
+    const csv =
+      "﻿" +
+      [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `auditoria-vouchers-${format(new Date(), "yyyy-MM-dd")}.csv`);
+    link.setAttribute(
+      "download",
+      `auditoria-vouchers-${format(new Date(), "yyyy-MM-dd")}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -105,40 +219,75 @@ export default function VoucherAuditoriaPage() {
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/vouchers")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/admin/vouchers")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <History className="h-6 w-6 text-primary" /> Central de Auditoria de Vouchers
+              <History className="h-6 w-6 text-primary" /> Central de Auditoria
+              de Vouchers
             </h1>
-            <p className="text-sm text-muted-foreground">Rastreabilidade completa de emissões, consumos e recusas.</p>
+            <p className="text-sm text-muted-foreground">
+              Rastreabilidade de emissões, consumos e recusas. Default: etapa
+              ativa + dia de hoje.
+            </p>
           </div>
         </div>
-        <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          disabled={filtered.length === 0}
+        >
           <FileSpreadsheet className="h-4 w-4 mr-2" /> Exportar CSV
         </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex flex-wrap gap-3 items-end">
             <div className="flex-1 min-w-[200px] space-y-1.5">
               <Label>Buscar</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Voucher ou operador..." 
+                <Input
+                  placeholder="Voucher, lote, pessoa ou operador..."
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
                 />
               </div>
             </div>
-            <div className="w-48 space-y-1.5">
+            <div className="space-y-1.5">
+              <Label>Dia</Label>
+              <div className="flex gap-1">
+                <Input
+                  type="date"
+                  value={dayFilter}
+                  onChange={(e) => setDayFilter(e.target.value)}
+                  className="w-[160px]"
+                />
+                {dayFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDayFilter("")}
+                    title="Limpar filtro de dia"
+                  >
+                    ×
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="w-44 space-y-1.5">
               <Label>Resultado</Label>
               <Select value={outcomeFilter} onValueChange={setOutcomeFilter}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="success">Sucessos</SelectItem>
@@ -146,15 +295,81 @@ export default function VoucherAuditoriaPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-44 space-y-1.5">
+              <Label>Serviço</Label>
+              <Select
+                value={serviceFilter}
+                onValueChange={(v: ServiceFilter) => setServiceFilter(v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="meals">Alimentação</SelectItem>
+                  <SelectItem value="transport">Transporte</SelectItem>
+                  <SelectItem value="lodging">Alojamento</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-40 space-y-1.5">
+              <Label>Origem</Label>
+              <Select
+                value={originFilter}
+                onValueChange={(v: OriginFilter) => setOriginFilter(v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="offline">Offline</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {operatorOptions.length > 0 && (
+              <div className="w-52 space-y-1.5">
+                <Label>Operador</Label>
+                <Select
+                  value={operatorFilter}
+                  onValueChange={setOperatorFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {operatorOptions.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <div className="mt-2 text-[10px] text-muted-foreground">
+            {stageId
+              ? "Filtrando pela etapa ativa"
+              : "Sem etapa ativa — mostrando todas as etapas do evento"}
+            {dayFilter ? ` · Dia ${dayFilter}` : " · Todos os dias"}
+            {" · "}
+            {filtered.length} registro{filtered.length === 1 ? "" : "s"}
           </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-2">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">Nenhum registro encontrado.</div>
+            <div className="py-12 text-center text-muted-foreground">
+              Nenhum registro encontrado para os filtros aplicados.
+            </div>
           ) : (
             <div className="rounded-md border overflow-hidden">
               <Table>
@@ -170,33 +385,58 @@ export default function VoucherAuditoriaPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((op) => (
+                  {filtered.map((op: any) => (
                     <TableRow key={op.id}>
-                      <TableCell className="text-xs font-mono">{format(new Date(op.timestamp), "dd/MM HH:mm")}</TableCell>
+                      <TableCell className="text-xs font-mono">
+                        {format(new Date(op.timestamp), "dd/MM HH:mm")}
+                      </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`text-[10px] uppercase ${op.tone === 'success' ? 'border-green-500 text-green-700 bg-green-50' : 'border-destructive text-destructive'}`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] uppercase ${op.tone === "success" ? "border-green-500 text-green-700 bg-green-50" : "border-destructive text-destructive"}`}
+                        >
                           {op.type}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         {op.is_offline ? (
                           <div className="flex flex-col gap-0.5">
-                            <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-700 bg-amber-50 w-fit">OFFLINE</Badge>
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] border-amber-500 text-amber-700 bg-amber-50 w-fit"
+                            >
+                              OFFLINE
+                            </Badge>
                             {op.offline_at && (
                               <span className="text-[9px] text-muted-foreground italic">
-                                Lido: {format(new Date(op.offline_at), "dd/MM HH:mm")}
+                                Lido:{" "}
+                                {format(new Date(op.offline_at), "dd/MM HH:mm")}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <Badge variant="outline" className="text-[9px] border-blue-500 text-blue-700 bg-blue-50 w-fit">ONLINE</Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] border-blue-500 text-blue-700 bg-blue-50 w-fit"
+                          >
+                            ONLINE
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="text-[10px] uppercase">{op.service}</Badge>
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] uppercase"
+                        >
+                          {op.service}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-sm font-medium">{op.identifier}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{op.details}</TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {op.identifier}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {op.details}
+                      </TableCell>
                       <TableCell className="text-xs">{op.operator}</TableCell>
                     </TableRow>
                   ))}
