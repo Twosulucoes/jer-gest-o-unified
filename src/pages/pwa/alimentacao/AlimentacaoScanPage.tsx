@@ -43,7 +43,6 @@ interface MealWindow {
   service_date: string;
   start_time: string;
   end_time: string;
-  capacity?: number;
 }
 
 // Saída antecipada (Etapa 2): pessoa fica inelegível para janelas com
@@ -86,6 +85,8 @@ export default function AlimentacaoScanPage() {
   const [debouncedManual, setDebouncedManual] = useState("");
   const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
   const [manualSearching, setManualSearching] = useState(false);
+  // L4: trava de double-submit. Bloqueia handleScan/handleManualPick paralelos.
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setPrefs(loadScanPreferences(MODULE, userId));
@@ -131,7 +132,7 @@ export default function AlimentacaoScanPage() {
       const today = new Date().toLocaleDateString('fr-CA');
       let q = supabase
         .from("meal_windows")
-        .select("id, meal_type:meal_types(name), service_date, start_time, end_time, capacity")
+        .select("id, meal_type:meal_types(name), service_date, start_time, end_time")
         .eq("service_date", today)
         .eq("event_id", activeEventId)
         .order("start_time");
@@ -326,9 +327,11 @@ export default function AlimentacaoScanPage() {
   }
 
   const handleScan = async (rawValue: string) => {
+    if (isSubmitting) return;
     setScannerOpen(false);
     let val = rawValue.trim();
     if (!val) return;
+    setIsSubmitting(true);
 
     // Normalização para entrada manual de código de voucher (6 caracteres)
     if (!val.toLowerCase().startsWith("voucher:") && val.length === 6 && /^[A-Z0-9]+$/i.test(val)) {
@@ -464,6 +467,8 @@ export default function AlimentacaoScanPage() {
     } catch (err: unknown) {
       setResult({ ok: false, message: `${getSystemMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -516,8 +521,10 @@ export default function AlimentacaoScanPage() {
   };
 
   const handleManualPick = async (row: ParticipantManualSearchRow) => {
+    if (isSubmitting) return;
     setManualQuery("");
     setManualHits([]);
+    setIsSubmitting(true);
     try {
       // Trava de presença aplicada também no caminho manual (Etapa 0/1/2 da
       // auditoria de Alimentação). Sem isso, o operador conseguia inserir
@@ -539,6 +546,8 @@ export default function AlimentacaoScanPage() {
     } catch (err: unknown) {
       setResult({ ok: false, message: `${getSystemMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}` });
       recordOutcome("error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -582,42 +591,29 @@ export default function AlimentacaoScanPage() {
         )}
 
         {windowId && (
-          <div className="space-y-2">
-            {(() => {
-              const win = windows.find(w => w.id === windowId);
-              if (!win?.capacity) return null;
-              const isFull = consumptionCount >= win.capacity;
-              return (
-                <Card className={isFull ? "border-amber-500 bg-amber-500/5 animate-pulse" : "border-border/50 bg-card/50"}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Ocupação da Janela</span>
-                      <span className="text-sm font-bold">
-                        {consumptionCount} / {win.capacity}
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full transition-all duration-500 ${isFull ? 'bg-amber-500' : 'bg-blue-500'}`}
-                        style={{ width: `${Math.min(100, (consumptionCount / win.capacity) * 100)}%` }}
-                      />
-                    </div>
-                    {isFull && (
-                      <div className="flex items-center gap-2 mt-2 text-amber-600 dark:text-amber-400">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span className="text-xs font-bold uppercase">Atenção: Capacidade Atingida</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })()}
+          <div className="rounded-lg border border-border/50 bg-card/50 px-3 py-2 text-xs text-muted-foreground">
+            <span className="font-medium uppercase tracking-wider">Consumos nesta janela:</span>{" "}
+            <span className="text-sm font-bold text-foreground">{consumptionCount}</span>
           </div>
         )}
 
-        <Button variant="module" className="h-12 w-full rounded-xl text-base font-semibold shadow-app-md" onClick={() => setScannerOpen(true)}>
-          <ScanLine className="mr-2 h-5 w-5" />
-          Escanear QR Code
+        <Button
+          variant="module"
+          className="h-12 w-full rounded-xl text-base font-semibold shadow-app-md"
+          onClick={() => setScannerOpen(true)}
+          disabled={isSubmitting || !windowId}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Processando…
+            </>
+          ) : (
+            <>
+              <ScanLine className="mr-2 h-5 w-5" />
+              Escanear QR Code
+            </>
+          )}
         </Button>
 
         <div className="space-y-2">
@@ -669,7 +665,8 @@ export default function AlimentacaoScanPage() {
                         key={h.participant_id}
                         type="button"
                         onClick={() => void handleManualPick(h)}
-                        className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60"
+                        disabled={isSubmitting}
+                        className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
                           <User className="h-5 w-5" />

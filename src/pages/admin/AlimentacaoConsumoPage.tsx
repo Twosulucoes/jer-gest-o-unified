@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,11 @@ export default function AlimentacaoConsumoPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
+
+  // H6: qualquer filtro reseta para a primeira página
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedWindowId, statusFilter, searchTerm]);
 
   // Removido query redundante de events
 
