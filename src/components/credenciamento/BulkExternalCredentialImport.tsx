@@ -19,6 +19,27 @@ interface BulkExternalCredentialImportProps {
   onSuccess: () => void;
 }
 
+// Normaliza cabeçalho da planilha: remove acentos, traços/underscores e
+// caixa. "Código", "CÓDIGO", "credencial", "Credential-Code" → todos
+// caem em "CODIGO" / "CREDENCIALCODE" / "CREDENCIAL" / etc.
+const normalizeHeader = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase();
+
+const CPF_HEADER_TOKENS = new Set(["CPF"]);
+const CODE_HEADER_TOKENS = new Set([
+  "CREDENTIAL",
+  "CREDENTIALCODE",
+  "CODIGO",
+  "CODIGOCREDENCIAL",
+  "CREDENCIAL",
+  "CODIGODACREDENCIAL",
+  "CODIGOCRED",
+]);
+
 export function BulkExternalCredentialImport({ eventId, onSuccess }: BulkExternalCredentialImportProps) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -49,13 +70,20 @@ export function BulkExternalCredentialImport({ eventId, onSuccess }: BulkExterna
         return;
       }
 
-      // Procura por colunas de identificação
+      // Procura por colunas de identificação. Normaliza headers para
+      // tolerar acentos ("CÓDIGO"), espaços ("Credential Code") e
+      // separadores ("Credential-Code"). Sem isso, planilhas exportadas
+      // com cabeçalho em português eram silenciosamente rejeitadas.
       const firstRow = rows[0];
-      const cpfCol = Object.keys(firstRow).find(k => k.toUpperCase() === "CPF");
-      const codeCol = Object.keys(firstRow).find(k => ["CREDENTIAL", "CREDENTIAL_CODE", "CODIGO", "CREDENTIAL-CODE", "CREDENCIAL"].includes(k.toUpperCase()));
+      const headerKeys = Object.keys(firstRow);
+      const cpfCol = headerKeys.find((k) => CPF_HEADER_TOKENS.has(normalizeHeader(k)));
+      const codeCol = headerKeys.find((k) => CODE_HEADER_TOKENS.has(normalizeHeader(k)));
 
       if (!cpfCol || !codeCol) {
-        toast.error("Colunas obrigatórias não encontradas. Certifique-se de que a planilha tenha colunas 'CPF' e 'CREDENCIAL'.");
+        toast.error(
+          `Colunas obrigatórias não encontradas. Esperado 'CPF' e 'CREDENCIAL' (ou CÓDIGO). Cabeçalhos lidos: ${headerKeys.join(", ") || "(vazio)"}`,
+          { duration: 8000 },
+        );
         setLoading(false);
         return;
       }
@@ -82,43 +110,61 @@ export function BulkExternalCredentialImport({ eventId, onSuccess }: BulkExterna
           continue;
         }
 
-        const { data: participant, error: partError } = await supabase
+        // Pode haver mais de 1 participação por pessoa no mesmo evento
+        // (atleta+técnico, atleta+chefe). maybeSingle() falhava em
+        // "more than one row" e a linha era rejeitada como "não é
+        // participante". Agora pegamos todos e tratamos os 3 casos.
+        const { data: participantRows, error: partError } = await supabase
           .from("participants")
-          .select("id")
+          .select("id, participant_type, is_active")
           .eq("person_id", person.id)
-          .eq("event_id", eventId)
-          .maybeSingle();
+          .eq("event_id", eventId);
 
-        if (partError || !participant) {
-          errors.push({ row: i + 2, error: `Pessoa com CPF ${cpfRaw} não é participante deste evento` });
+        if (partError) {
+          errors.push({ row: i + 2, error: `Erro ao buscar participação (CPF ${cpfRaw}): ${partError.message}` });
           continue;
         }
 
-        // 2. Verificar se já possui credencial ativa para poder substituir
+        const activeRows = (participantRows ?? []).filter((p: any) => p.is_active !== false);
+        if (activeRows.length === 0) {
+          errors.push({ row: i + 2, error: `Pessoa com CPF ${cpfRaw} não é participante deste evento` });
+          continue;
+        }
+        if (activeRows.length > 1) {
+          const types = activeRows.map((p: any) => p.participant_type).join(", ");
+          errors.push({
+            row: i + 2,
+            error: `Pessoa com CPF ${cpfRaw} tem ${activeRows.length} participações ativas (${types}). Vincule manualmente para escolher qual receberá a credencial.`,
+          });
+          continue;
+        }
+        const participant = activeRows[0];
+
+        // 2. Verificar se já possui credencial externa ativa neste evento.
+        // Faltava o .eq('event_id') — sem ele, podia pegar credencial
+        // de outro evento e passar como p_replace_id (corrupção de estado).
         const { data: existingCred } = await supabase
           .from("external_credentials")
           .select("id")
           .eq("participant_id", participant.id)
+          .eq("event_id", eventId)
           .eq("status", "active")
           .maybeSingle();
 
-        // 3. Vincular credencial usando a RPC existente
+        // 3. Vincular credencial usando a RPC. Após L2, a RPC já devolve
+        // mensagens humanas via EXCEPTION handler — confiamos em
+        // error.message direto, sem string-matching de constraint name.
         const { error: linkError } = await (supabase as any).rpc("link_external_credential", {
           p_event_id: eventId,
           p_participant_id: participant.id,
           p_credential_code: code,
           p_user_id: user.id,
           p_replace_id: existingCred?.id ?? null,
+          p_is_internal_mode: false,
         });
 
         if (linkError) {
-          let msg = linkError.message;
-          if (msg.includes("uq_external_credentials_active_participant")) {
-            msg = "Participante já possui uma credencial ativa.";
-          } else if (msg.includes("uq_external_credentials_active_code")) {
-            msg = "Este código de credencial já está em uso por outra pessoa.";
-          }
-          errors.push({ row: i + 2, error: msg });
+          errors.push({ row: i + 2, error: linkError.message || "Erro desconhecido" });
         } else {
           successCount++;
         }
