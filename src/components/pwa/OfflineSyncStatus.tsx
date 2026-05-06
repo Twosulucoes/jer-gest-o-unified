@@ -4,17 +4,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CloudOff, RefreshCw, CheckCircle2, Ticket } from "lucide-react";
 import { getOfflineQueue, syncOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { getVoucherQueue, syncVoucherQueue } from "@/lib/voucherOffline";
+import { getPendingIncidentCount, syncIncidentQueue } from "@/lib/incidentOffline";
 import { toast } from "sonner";
 
 export function OfflineSyncStatus() {
   const [queueCount, setQueueCount] = useState(0);
   const [voucherQueueCount, setVoucherQueueCount] = useState(0);
+  const [incidentQueueCount, setIncidentQueueCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [online, setOnline] = useState(isOnline());
 
   const updateQueueCounts = () => {
     setQueueCount(getOfflineQueue().filter(i => i.status === "pending" || i.status === "failed").length);
     setVoucherQueueCount(getVoucherQueue().filter(i => i.status === "pending" || i.status === "failed").length);
+    setIncidentQueueCount(getPendingIncidentCount());
   };
 
   useEffect(() => {
@@ -75,6 +78,17 @@ export function OfflineSyncStatus() {
         }
       }
 
+      if (incidentQueueCount > 0) {
+        const iResult = await syncIncidentQueue();
+        if (iResult.synced > 0) {
+          toast.success(`${iResult.synced} incidentes sincronizados.`);
+          syncedAny = true;
+        }
+        if (iResult.failed > 0) {
+          toast.error(`${iResult.failed} incidentes falharam ao sincronizar.`);
+        }
+      }
+
       updateQueueCounts();
     } catch (error) {
       toast.error("Erro inesperado ao sincronizar.");
@@ -83,7 +97,7 @@ export function OfflineSyncStatus() {
     }
   };
 
-  const totalPending = queueCount + voucherQueueCount;
+  const totalPending = queueCount + voucherQueueCount + incidentQueueCount;
   if (totalPending === 0 && online) return null;
 
   return (
@@ -111,6 +125,11 @@ export function OfflineSyncStatus() {
               {voucherQueueCount > 0 && (
                 <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded flex items-center gap-1">
                   <Ticket className="h-2.5 w-2.5" /> {voucherQueueCount} vouchers
+                </span>
+              )}
+              {incidentQueueCount > 0 && (
+                <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                  {incidentQueueCount} recusas
                 </span>
               )}
               {totalPending === 0 && !online && (

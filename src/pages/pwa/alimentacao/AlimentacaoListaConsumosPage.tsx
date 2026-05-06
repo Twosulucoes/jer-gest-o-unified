@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { formatPhone, phoneMask } from "@/lib/phoneUtils";
 import { downloadCsv } from "@/lib/reportExport";
+import { useTodayString } from "@/hooks/useTodayString";
 
 interface MealWindow {
   id: string;
@@ -65,11 +66,13 @@ export default function AlimentacaoListaConsumosPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const today = new Date().toLocaleDateString('fr-CA');
+  const today = useTodayString();
 
   useEffect(() => {
     loadData();
-  }, [activeEventId, stageId]);
+    // `today` é dependência: meia-noite passou ⇒ refetch para o dia novo.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeEventId, stageId, today]);
 
   async function loadData() {
     setLoading(true);

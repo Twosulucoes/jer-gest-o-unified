@@ -18,6 +18,7 @@ import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/Alimenta
 import { format } from "date-fns";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
+import { useTodayString } from "@/hooks/useTodayString";
 
 
 interface OpenWindowState {
@@ -33,6 +34,7 @@ export default function AlimentacaoHomePage() {
   const navigate = useNavigate();
   const { activeEventId } = useEventContext();
   const stageId = useActiveStageId();
+  const today = useTodayString();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({ consumosHoje: 0, janelasAbertas: 0, tiposRefeicao: 0, totalJanelas: 0 });
   const [openWindows, setOpenWindows] = useState<OpenWindowState[]>([]);
@@ -48,7 +50,6 @@ export default function AlimentacaoHomePage() {
       const { data: profile } = await supabase.from("profiles").select("active").eq("id", session.user.id).single();
       if (!profile?.active) { navigate("/pwa", { replace: true }); return; }
 
-      const today = new Date().toLocaleDateString('fr-CA');
       const nowDate = new Date();
 
       let windowsQ = supabase.from("meal_windows").select("id, start_time, end_time, service_date, label, meal_type:meal_types(name)").eq("event_id", activeEventId).eq("service_date", today).order("start_time");
@@ -101,7 +102,7 @@ export default function AlimentacaoHomePage() {
       });
       setLoading(false);
     })();
-  }, [navigate, activeEventId, stageId]);
+  }, [navigate, activeEventId, stageId, today]);
 
   return (
     <PwaLayout onBack={() => navigate(-1)} moduleTitle="Alimentação">
@@ -161,7 +162,7 @@ export default function AlimentacaoHomePage() {
             { label: "Scan QR", description: "Registrar consumo agora", icon: ScanLine, to: "/pwa/alimentacao/scan", featured: true },
             { label: "Buscar", icon: Search, to: "/pwa/alimentacao/buscar" },
             { label: "Janelas", icon: Clock, to: "/pwa/alimentacao/janelas" },
-            { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/lista-consumos" },
+            { label: "Lista de Consumos", icon: ListChecks, to: "/pwa/alimentacao/consumos" },
           ]}
         />
 
