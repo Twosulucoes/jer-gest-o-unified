@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
 import QRCode from "qrcode";
@@ -751,7 +750,6 @@ export default function VouchersPage() {
 
 // -------- Emission Wizards --------
 function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, handlePrintIndividual }: any) {
-  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -774,90 +772,47 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const vType = isNominal ? "nominal" : "aggregate";
-      
       if (!stageId) throw new Error("Selecione uma etapa antes de emitir voucher.");
-      const payload: any = {
-        event_id: eventId,
-        event_stage_id: stageId,
-        voucher_type: vType,
-        is_nominal: isNominal,
-        qr_code_value: genQrValue(),
-        status: "active",
-      };
-
-      if (isNominal) {
-        if (!eventualId) {
-          throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
-        }
-        payload.eventual_person_id = eventualId;
-      }
-
-      if (serviceType === "meals") {
-        payload.target_meal_window_id = instanceId;
-        payload.scope_meals = true;
-      } else if (serviceType === "transport") {
-        payload.target_trip_id = instanceId;
-        payload.scope_transport = true;
-      } else if (serviceType === "lodging") {
-        if (!lodgingDate) {
-          throw new Error("Selecione a data do alojamento — voucher de alojamento exige dia explícito.");
-        }
-        payload.target_facility_id = instanceId;
-        payload.target_date = lodgingDate;
-        payload.scope_lodging = true;
-      } else {
+      if (!serviceType || !["meals", "transport", "lodging"].includes(serviceType)) {
         throw new Error("Tipo de serviço inválido.");
       }
-
       if (!instanceId) {
         throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
       }
-
-
-      const sanitizedAuditPayload = {
-        event_id: eventId,
-        voucher_type: vType,
-        is_nominal: isNominal,
-        eventual_person_id: payload.eventual_person_id,
-        service_type: serviceType,
-        instance_id: instanceId,
-        qr_hash: btoa(payload.qr_code_value).slice(0, 10),
-        audit_info: "individual_emission"
-      };
-
-      try {
-        const { data, error } = await supabase.from("service_vouchers").insert(payload).select().single();
-        if (error) {
-          throw error;
-        }
-        
-        await supabase.from("service_voucher_audit").insert({
-          event_id: eventId,
-          issuer_id: user?.id,
-          voucher_type: vType,
-          payload: sanitizedAuditPayload,
-          status: 'success'
-        });
-
-        return data;
-      } catch (err: any) {
-        await supabase.from("service_voucher_audit").insert({
-          event_id: eventId,
-          issuer_id: user?.id,
-          voucher_type: vType,
-          payload: { ...sanitizedAuditPayload, audit_info: "individual_failed" },
-          status: 'error',
-          error_message: err.message || JSON.stringify(err)
-        });
-        throw err;
+      if (isNominal && !eventualId) {
+        throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
       }
+      if (serviceType === "lodging" && !lodgingDate) {
+        throw new Error("Selecione a data do alojamento — voucher de alojamento exige dia explícito.");
+      }
+
+      const qrCode = genQrValue();
+      const { data, error } = await supabase.rpc("issue_voucher_v1" as any, {
+        p_event_id: eventId,
+        p_event_stage_id: stageId,
+        p_service_type: serviceType,
+        p_instance_id: instanceId,
+        p_target_date: serviceType === "lodging" ? lodgingDate : null,
+        p_is_nominal: isNominal,
+        p_eventual_person_id: isNominal ? eventualId : null,
+        p_label: null,
+        p_qr_code: qrCode,
+      });
+      if (error) throw error;
+
+      // Carrega o voucher recém-criado para impressão.
+      const newId = (data as any)?.voucher_id;
+      if (!newId) return null;
+      const { data: newV } = await (supabase.from("service_vouchers") as any)
+        .select("*")
+        .eq("id", newId)
+        .single();
+      return newV;
     },
     onSuccess: (newV) => {
       toast.success("Voucher emitido com sucesso");
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
-      // Tenta imprimir automaticamente se for individual
       if (newV) {
         handlePrintIndividual(newV as unknown as VoucherRow);
       }
@@ -952,7 +907,6 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
 }
 
 function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: any) {
-  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -963,88 +917,30 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!serviceType) {
-        throw new Error("Selecione o tipo de serviço.");
-      }
-      if (!instanceId) {
-        throw new Error("Selecione a instância do serviço.");
-      }
-      if (quantity <= 0) {
-        throw new Error("A quantidade deve ser maior que zero.");
-      }
+      if (!serviceType) throw new Error("Selecione o tipo de serviço.");
+      if (!instanceId) throw new Error("Selecione a instância do serviço.");
+      if (quantity <= 0) throw new Error("A quantidade deve ser maior que zero.");
       if (serviceType === "lodging" && !lodgingDate) {
         throw new Error("Selecione a data do alojamento — voucher de alojamento exige dia explícito.");
       }
+      if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
 
-      const auditPayload = { 
-        service_type: serviceType, 
-        quantity, 
-        label, 
-        instance_id: instanceId,
-        audit_info: "batch_emission"
-      };
-
-      try {
-        if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
-        const targetDate = serviceType === "lodging" ? lodgingDate : null;
-        const { data: batch, error: bErr } = await (supabase.from("service_voucher_batches") as any).insert({
-          event_id: eventId,
-          event_stage_id: stageId,
-          label,
-          service_type: serviceType,
-          quantity,
-          target_meal_window_id: serviceType === "meals" ? instanceId : null,
-          target_trip_id: serviceType === "transport" ? instanceId : null,
-          target_facility_id: serviceType === "lodging" ? instanceId : null,
-          target_date: targetDate,
-        }).select().single();
-
-        if (bErr) throw bErr;
-
-        const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
-          event_id: eventId,
-          event_stage_id: stageId,
-          batch_id: batch.id,
-          participant_id: null,
-          voucher_type: "aggregate" as const,
-          is_nominal: false,
-          qr_code_value: genQrValue(),
-          status: "active",
-          scope_meals: serviceType === "meals",
-          scope_transport: serviceType === "transport",
-          scope_lodging: serviceType === "lodging",
-          target_meal_window_id: serviceType === "meals" ? instanceId : null,
-          target_trip_id: serviceType === "transport" ? instanceId : null,
-          target_facility_id: serviceType === "lodging" ? instanceId : null,
-          target_date: targetDate,
-        }));
-
-        const { error: vErr } = await supabase.from("service_vouchers").insert(vouchersToInsert as any);
-        if (vErr) {
-          throw vErr;
-        }
-
-        await supabase.from("service_voucher_audit").insert({
-          event_id: eventId,
-          issuer_id: user?.id,
-          voucher_type: 'batch',
-          payload: { ...auditPayload, batch_id: batch.id, created_count: quantity },
-          status: 'success'
-        });
-      } catch (err: any) {
-        await supabase.from("service_voucher_audit").insert({
-          event_id: eventId,
-          issuer_id: user?.id,
-          voucher_type: 'batch',
-          payload: { ...auditPayload, error: err.message || JSON.stringify(err), audit_info: "batch_failed" },
-          status: 'error',
-          error_message: err.message || JSON.stringify(err)
-        });
-        throw err;
-      }
+      const qrCodes = Array.from({ length: quantity }).map(() => genQrValue());
+      const { data, error } = await supabase.rpc("issue_voucher_batch_v1" as any, {
+        p_event_id: eventId,
+        p_event_stage_id: stageId,
+        p_service_type: serviceType,
+        p_instance_id: instanceId,
+        p_target_date: serviceType === "lodging" ? lodgingDate : null,
+        p_quantity: quantity,
+        p_label: label,
+        p_qr_codes: qrCodes,
+      });
+      if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast.success("Lote emitido com sucesso");
+    onSuccess: (data: any) => {
+      toast.success(`Lote emitido — ${data?.created_count ?? quantity} vouchers gerados`);
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
       qc.invalidateQueries({ queryKey: ["voucher-batches"] });

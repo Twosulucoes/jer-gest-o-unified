@@ -4,6 +4,17 @@
 > **Estado:** 🟢 P0 mergeado / 🟡 P1 pendente revisão.
 > Histórico: ✅ FECHADO 2026-04-28 → regressão por mudança de RPC → P0 mergeado em 2026‑05‑06 → P1 (filtros, audit, RLS).
 
+## Auditoria 2026-05-06 (Hqy0B-p4) — Pacote P4
+
+| Frente | Mudança | Migration / Arquivo |
+|---|---|---|
+| Emissão atomic | RPCs `issue_voucher_v1` e `issue_voucher_batch_v1` (`SECURITY INVOKER`). Batch faz `ROLLBACK` integral se qualquer voucher falhar → sem batches órfãos. | `20260507300000_voucher_p4_issue_rpcs_and_realtime.sql` |
+| Audit creation | Trigger `log_voucher_creation` AFTER INSERT em `service_vouchers` grava em `service_voucher_audit` com `event_type=issue` ou `reissue` (pela presença de `replaces_voucher_id`). | mesma migration |
+| Realtime publication | `ALTER PUBLICATION supabase_realtime ADD TABLE service_vouchers, service_voucher_attempts` (idempotente via DO $$ check). | mesma migration |
+| Wizards | `IssueVoucherWizard` e `IssueBatchWizard` chamam as RPCs em vez de inserts. Audit do client removido (anti-spoof: agora 100% no trigger DB). | `src/pages/admin/VouchersPage.tsx` |
+
+---
+
 ## Auditoria 2026-05-06 (Hqy0B-p3) — Pacote P3
 
 | Frente | Mudança | Migration / Arquivo |
