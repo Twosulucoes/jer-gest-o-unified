@@ -22,11 +22,27 @@ export default function AlimentacaoDashboardPage() {
   const [filterMealType, setFilterMealType] = useState("all");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds (fallback caso o canal realtime caia)
   useEffect(() => {
     const interval = setInterval(() => setRefreshKey((k) => k + 1), 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // M8: realtime — invalida o cache assim que algum consumo da etapa muda
+  useEffect(() => {
+    if (!eventId) return;
+    const channel = supabase
+      .channel(`meal_consumptions_dashboard_${eventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meal_consumptions" },
+        () => setRefreshKey((k) => k + 1),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [eventId]);
 
   // Meal types
   const { data: mealTypes = [] } = useQuery({
