@@ -33,6 +33,9 @@ import PwaLayout from "@/components/pwa/PwaLayout";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 import { addToVoucherQueue } from "@/lib/voucherOffline";
+import { enqueueIncident } from "@/lib/incidentOffline";
+import { readMealWindowsCache, writeMealWindowsCache } from "@/lib/mealWindowsCache";
+import { useTodayString } from "@/hooks/useTodayString";
 import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 
 
@@ -69,6 +72,7 @@ export default function AlimentacaoScanPage() {
   const stageId = useActiveStageId();
   const userId = user?.id ?? null;
   const lang = getPwaLang();
+  const today = useTodayString();
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState(preselectedWindowId ?? "");
   const [consumptionCount, setConsumptionCount] = useState(0);
@@ -114,22 +118,19 @@ export default function AlimentacaoScanPage() {
 
   useEffect(() => {
     (async () => {
-      // 1. Load from cache immediately if available
-      const cached = localStorage.getItem("pwa_meal_windows_cache");
-      if (cached) {
-        try {
-          const { windows: cachedWindows } = JSON.parse(cached);
-          const today = new Date().toLocaleDateString('fr-CA');
-          const todaysWindows = cachedWindows.filter((w: any) => w.service_date === today);
-          if (todaysWindows.length > 0) {
-            setWindows(todaysWindows);
-            if (todaysWindows.length === 1) setWindowId(todaysWindows[0].id);
-          }
-        } catch (e) {}
+      // 1. Cache chaveado por evento+etapa (auditoria L bloqueador 4) —
+      //    sem o key composto, trocar de etapa exibia janelas do contexto
+      //    antigo até o fetch terminar.
+      const cached = readMealWindowsCache<any>(activeEventId, stageId);
+      if (cached?.windows?.length) {
+        const todaysWindows = cached.windows.filter((w: any) => w.service_date === today);
+        if (todaysWindows.length > 0) {
+          setWindows(todaysWindows as MealWindow[]);
+          if (todaysWindows.length === 1) setWindowId(todaysWindows[0].id);
+        }
       }
 
       // 2. Fetch fresh data
-      const today = new Date().toLocaleDateString('fr-CA');
       let q = supabase
         .from("meal_windows")
         .select("id, meal_type:meal_types(name), service_date, start_time, end_time")
@@ -141,8 +142,9 @@ export default function AlimentacaoScanPage() {
       const list = (data ?? []) as unknown as MealWindow[];
       setWindows(list);
       if (list.length === 1) setWindowId(list[0].id);
+      if (list.length > 0) writeMealWindowsCache(activeEventId, stageId, list);
     })();
-  }, [activeEventId, stageId]);
+  }, [activeEventId, stageId, today]);
 
   useEffect(() => {
     if (!windowId) {
@@ -209,7 +211,27 @@ export default function AlimentacaoScanPage() {
   }, [debouncedManual, activeEventId]);
 
   const recordIncident = useCallback(async (type: string, participantId?: string) => {
-    if (!windowId || !isOnline()) return;
+    if (!windowId) return;
+
+    const deviceInfo = {
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      platform: typeof navigator !== "undefined" ? navigator.platform : null,
+      online: isOnline(),
+    };
+
+    // Offline: enfileira para sync — o `OfflineSyncStatus` flusha junto
+    // com a fila de consumos. Sem isso, recusas durante operação offline
+    // (sem credencial, inativo, NEEDS_MEALS_FALSE, LEFT_EVENT, voucher
+    // inválido) ficavam sem trilha, quebrando a aba Divergências.
+    if (!isOnline()) {
+      enqueueIncident({
+        meal_window_id: windowId,
+        incident_type: type,
+        participant_id: participantId || null,
+        device_info: deviceInfo,
+      });
+      return;
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -221,13 +243,18 @@ export default function AlimentacaoScanPage() {
         participant_id: participantId || null,
         registered_by: session.user.id,
         is_offline: false,
-        device_info: {
-          userAgent: navigator.userAgent,
-          platform: navigator.platform
-        }
+        device_info: deviceInfo,
       });
     } catch (err) {
-      console.error("Failed to record meal incident:", err);
+      // Se a inserção online falhar (RLS, rede caindo no meio do scan),
+      // empurra pra fila para não perder a trilha.
+      enqueueIncident({
+        meal_window_id: windowId,
+        incident_type: type,
+        participant_id: participantId || null,
+        device_info: { ...deviceInfo, fallback_from: "online_insert_failed" },
+      });
+      console.error("Failed to record meal incident, enqueued offline:", err);
     }
   }, [windowId]);
 
@@ -305,6 +332,19 @@ export default function AlimentacaoScanPage() {
     const { error } = await supabase.from("meal_consumptions").insert(consumptionData);
 
     if (error) {
+      // Conflito UNIQUE (corrida entre operadores ou re-tap antes do realtime
+      // atualizar a contagem) precisa virar DUPLICATE, não OTHER, para que a
+      // aba Divergências consiga reconciliar e o operador veja a mensagem
+      // certa em vez de erro genérico.
+      if ((error as { code?: string }).code === "23505") {
+        const dupMsg = getSystemMessage("ERR_ALREADY_REGISTERED", lang);
+        setResult({ ok: false, message: dupMsg, source: resultSource });
+        toast.error(dupMsg);
+        recordOutcome("error");
+        void recordIncident("DUPLICATE", participantId);
+        reopenIfContinuous();
+        return;
+      }
       void recordIncident("OTHER", participantId);
       throw error;
     }
@@ -331,7 +371,6 @@ export default function AlimentacaoScanPage() {
     setScannerOpen(false);
     let val = rawValue.trim();
     if (!val) return;
-    setIsSubmitting(true);
 
     // Normalização para entrada manual de código de voucher (6 caracteres)
     if (!val.toLowerCase().startsWith("voucher:") && val.length === 6 && /^[A-Z0-9]+$/i.test(val)) {
@@ -343,6 +382,7 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       let participantId: string | null = null;
       let participantName: string | null = null;

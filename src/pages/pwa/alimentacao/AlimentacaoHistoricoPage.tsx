@@ -8,6 +8,7 @@ import { BarChart3 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { format } from "date-fns";
+import { useTodayString } from "@/hooks/useTodayString";
 
 interface ConsumptionItem {
   id: string;
@@ -22,16 +23,17 @@ export default function AlimentacaoHistoricoPage() {
   const { activeStageId } = useStageContext();
   const [items, setItems] = useState<ConsumptionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const today = useTodayString();
 
   useEffect(() => {
     (async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      setLoading(true);
       let query = supabase
         .from("meal_consumptions")
         .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows!inner(event_id, event_stage_id, meal_type:meal_types(name))")
         .eq("meal_windows.event_id", activeEventId)
         .gte("consumed_at", today + "T00:00:00");
-      
+
       if (activeStageId) {
         query = query.eq("meal_windows.event_stage_id", activeStageId);
       }
@@ -42,7 +44,7 @@ export default function AlimentacaoHistoricoPage() {
       setItems((data as any) || []);
       setLoading(false);
     })();
-  }, []);
+  }, [activeEventId, activeStageId, today]);
 
   return (
     <PwaLayout backTo="/pwa/alimentacao" moduleTitle="Histórico de Hoje">

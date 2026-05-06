@@ -9,6 +9,8 @@ import { Clock } from "lucide-react";
 import { format } from "date-fns";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
+import { readMealWindowsCache, writeMealWindowsCache } from "@/lib/mealWindowsCache";
+import { useTodayString } from "@/hooks/useTodayString";
 
 interface WindowItem {
   id: string;
@@ -27,9 +29,24 @@ export default function AlimentacaoJanelasPage() {
   const stageId = useActiveStageId();
   const [windows, setWindows] = useState<WindowItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const today = useTodayString();
+
+  // Cache chaveado por evento+etapa (auditoria L bloqueador 4): leitura
+  // imediata para feedback rápido + fetch de rede em seguida. Trocar de
+  // contexto (evento/etapa) hidrata a partir do cache certo, não do lixo
+  // do contexto anterior.
+  useEffect(() => {
+    const cached = readMealWindowsCache<WindowItem>(eventId, stageId);
+    if (cached?.windows?.length) {
+      setWindows(cached.windows);
+    } else {
+      setWindows([]);
+    }
+  }, [eventId, stageId]);
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       let query = supabase
         .from("meal_windows")
         .select(`
@@ -49,35 +66,14 @@ export default function AlimentacaoJanelasPage() {
       }
 
       const { data } = await query.order("start_time");
-      setWindows((data as any) || []);
+      const list = (data as WindowItem[]) || [];
+      setWindows(list);
       setLoading(false);
-
-      if (data) {
-        localStorage.setItem("pwa_meal_windows_cache", JSON.stringify({
-          updated_at: new Date().toISOString(),
-          windows: data
-        }));
-      }
+      if (list.length > 0) writeMealWindowsCache(eventId, stageId, list);
     })();
   }, [eventId, stageId]);
 
-  // Load from cache initially
-  useEffect(() => {
-    const cached = localStorage.getItem("pwa_meal_windows_cache");
-    if (cached) {
-      try {
-        const { windows: cachedWindows } = JSON.parse(cached);
-        if (cachedWindows && windows.length === 0) {
-          setWindows(cachedWindows);
-        }
-      } catch (e) {
-        console.error("Error parsing windows cache", e);
-      }
-    }
-  }, []);
-
   const getStatus = (w: WindowItem) => {
-    const today = new Date().toISOString().slice(0, 10);
     const date = w.service_date || today;
     const start = new Date(`${date}T${w.start_time}`);
     const end = new Date(`${date}T${w.end_time}`);
@@ -91,16 +87,13 @@ export default function AlimentacaoJanelasPage() {
     <PwaLayout backTo="/pwa/alimentacao" moduleTitle="Janelas da Etapa">
       <main className="p-4 max-w-md mx-auto space-y-3">
         {(() => {
-          const cached = localStorage.getItem("pwa_meal_windows_cache");
+          const cached = readMealWindowsCache(eventId, stageId);
           if (!cached) return null;
-          try {
-            const { updated_at } = JSON.parse(cached);
-            return (
-              <div className="text-[10px] text-center text-muted-foreground uppercase tracking-wider mb-2">
-                Última atualização: {format(new Date(updated_at), "dd/MM HH:mm")}
-              </div>
-            );
-          } catch (e) { return null; }
+          return (
+            <div className="text-[10px] text-center text-muted-foreground uppercase tracking-wider mb-2">
+              Última atualização: {format(new Date(cached.updated_at), "dd/MM HH:mm")}
+            </div>
+          );
         })()}
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)}
 
@@ -110,7 +103,6 @@ export default function AlimentacaoJanelasPage() {
 
         {windows.map((w) => {
           const status = getStatus(w);
-          const today = new Date().toISOString().slice(0, 10);
           const date = w.service_date || today;
           return (
             <Card key={w.id}>

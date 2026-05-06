@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
 import { getAlojamentoQueue } from "@/hooks/useAlojamentoOffline";
+import { clearAllMealWindowsCache } from "@/lib/mealWindowsCache";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -71,8 +72,8 @@ const PwaSelectionFallback = () => {
           }
         });
 
-        // Invalidação de Cache
-        localStorage.removeItem("pwa_meal_windows_cache");
+        // Invalidação de Cache: chaves segmentadas + legado
+        clearAllMealWindowsCache();
         localStorage.removeItem("jer_alj_facility_id");
         localStorage.removeItem("jer_alj_unit_id");
         // Adicionar outras chaves se identificadas futuramente
