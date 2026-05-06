@@ -477,15 +477,18 @@ export default function CredenciamentoPage() {
   const credentialMutation = useMutation({
     mutationFn: async ({ participantId, externalCode }: { participantId: string; externalCode?: string }) => {
       if (externalCode) {
-        // Caminho externo: o code vem do operador (pulseira/cartão), sem retry.
-        const qrCodeValue = externalCode;
-        const { error } = await (supabase as any).rpc("issue_participant_credential", {
+        // Caminho externo: link_external_credential é a RPC atômica que insere
+        // em external_credentials + participant_credentials na mesma transação.
+        // Antes chamávamos issue_participant_credential com binding='external',
+        // o que criava participant_credentials órfã (sem external_credentials),
+        // quebrando resolveQrCredential e impossibilitando cancelamento limpo.
+        const { error } = await (supabase as any).rpc("link_external_credential", {
           p_event_id: selectedEventId,
           p_participant_id: participantId,
           p_credential_code: externalCode,
-          p_qr_code_value: qrCodeValue,
           p_user_id: user?.id,
-          p_binding_source: "external",
+          p_replace_id: null,
+          p_is_internal_mode: false,
         });
         if (error) throw error;
         return;
@@ -553,18 +556,62 @@ export default function CredenciamentoPage() {
 
   const undoCredentialMutation = useMutation({
     mutationFn: async (participantId: string) => {
-      // 1. Inativar credenciais atuais (status 'revoked' é o padrão aceito pela constraint para cancelamento)
-      // is_active é GENERATED ALWAYS AS (status='active') — recompõe sozinho ao mudar status.
-      const { error: credErr } = await supabase
+      // 1. Buscar credenciais ativas para decidir o caminho de revogação.
+      // Se for externa, usar cancel_external_credential (cancela ambas as
+      // tabelas atomicamente). UPDATE direto deixava external_credentials
+      // órfã (status='active' apontando para participant_credentials revoked).
+      const { data: activeCreds, error: lookupErr } = await supabase
         .from("participant_credentials")
-        .update({ status: "revoked" })
+        .select("id, binding_source")
         .eq("participant_id", participantId)
         .eq("event_id", selectedEventId)
         .eq("status", "active");
-      
-      if (credErr) throw credErr;
 
-      // 2. Voltar status do participante para 'confirmed'
+      if (lookupErr) throw lookupErr;
+
+      for (const cred of activeCreds ?? []) {
+        if (cred.binding_source === "external") {
+          // Pegar o id da external_credentials ativa para passar pra RPC.
+          const { data: extCred, error: extErr } = await (supabase as any)
+            .from("external_credentials")
+            .select("id")
+            .eq("participant_id", participantId)
+            .eq("event_id", selectedEventId)
+            .eq("status", "active")
+            .maybeSingle();
+          if (extErr) throw extErr;
+
+          if (extCred?.id) {
+            const { error: rpcErr } = await (supabase as any).rpc("cancel_external_credential", {
+              p_event_id: selectedEventId,
+              p_participant_id: participantId,
+              p_cred_id: extCred.id,
+              p_user_id: user?.id,
+              p_reason: "undo_credenciamento",
+            });
+            if (rpcErr) throw rpcErr;
+          } else {
+            // Órfã: participant_credentials externa sem external_credentials.
+            // Revogar só a participant_credentials para destravar.
+            const { error: credErr } = await supabase
+              .from("participant_credentials")
+              .update({ status: "revoked" })
+              .eq("id", cred.id);
+            if (credErr) throw credErr;
+          }
+        } else {
+          // Nativa (manual/import/api_sync): revoga direto.
+          const { error: credErr } = await supabase
+            .from("participant_credentials")
+            .update({ status: "revoked" })
+            .eq("id", cred.id);
+          if (credErr) throw credErr;
+        }
+      }
+
+      // 2. Voltar status do participante para 'confirmed' (cancel_external_credential
+      // já faz isso quando todas as externas vão pra cancelled, mas garantimos
+      // cobertura quando houver mistura ou nativas).
       const { error: partErr } = await supabase
         .from("participants")
         .update({
@@ -573,7 +620,7 @@ export default function CredenciamentoPage() {
           credentialed_by: null,
         })
         .eq("id", participantId);
-      
+
       if (partErr) throw partErr;
     },
     onSuccess: () => {
