@@ -452,9 +452,19 @@ export default function VouchersPage() {
   };
 
   const handlePrintBatch = async (batchId: string) => {
-    const batchVouchers = vouchers.filter(v => v.batch_id === batchId);
+    toast.info("Carregando vouchers do lote...");
+    const { data: batchVouchersData, error: batchFetchError } = await supabase
+      .from("service_vouchers")
+      .select("*")
+      .eq("batch_id", batchId)
+      .order("created_at", { ascending: true });
+    if (batchFetchError) {
+      toast.error("Erro ao carregar vouchers do lote");
+      return;
+    }
+    const batchVouchers = (batchVouchersData ?? []) as VoucherRow[];
     if (batchVouchers.length === 0) {
-      toast.error("Nenhum voucher encontrado neste lote (ou não carregado)");
+      toast.error("Nenhum voucher encontrado neste lote");
       return;
     }
     toast.info("Gerando etiquetas do lote...");
