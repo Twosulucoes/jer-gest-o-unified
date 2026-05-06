@@ -13,7 +13,10 @@ async function flush() {
       flushing = false;
       return;
     }
-    const batch = queue.splice(0, queue.length).map((e) => ({
+    
+    // Use a copy to avoid losing errors if the insert fails
+    const currentBatch = [...queue];
+    const batch = currentBatch.map((e) => ({
       source: "frontend" as const,
       message: String(e.message ?? "unknown"),
       severity: (e.severity as string) ?? "error",
@@ -24,7 +27,13 @@ async function flush() {
       user_id: user.id,
       user_email: user.email ?? null,
     }));
-    await supabase.from("monitoring_errors").insert(batch as never);
+    
+    const { error } = await supabase.from("monitoring_errors").insert(batch as never);
+    
+    if (!error) {
+      // Only remove from queue if successfully inserted
+      queue.splice(0, currentBatch.length);
+    }
   } catch (err) {
     console.warn("[monitor] failed to flush errors", err);
   } finally {

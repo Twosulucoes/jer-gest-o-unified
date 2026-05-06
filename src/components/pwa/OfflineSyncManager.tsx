@@ -11,20 +11,27 @@ export function OfflineSyncManager() {
   const { user } = useAuth();
 
   useEffect(() => {
+    let isMounted = true;
     if (!user) return;
 
     const handleSync = async () => {
       if (navigator.onLine) {
-        const result = await syncOfflineQueue();
-        if (result.count > 0) {
-          toast.success(`${result.count} registro(s) sincronizados com sucesso.`, {
-            description: "Os dados coletados offline foram enviados ao servidor."
-          });
-        }
-        if (result.errors && result.errors > 0) {
-          toast.error(`Falha ao sincronizar ${result.errors} registro(s).`, {
-            description: "Verifique a Central de Conflitos no menu PWA."
-          });
+        try {
+          const result = await syncOfflineQueue();
+          if (!isMounted) return;
+          
+          if (result.count > 0) {
+            toast.success(`${result.count} registro(s) sincronizados com sucesso.`, {
+              description: "Os dados coletados offline foram enviados ao servidor."
+            });
+          }
+          if (result.errors && result.errors > 0) {
+            toast.error(`Falha ao sincronizar ${result.errors} registro(s).`, {
+              description: "Verifique a Central de Conflitos no menu PWA."
+            });
+          }
+        } catch (error) {
+          console.error("Sync error:", error);
         }
       }
     };
@@ -39,6 +46,7 @@ export function OfflineSyncManager() {
     handleSync();
 
     return () => {
+      isMounted = false;
       window.removeEventListener("online", handleSync);
       clearInterval(interval);
     };
