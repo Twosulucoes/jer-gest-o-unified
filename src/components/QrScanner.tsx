@@ -41,7 +41,8 @@ export default function QrScanner({
   const validatePayload = useCallback(
     (raw: string): boolean => {
       if (!allowedPrefixes || allowedPrefixes.length === 0) return true;
-      return allowedPrefixes.some((p) => raw.startsWith(p));
+      const upper = raw.toUpperCase();
+      return allowedPrefixes.some((p) => upper.startsWith(p.toUpperCase()));
     },
     [allowedPrefixes]
   );

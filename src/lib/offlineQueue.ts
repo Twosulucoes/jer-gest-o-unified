@@ -13,9 +13,35 @@ export type OfflineQueueItem = {
 
 const STORAGE_KEY = "pwa_offline_queue";
 
+export const OFFLINE_QUEUE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 export const getOfflineQueue = (): OfflineQueueItem[] => {
   const stored = localStorage.getItem(STORAGE_KEY);
   return stored ? JSON.parse(stored) : [];
+};
+
+export const purgeExpiredOfflineItems = (
+  ttlMs: number = OFFLINE_QUEUE_TTL_MS,
+): { expired: number } => {
+  const queue = getOfflineQueue();
+  const now = Date.now();
+  let expired = 0;
+  const next = queue.map((item) => {
+    if (item.status === "conflict") return item;
+    const age = now - new Date(item.timestamp).getTime();
+    if (Number.isFinite(age) && age > ttlMs) {
+      expired++;
+      return {
+        ...item,
+        status: "conflict" as const,
+        lastError:
+          "Item expirado (mais de 7 dias offline). Revise manualmente antes de descartar.",
+      };
+    }
+    return item;
+  });
+  if (expired > 0) saveOfflineQueue(next);
+  return { expired };
 };
 
 export const saveOfflineQueue = (queue: OfflineQueueItem[]) => {
@@ -90,7 +116,9 @@ let isSyncing = false;
 
 export const syncOfflineQueue = async () => {
   if (isSyncing || !navigator.onLine) return { success: false, count: 0 };
-  
+
+  purgeExpiredOfflineItems();
+
   const queue = getOfflineQueue();
   const pending = queue.filter(item => item.status === "pending" || item.status === "failed");
   
@@ -168,16 +196,24 @@ export const syncOfflineQueue = async () => {
         if (existing) {
           const { error } = await supabase
             .from("transport_passengers")
-            .update({ 
-              status: transportData.status, 
-              boarded_at: transportData.boarded_at, 
-              boarded_by: transportData.boarded_by 
+            .update({
+              status: transportData.status,
+              boarded_at: transportData.boarded_at,
+              boarded_by: transportData.boarded_by
             })
             .eq("id", existing.id);
           if (error) throw error;
         } else {
           const { error } = await supabase.from("transport_passengers").insert(transportData as any);
-          if (error) throw error;
+          if (error) {
+            if (error.code === "23505") {
+              const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
+              saveOfflineQueue(finalQueueDup);
+              errorCount++;
+              continue;
+            }
+            throw error;
+          }
         }
       }
       
