@@ -10,15 +10,19 @@ A inscrição oficial é realizada no sistema oficial (SIGECOM), conforme Regula
 - QR Code é o meio de validação em todos os pontos operacionais.
 - Formato oficial: `jer:{event_id}:{participant_id}:{credential_code}`.
 
-### 3. Vouchers QR (Regra Reformulada JER-VOU-01)
+### 3. Vouchers QR (Invariante Canônico JER-VOU-02)
+**Invariante:** 1 voucher = **1 evento × 1 etapa × 1 dia × 1 janela** (refeição, viagem ou diária de alojamento).
+
 - O voucher é instrumento **exclusivo para pessoas eventuais** (prestadores, visitantes, acompanhantes).
 - **Participantes credenciados nunca usam voucher**; em caso de extravio, a credencial é reemitida.
-- Cada voucher deve estar vinculado a uma **instância específica de serviço** (uma refeição definida, uma viagem definida).
-- **Validação Estrita (Fase 3):** O voucher só é aceito na instância exata para a qual foi emitido.
-- **Uso Único por Instância:** Mesmo que o voucher tenha limite de usos alto, ele não pode ser consumido duas vezes na mesma janela/viagem/diária.
-- **Reemissão e Auditoria (Fase 4):** Extravios são tratados via reemissão, invalidando o original e preservando o vínculo. Todas as operações (consumos, recusas, revogações) são registradas na Central de Auditoria.
-- Vouchers podem ser **nominais** (vinculados a uma Pessoa Eventual) ou **anônimos**.
-- Apenas perfis `admin` e `secretaria` podem gerenciar vouchers.
+- Cada voucher é vinculado a **uma instância específica** (uma `meal_window`, uma `transport_trip` ou uma `lodging_location` + `target_date`).
+- **Válido somente no dia** — `valid_from`/`valid_until` são derivados da janela‑alvo pelo trigger `derive_voucher_validity`. Voucher de alojamento exige `target_date` explícito (o trigger recusa o INSERT caso contrário). Vouchers sem `valid_until` são recusados como `missing_validity` no resgate (defesa em profundidade).
+- **Uso único por (voucher × serviço × instância)** — vale para nominais e agregados (lotes anônimos). `current_uses` é incrementado e `max_uses` enforced pela RPC `redeem_voucher`.
+- **Validação estrita de instância:** se o voucher tem `target_*_id` e o caller não passa `p_context_id`, a RPC retorna `wrong_instance` (não há mais "aceite silencioso").
+- **Offline com clamp de relógio:** `p_offline_at` no futuro é ignorado (usa `now()`); mais velho que 24 h é recusado como `offline_too_old`. Janelas atravessando meia‑noite (`end_time < start_time`) recebem +1 dia automaticamente em `valid_until`.
+- **Reemissão e Auditoria:** extravios são tratados via reemissão (invalida o original, preserva o vínculo). Reemissão pós‑janela é bloqueada cliente e servidor. Todas as operações (consumos, recusas, revogações) ficam em `service_voucher_attempts`/`service_voucher_uses`.
+- Vouchers podem ser **nominais** (vinculados a `service_eventual_people`) ou **agregados** (lotes anônimos, 1 QR por pessoa).
+- **Permissões:** emissão, revogação e reemissão por `admin`/`secretaria`/`super_admin`. Validação por estes + perfis operacionais (`alimentacao`/`transporte`/`alojamento`/`coordenacao_tecnica`) cada um no seu serviço.
 
 ### 4. Participante Regular
 Participante só pode ser operado (transporte, alimentação, competição) se estiver com status regular na base do evento (`confirmed` ou superior).

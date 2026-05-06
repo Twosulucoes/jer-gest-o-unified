@@ -94,11 +94,6 @@ export const syncVoucherQueue = async () => {
         p_context_id: item.context_id,
         p_is_offline: true,
         p_offline_at: item.attempted_at,
-        p_metadata: {
-          offline_id: item.id,
-          attempted_by: item.attempted_by,
-          person_name: item.person_name
-        }
       });
 
       const res = data as VoucherRedeemResult;

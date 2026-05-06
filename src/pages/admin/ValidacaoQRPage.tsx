@@ -105,13 +105,30 @@ export default function ValidacaoQRPage() {
 
       // NOVO: Se for um voucher, segue fluxo específico de voucher
       if (isVoucherQr(codeToValidate)) {
-        // Mapeia o scan_point para service_kind se possível
+        // Vouchers exigem ponto de scan SERVIÇO específico + janela/viagem/local.
+        // Pontos "general"/"entrada" não têm contexto e a regra canônica
+        // (1 voucher × 1 dia × 1 janela) tornaria impossível validar
+        // corretamente. Encaminha o operador para a página dedicada.
         const serviceMap: Record<string, ServiceKind> = {
           alimentacao: "meals",
           transporte: "transport",
           alojamento: "lodging",
         };
-        const serviceKind = serviceMap[scanPoint] || "meals"; // fallback para meals se for general
+        const serviceKind = serviceMap[scanPoint];
+        if (!serviceKind) {
+          toast.error("Use a tela 'Validar voucher'", {
+            description:
+              "Vouchers exigem janela/viagem/local específicos. Selecione o ponto de scan correto ou abra Vouchers › Validar.",
+          });
+          setResult({
+            result: "wrong_instance",
+            message:
+              "Voucher requer ponto de scan específico (alimentacao, transporte ou alojamento) com janela/viagem/local.",
+            participant: null,
+            timestamp: new Date().toISOString(),
+          });
+          return;
+        }
 
         const voucher = await tryRedeemVoucher(codeToValidate, serviceKind);
         

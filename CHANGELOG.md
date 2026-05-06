@@ -4,6 +4,21 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed — Vouchers (P0, auditoria etapa Hqy0B)
+- **[Vouchers]** Emissão (individual e lote) destravada: `stageId` passa a ser propagado pelos dois wizards a partir de `useStageScope()` no `VouchersPage`. Sem etapa ativa os botões "Novo Voucher" / "Novo Lote" ficam desabilitados com tooltip explicativo.
+- **[Vouchers]** Voucher de **alojamento** agora exige campo "Data" obrigatório nos wizards; trigger `derive_voucher_validity` recusa `INSERT` com `target_facility_id` sem `target_date` (regra "válido somente no dia").
+- **[Vouchers]** RPC `redeem_voucher` reescrita canônica:
+  - Restaura enforce de **uso único por (voucher, serviço, instância)** para qualquer tipo (nominal e aggregate).
+  - Restaura incremento de `current_uses` e bloqueio por `max_uses`.
+  - **`p_context_id` ausente** com voucher target → `wrong_instance` (não mais aceito silenciosamente).
+  - **Clamp de `p_offline_at`**: futuro vira `now()`; mais velho que 24 h é recusado como `offline_too_old`.
+  - Voucher sem `valid_until` é recusado com `missing_validity` (defesa em profundidade).
+  - Janelas atravessando meia-noite (`end_time < start_time`) ganham +1 dia em `valid_until`.
+- **[Vouchers]** `VoucherValidarPage` admin reformulada: exige seleção da janela/viagem/local (instâncias filtradas pela etapa ativa) antes de permitir scan; perfis operacionais (alimentação/transporte/alojamento/coordenação técnica) passam a poder validar.
+- **[Vouchers]** `ValidacaoQRPage` (scanner universal) deixa de fazer fallback silencioso para `meals` quando o ponto de scan é "general"/"entrada" e orienta o operador para a tela dedicada.
+- **[Vouchers]** Sync offline (`voucherOffline.syncVoucherQueue`) deixa de passar parâmetro `p_metadata` inexistente, eliminando falhas em massa de fila offline.
+- **[Vouchers]** Auditoria (`VoucherAuditoriaPage`) corrige JOINs quebrados: `service_voucher_batches(label)` (era `name`) e `profiles(full_name)` (era `display_name`).
+
 ### Added
 - **[Manual]** Nova seção "Primeiros Passos" para perfil Admin com 8 cards de jornada cronológica e barra de progresso.
 - **[Manual]** Tabela `admin_manual_progress` para rastreamento persistente de conclusão de etapas por usuário.
