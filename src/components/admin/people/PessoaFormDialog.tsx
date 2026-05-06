@@ -132,7 +132,7 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
     queryFn: async () => {
       const { data: p, error } = await supabase
         .from("participants")
-        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, guardian_name, guardian_phone, coach_name, coach_phone, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes)")
+        .select("id, person_id, participant_type, delegation_id, needs_transport, needs_meals, needs_lodging, logistics_restrictions, logistics_notes, person:people(full_name, cpf, email, phone, birth_date, gender, food_restrictions, disability_type, medical_notes, guardian_name, guardian_phone, coach_name, coach_phone)")
         .eq("id", participantId!).single();
       if (error) throw error;
       const { data: roles } = await (supabase.from("participant_event_roles" as never) as any)
@@ -167,10 +167,10 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
       setFoodRestrictions(p.person?.food_restrictions ?? "");
       setDisabilityType(p.person?.disability_type ?? "");
       setMedicalNotes(p.person?.medical_notes ?? "");
-      setGuardianName(p.guardian_name ?? "");
-      setGuardianPhone(p.guardian_phone ?? "");
-      setCoachName(p.coach_name ?? "");
-      setCoachPhone(p.coach_phone ?? "");
+      setGuardianName(p.person?.guardian_name ?? "");
+      setGuardianPhone(p.person?.guardian_phone ?? "");
+      setCoachName(p.person?.coach_name ?? "");
+      setCoachPhone(p.person?.coach_phone ?? "");
       setSelectedRoles(existing.roles);
     } else if (open && !isEdit) {
       // Reset
@@ -235,7 +235,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
         // Update participant — só campos da inscrição.
         const { error: errPart } = await (supabase.from("participants") as any).update({
           participant_type: participantType,
-          enrollment_class: participantCategory,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
           needs_transport: needsTransport,
           needs_meals: needsMeals,
@@ -286,7 +285,6 @@ export default function PessoaFormDialog({ open, onOpenChange, participantId, on
           event_id: eventId,
           delegation_id: participantCategory === "delegation" ? (delegationId || null) : null,
           participant_type: participantType,
-          enrollment_class: participantCategory,
           status: "confirmed",
           is_active: true,
           needs_transport: needsTransport,
