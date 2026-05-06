@@ -235,18 +235,19 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!credential && cpfDigits) {
-      const { data: person } = await serviceClient
+      const cpfFormatted = cpfDigits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+      const { data: people } = await serviceClient
         .from("people")
         .select("id")
-        .or(`cpf.eq.${cpfDigits},cpf.eq.${cpfDigits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")}`)
-        .limit(1)
-        .maybeSingle();
+        .or(`cpf.eq.${cpfDigits},cpf.eq.${cpfFormatted}`);
 
-      if (person) {
+      const personIds = (people ?? []).map((p) => p.id);
+
+      if (personIds.length > 0) {
         const { data: part } = await serviceClient
           .from("participants")
           .select("id")
-          .eq("person_id", person.id)
+          .in("person_id", personIds)
           .eq("event_id", event_id)
           .limit(1)
           .maybeSingle();
