@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type OfflineQueueItem = {
   id: string;
-  module: "alimentacao" | "transporte";
+  module: "alimentacao" | "transporte" | "credenciamento";
   data: Record<string, unknown>;
   timestamp: string;
   participantName?: string;
@@ -48,8 +48,26 @@ export type AddToOfflineQueueResult =
   | { item: OfflineQueueItem; deduped: false }
   | { item: OfflineQueueItem; deduped: true };
 
+// Dedupe da fila de credenciamento: se já existe item pendente com a
+// mesma idempotency_key (caso o operador toque "Vincular" 2x antes do
+// online), retorna o existente em vez de empilhar duplicata. A
+// idempotency_key também garante no-op no servidor (C5a).
+function findDuplicateCredItem(
+  queue: OfflineQueueItem[],
+  data: Record<string, unknown>,
+): OfflineQueueItem | undefined {
+  const key = (data as any)?.idempotency_key;
+  if (!key) return undefined;
+  return queue.find(
+    (item) =>
+      item.module === "credenciamento" &&
+      item.status !== "conflict" &&
+      (item.data as any)?.idempotency_key === key,
+  );
+}
+
 export const addToOfflineQueue = (
-  module: "alimentacao" | "transporte",
+  module: "alimentacao" | "transporte" | "credenciamento",
   data: Record<string, unknown>,
   participantName?: string,
 ): AddToOfflineQueueResult => {
@@ -57,6 +75,13 @@ export const addToOfflineQueue = (
 
   if (module === "alimentacao") {
     const existing = findDuplicateMealItem(queue, data);
+    if (existing) {
+      return { item: existing, deduped: true };
+    }
+  }
+
+  if (module === "credenciamento") {
+    const existing = findDuplicateCredItem(queue, data);
     if (existing) {
       return { item: existing, deduped: true };
     }
@@ -151,6 +176,46 @@ export const syncOfflineQueue = async () => {
             // Sucesso na "resolução": remove da fila local.
             const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
             saveOfflineQueue(finalQueueDup);
+            errorCount++;
+            continue;
+          }
+          throw error;
+        }
+      } else if (item.module === "credenciamento") {
+        // Credenciamento usa RPC link_external_credential com
+        // p_idempotency_key. Se a chave já foi consumida no servidor
+        // (C5a), o RETURN da RPC é no-op e o item é descartado.
+        const credData = item.data as {
+          event_id: string;
+          participant_id: string;
+          credential_code: string;
+          replace_id?: string | null;
+          is_internal_mode?: boolean;
+          idempotency_key: string;
+        };
+        const { error } = await (supabase as any).rpc("link_external_credential", {
+          p_event_id: credData.event_id,
+          p_participant_id: credData.participant_id,
+          p_credential_code: credData.credential_code,
+          p_user_id: null, // RPC sobrescreve com auth.uid() (C2)
+          p_replace_id: credData.replace_id ?? null,
+          p_is_internal_mode: credData.is_internal_mode ?? false,
+          p_idempotency_key: credData.idempotency_key,
+        });
+        if (error) {
+          // Erros de regra de negócio (já vinculada a outro, etc.) são
+          // permanentes — vão para conflict e exigem ação manual.
+          // Erros de rede/transientes são re-tentáveis.
+          const code = String((error as any).code ?? "");
+          const isPermanent = code === "23505" || code === "42501" || code === "P0002";
+          if (isPermanent) {
+            const cur = getOfflineQueue();
+            const cIdx = cur.findIndex((i) => i.id === item.id);
+            if (cIdx !== -1) {
+              cur[cIdx].status = "conflict";
+              cur[cIdx].lastError = error.message || "Conflito ao vincular credencial.";
+              saveOfflineQueue(cur);
+            }
             errorCount++;
             continue;
           }

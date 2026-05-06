@@ -18,6 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 
 export default function VincularCredencialPage() {
   useAuth();
@@ -172,55 +173,99 @@ export default function VincularCredencialPage() {
     if (!scannedCode || !activeEventId) return;
 
     setLinking(true);
+    // Chave de idempotência da intenção: se o request perder ACK e
+    // o cliente reenviar (online direto ou via fila offline), o
+    // servidor reconhece como no-op (C5a) em vez de criar duplicidade.
+    const idempotencyKey = crypto.randomUUID();
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error("Sessão expirada — faça login novamente.");
+      // Lookup p_replace_id antes (caso de troca de pulseira). Quando
+      // offline, este SELECT também falha — nesse caso seguimos sem
+      // replace_id; a fila tenta sincronizar quando online voltar e
+      // o RPC ainda valida no servidor.
+      let replaceId: string | null = null;
+      if (isOnline()) {
+        const { data: existing } = await supabase
+          .from("external_credentials")
+          .select("id")
+          .eq("participant_id", participant.participant_id)
+          .eq("event_id", activeEventId)
+          .eq("status", "active")
+          .maybeSingle();
+        replaceId = existing?.id ?? null;
       }
 
-      // RPC link_external_credential exige p_replace_id quando o participante
-      // já tem credencial externa ativa (caso de troca de pulseira).
-      const { data: existing } = await supabase
-        .from("external_credentials")
-        .select("id")
-        .eq("participant_id", participant.participant_id)
-        .eq("event_id", activeEventId)
-        .eq("status", "active")
-        .maybeSingle();
+      // Modo offline: enfileira e segue. Sync acontece no online próximo.
+      if (!isOnline()) {
+        addToOfflineQueue(
+          "credenciamento",
+          {
+            event_id: activeEventId,
+            participant_id: participant.participant_id,
+            credential_code: scannedCode,
+            replace_id: replaceId,
+            is_internal_mode: false,
+            idempotency_key: idempotencyKey,
+          },
+          participant.full_name,
+        );
+        toast.success("Vinculação salva offline. Sincronizará quando conectar.", {
+          duration: 5000,
+        });
+        if (navigator.vibrate) navigator.vibrate(200);
+        handleReset();
+        return;
+      }
 
-      // Atomic: insere external_credentials, sincroniza participant_credentials
-      // e marca participant.status='credentialed' numa única transação.
-      // Sem isso, o admin via participante como "não credenciado" mesmo após
-      // PWA confirmar.
+      // Online: tenta direto. RPC sincroniza external_credentials,
+      // participant_credentials e participants.status numa única
+      // transação. p_user_id é sobrescrito por auth.uid() no servidor (C2).
       const { error } = await (supabase as any).rpc("link_external_credential", {
         p_event_id: activeEventId,
         p_participant_id: participant.participant_id,
         p_credential_code: scannedCode,
-        p_user_id: session.user.id,
-        p_replace_id: existing?.id ?? null,
+        p_user_id: null,
+        p_replace_id: replaceId,
         p_is_internal_mode: false,
+        p_idempotency_key: idempotencyKey,
       });
 
       if (error) {
-        const raw = (error.message || "").toLowerCase();
-        if (raw.includes("já vinculada a outro") || raw.includes("uq_external_credentials_event_code")) {
-          throw new Error(
-            "Esta credencial já está com outro participante. Cancele a vinculação atual no admin antes de transferir.",
-          );
+        // Erros de regra de negócio (cross_participant, código duplicado)
+        // são permanentes — não enfileiramos. Erros de rede/timeout
+        // (sem code estruturado, ou códigos como 503/PGRST00x) caem
+        // na fila para retry.
+        const code = String((error as any).code ?? "");
+        const isPermanent = code === "23505" || code === "42501" || code === "P0002" || code === "22023";
+        if (isPermanent) {
+          throw error;
         }
-        if (raw.includes("uq_external_credentials_active_participant") || raw.includes("uq_participant_credentials_active")) {
-          throw new Error(
-            "Este participante já possui uma credencial ativa. Use a opção de substituir.",
-          );
-        }
-        throw error;
+
+        // Falha transitória — enfileira para retry.
+        addToOfflineQueue(
+          "credenciamento",
+          {
+            event_id: activeEventId,
+            participant_id: participant.participant_id,
+            credential_code: scannedCode,
+            replace_id: replaceId,
+            is_internal_mode: false,
+            idempotency_key: idempotencyKey,
+          },
+          participant.full_name,
+        );
+        toast.info("Sem conexão estável. Vinculação salva e será reenviada.", {
+          duration: 5000,
+        });
+        handleReset();
+        return;
       }
 
       toast.success("Credencial vinculada com sucesso!");
       if (navigator.vibrate) navigator.vibrate(200);
       handleReset();
     } catch (err: any) {
-      toast.error(`Erro ao vincular: ${err.message}`);
+      toast.error(err?.message || "Erro ao vincular credencial");
     } finally {
       setLinking(false);
     }
