@@ -278,7 +278,7 @@ export default function CredenciamentoExternoPage() {
   // ator e motivo). Sem isso, no pós-evento ninguém sabe quem cancelou
   // nem por quê.
   const cancelMutation = useMutation({
-    mutationFn: async ({ credId, reason }: { credId: string; reason: string }) => {
+    mutationFn: async ({ credId, reason, note }: { credId: string; reason: string; note?: string }) => {
       if (!eventId || !selectedParticipant || !user) throw new Error("Dados insuficientes");
 
       const { error } = await (supabase as any).rpc("cancel_external_credential", {
@@ -287,6 +287,7 @@ export default function CredenciamentoExternoPage() {
         p_cred_id: credId,
         p_user_id: user.id,
         p_reason: reason,
+        p_note: note || null,
       });
       if (error) throw error;
     },
@@ -312,14 +313,11 @@ export default function CredenciamentoExternoPage() {
 
   const submitCancel = () => {
     if (!cancelReason || !existingCred?.id) return;
-    const reasonLabel = CANCEL_REASONS.find((r) => r.value === cancelReason)?.label ?? cancelReason;
-    const fullReason =
-      cancelReason === "outro" && cancelNote.trim()
-        ? `outro: ${cancelNote.trim()}`
-        : cancelNote.trim()
-        ? `${reasonLabel} — ${cancelNote.trim()}`
-        : reasonLabel;
-    cancelMutation.mutate({ credId: existingCred.id, reason: fullReason });
+    cancelMutation.mutate({
+      credId: existingCred.id,
+      reason: cancelReason,
+      note: cancelNote.trim() || undefined,
+    });
   };
 
   const handleScan = useCallback((rawValue: string) => {
