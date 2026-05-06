@@ -650,6 +650,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       console.log("DEBUG: Iniciando emissão de voucher individual...");
       const vType = isNominal ? "nominal" : "aggregate";
       
+      const stageId = instances.stageId;
       if (!stageId) throw new Error("Selecione uma etapa antes de emitir voucher.");
       const payload: any = {
         event_id: eventId,
@@ -865,6 +866,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           throw bErr;
         }
 
+        const stageId = instances.stageId;
         if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
         const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
           event_id: eventId,

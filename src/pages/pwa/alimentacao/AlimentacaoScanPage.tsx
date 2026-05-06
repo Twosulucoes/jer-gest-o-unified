@@ -525,14 +525,14 @@ export default function AlimentacaoScanPage() {
       const win = windows.find((w) => w.id === windowId);
       const verdict = evaluateMealEligibility(row, win?.service_date);
       if (!verdict.ok) {
-        setResult({ ok: false, message: verdict.message, source: "manual" });
-        toast.error(verdict.message, {
-          description: verdict.reason === "NO_CREDENTIAL" ? "Encaminhe para a secretaria." : undefined,
+        setResult({ ok: false, message: (verdict as any).message, source: "manual" });
+        toast.error((verdict as any).message, {
+          description: (verdict as any).reason === "NO_CREDENTIAL" ? "Encaminhe para a secretaria." : undefined,
         });
         recordOutcome("error");
         // Etapa 1: o enum meal_incident_type foi estendido com os motivos
         // específicos abaixo, então a trilha distingue cada situação.
-        void recordIncident(incidentTypeFor(verdict.reason), row.participant_id);
+        void recordIncident(incidentTypeFor((verdict as any).reason), row.participant_id);
         return;
       }
       await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);
@@ -656,11 +656,11 @@ export default function AlimentacaoScanPage() {
                     const winForBadge = windows.find((w) => w.id === windowId);
                     const verdict = evaluateMealEligibility(h, winForBadge?.service_date);
                     const badgeLabel = !verdict.ok
-                      ? verdict.reason === "NO_CREDENTIAL"
+                      ? (verdict as any).reason === "NO_CREDENTIAL"
                         ? "sem credencial"
-                        : verdict.reason === "NEEDS_MEALS_FALSE"
+                        : (verdict as any).reason === "NEEDS_MEALS_FALSE"
                           ? "não precisa alim."
-                          : verdict.reason === "LEFT_EVENT"
+                          : (verdict as any).reason === "LEFT_EVENT"
                             ? "saiu do evento"
                             : "inativo"
                       : null;
