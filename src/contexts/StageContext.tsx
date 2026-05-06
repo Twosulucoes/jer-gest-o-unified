@@ -12,7 +12,8 @@ import { handleContextChange } from "@/lib/context-manager";
 import { getModuleByPath } from "@/constants/modules";
 import { isStageOpenToday } from "@/lib/stageDateUtils";
 
-const STORAGE_KEY = "jer_active_stage_id";
+export const ACTIVE_STAGE_STORAGE_KEY = "jer_active_stage_id";
+const STORAGE_KEY = ACTIVE_STAGE_STORAGE_KEY;
 const MODULE_STORAGE_KEY = "jer_active_module";
 
 /** Detailed stage information from the database */

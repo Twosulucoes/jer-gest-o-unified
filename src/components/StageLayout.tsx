@@ -26,6 +26,7 @@ import { useMobileBackGuard } from "@/hooks/useMobileBackGuard";
 import { EtapaSwitcher } from "@/components/navigation/EtapaSwitcher";
 import { BackButton } from "@/components/navigation/BackButton";
 import { LAST_ACTIVE_STAGE_STORAGE_KEY } from "@/lib/activeStageStorage";
+import { ACTIVE_STAGE_STORAGE_KEY } from "@/contexts/StageContext";
 import { VersionBadge } from "@/components/VersionBadge";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -93,7 +94,11 @@ export default function StageLayout() {
   // and emit stage_enter/stage_exit audit events.
   useEffect(() => {
     if (!stage?.id || !eventId) return;
-    try { localStorage.setItem(LAST_ACTIVE_STAGE_STORAGE_KEY, stage.id); } catch {}
+    try {
+      localStorage.setItem(LAST_ACTIVE_STAGE_STORAGE_KEY, stage.id);
+      // Sync PWA context: StageContext reads ACTIVE_STAGE_STORAGE_KEY to determine activeStageId
+      localStorage.setItem(ACTIVE_STAGE_STORAGE_KEY, stage.id);
+    } catch {}
 
     void supabase.from("audit_events").insert({
       action: "stage_enter",
