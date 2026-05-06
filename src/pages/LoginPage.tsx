@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { brand } from "@/theme/brand";
 import { APP_VERSION } from "@/config/version";
+import { ACTIVE_STAGE_STORAGE_KEY } from "@/contexts/StageContext";
 
 const ROLE_REDIRECT_MAP: Record<string, string> = {
   admin: "/admin",
@@ -33,7 +34,7 @@ const ADMIN_ROLES = ["admin", "super_admin", "secretaria", "coordenacao_tecnica"
 function resolveRedirect(roles: string[]): string {
   // Check for active event/stage in localStorage
   const activeEventId = localStorage.getItem("jer_active_event_id");
-  const activeStageId = localStorage.getItem("jer_active_stage_id");
+  const activeStageId = localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY);
   const hasPwaContext = !!activeEventId && !!activeStageId;
 
   // If only coordenador_modalidade, redirect to their dashboard
@@ -80,7 +81,7 @@ export default function LoginPage() {
       const from = (location.state as any)?.from?.pathname;
       const reason = (location.state as any)?.reason;
       const activeEventId = localStorage.getItem("jer_active_event_id");
-      const activeStageId = localStorage.getItem("jer_active_stage_id");
+      const activeStageId = localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY);
       const hasPwaContext = !!activeEventId && !!activeStageId;
 
       if (from && from !== "/login") {
@@ -140,7 +141,7 @@ export default function LoginPage() {
       // Use state.from if available and context is valid
       const from = (location.state as any)?.from?.pathname;
       const activeEventId = localStorage.getItem("jer_active_event_id");
-      const activeStageId = localStorage.getItem("jer_active_stage_id");
+      const activeStageId = localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY);
       const hasPwaContext = !!activeEventId && !!activeStageId;
 
       if (from && from !== "/login") {

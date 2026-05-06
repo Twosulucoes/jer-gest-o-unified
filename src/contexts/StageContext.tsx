@@ -12,9 +12,8 @@ import { handleContextChange } from "@/lib/context-manager";
 import { getModuleByPath } from "@/constants/modules";
 import { isStageOpenToday } from "@/lib/stageDateUtils";
 
-export const ACTIVE_STAGE_STORAGE_KEY = "jer_active_stage_id";
-const STORAGE_KEY = ACTIVE_STAGE_STORAGE_KEY;
-const MODULE_STORAGE_KEY = "jer_active_module";
+export const ACTIVE_STAGE_ACTIVE_STAGE_STORAGE_KEY = "jer_active_stage_id";
+const MODULE_ACTIVE_STAGE_STORAGE_KEY = "jer_active_module";
 
 /** Detailed stage information from the database */
 export interface EventStage {
@@ -63,7 +62,7 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
 
   const [persistedStageId, setPersistedStageId] = useState<string | null>(() => {
     try {
-      const lastStageId = localStorage.getItem(STORAGE_KEY);
+      const lastStageId = localStorage.getItem(ACTIVE_STAGE_STORAGE_KEY);
       return lastStageId;
     } catch {
       return null;
@@ -72,7 +71,7 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
 
   // Track module changes and sync context
   useEffect(() => {
-    const lastModule = localStorage.getItem(MODULE_STORAGE_KEY);
+    const lastModule = localStorage.getItem(MODULE_ACTIVE_STAGE_STORAGE_KEY);
     if (lastModule && lastModule !== currentModule && currentModule !== "other") {
       console.log(`[StageContext] Module changed from ${lastModule} to ${currentModule}. Syncing context and locking...`);
       setContextLocked(true);
@@ -88,7 +87,7 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
     }
     
     if (currentModule !== "other") {
-      localStorage.setItem(MODULE_STORAGE_KEY, currentModule);
+      localStorage.setItem(MODULE_ACTIVE_STAGE_STORAGE_KEY, currentModule);
     }
   }, [currentModule, queryClient]);
 
@@ -121,9 +120,9 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
     
     setPersistedStageId(finalId);
     if (finalId) {
-      localStorage.setItem(STORAGE_KEY, finalId);
+      localStorage.setItem(ACTIVE_STAGE_STORAGE_KEY, finalId);
     } else {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(ACTIVE_STAGE_STORAGE_KEY);
     }
   }, [queryClient, persistedStageId]);
 
