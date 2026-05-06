@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { syncOfflineQueue } from "@/lib/offlineQueue";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,7 +37,6 @@ export function OfflineSyncManager() {
         } finally {
           isSyncingRef.current = false;
         }
-      }
     };
 
     // 1. Sync when coming back online
