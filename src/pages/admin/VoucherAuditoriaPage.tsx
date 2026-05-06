@@ -33,12 +33,12 @@ export default function VoucherAuditoriaPage() {
         .select(`
           *,
           voucher:service_vouchers(
-            qr_code_value, 
-            is_nominal, 
+            qr_code_value,
+            is_nominal,
             eventual_person:service_eventual_people(full_name),
-            batch:service_voucher_batches(name)
+            batch:service_voucher_batches(label)
           ),
-          operator:profiles(display_name)
+          operator:profiles(full_name)
         `)
         .eq("event_id", eventId)
         .order("attempted_at", { ascending: false });
@@ -62,7 +62,7 @@ export default function VoucherAuditoriaPage() {
           valid_until: a.metadata?.valid_until
         }).text,
         identifier: a.voucher?.eventual_person?.full_name || a.voucher?.qr_code_value || a.qr_value,
-        operator: a.operator?.display_name || 'Sistema',
+        operator: a.operator?.full_name || 'Sistema',
         is_offline: a.is_offline,
         offline_at: a.offline_at,
         tone: a.outcome === 'success' ? 'success' : 'destructive'

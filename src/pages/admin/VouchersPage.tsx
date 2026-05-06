@@ -455,10 +455,19 @@ export default function VouchersPage() {
           <Button variant="outline" onClick={() => navigate("/admin/vouchers/auditoria")}>
             <History className="h-4 w-4 mr-2" /> Auditoria
           </Button>
-          <Button variant="outline" onClick={() => setBatchIssueOpen(true)}>
+          <Button
+            variant="outline"
+            onClick={() => setBatchIssueOpen(true)}
+            disabled={!stageId}
+            title={!stageId ? "Selecione uma etapa para emitir" : undefined}
+          >
             <Layers className="h-4 w-4 mr-2" /> Novo Lote
           </Button>
-          <Button onClick={() => setIssueOpen(true)}>
+          <Button
+            onClick={() => setIssueOpen(true)}
+            disabled={!stageId}
+            title={!stageId ? "Selecione uma etapa para emitir" : undefined}
+          >
             <Plus className="h-4 w-4 mr-2" /> Novo Voucher
           </Button>
         </div>
@@ -564,8 +573,8 @@ export default function VouchersPage() {
         </TabsContent>
       </Tabs>
 
-      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} instances={instances} handlePrintIndividual={handlePrintIndividual} />
-      <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} instances={instances} />
+      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} stageId={stageId} instances={instances} handlePrintIndividual={handlePrintIndividual} />
+      <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} stageId={stageId} instances={instances} />
       <UsageHistoryDialog voucher={historyVoucher} onClose={() => setHistoryVoucher(null)} />
       
       {/* Revoke/Reissue Reason Dialog */}
@@ -626,11 +635,14 @@ export default function VouchersPage() {
 }
 
 // -------- Emission Wizards --------
-function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrintIndividual }: any) {
+function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, handlePrintIndividual }: any) {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
+  // Lodging não tem horário no schema → exige data explícita para o trigger
+  // derive_voucher_validity recortar valid_from/valid_until ao dia.
+  const [lodgingDate, setLodgingDate] = useState<string>("");
   const [isNominal, setIsNominal] = useState(true);
   const [eventualId, setEventualId] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -650,7 +662,6 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
       console.log("DEBUG: Iniciando emissão de voucher individual...");
       const vType = isNominal ? "nominal" : "aggregate";
       
-      const stageId = instances.stageId;
       if (!stageId) throw new Error("Selecione uma etapa antes de emitir voucher.");
       const payload: any = {
         event_id: eventId,
@@ -660,31 +671,32 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         qr_code_value: genQrValue(),
         status: "active",
       };
-      
+
       if (isNominal) {
         if (!eventualId) {
-          console.error("DEBUG: Erro de validação - eventualId ausente");
           throw new Error("ID da pessoa eventual é obrigatório para vouchers nominais.");
         }
         payload.eventual_person_id = eventualId;
       }
-      
-      if (serviceType === "meals") { 
-        payload.target_meal_window_id = instanceId; 
-        payload.scope_meals = true; 
-      } else if (serviceType === "transport") { 
-        payload.target_trip_id = instanceId; 
-        payload.scope_transport = true; 
-      } else if (serviceType === "lodging") { 
-        payload.target_facility_id = instanceId; 
-        payload.scope_lodging = true; 
+
+      if (serviceType === "meals") {
+        payload.target_meal_window_id = instanceId;
+        payload.scope_meals = true;
+      } else if (serviceType === "transport") {
+        payload.target_trip_id = instanceId;
+        payload.scope_transport = true;
+      } else if (serviceType === "lodging") {
+        if (!lodgingDate) {
+          throw new Error("Selecione a data do alojamento — voucher de alojamento exige dia explícito.");
+        }
+        payload.target_facility_id = instanceId;
+        payload.target_date = lodgingDate;
+        payload.scope_lodging = true;
       } else {
-        console.error("DEBUG: Erro de validação - serviceType inválido:", serviceType);
         throw new Error("Tipo de serviço inválido.");
       }
-      
+
       if (!instanceId) {
-        console.error("DEBUG: Erro de validação - instanceId ausente");
         throw new Error("Instância de serviço (refeição/viagem/local) não selecionada.");
       }
 
@@ -777,14 +789,26 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
             </div>
           )}
           {step === 2 && (
-            <Select value={instanceId} onValueChange={setInstanceId}>
-              <SelectTrigger><SelectValue placeholder="Selecione a instância" /></SelectTrigger>
-              <SelectContent>
-                {serviceType === "meals" && instances.meals.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.label} ({m.service_date})</SelectItem>)}
-                {serviceType === "transport" && instances.trips.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.routes?.name} ({format(new Date(t.scheduled_at), "dd/MM HH:mm")})</SelectItem>)}
-                {serviceType === "lodging" && instances.locations.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="space-y-3">
+              <Select value={instanceId} onValueChange={setInstanceId}>
+                <SelectTrigger><SelectValue placeholder="Selecione a instância" /></SelectTrigger>
+                <SelectContent>
+                  {serviceType === "meals" && instances.meals.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.label} ({m.service_date})</SelectItem>)}
+                  {serviceType === "transport" && instances.trips.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.routes?.name} ({format(new Date(t.scheduled_at), "dd/MM HH:mm")})</SelectItem>)}
+                  {serviceType === "lodging" && instances.locations.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {serviceType === "lodging" && (
+                <div>
+                  <Label>Data do alojamento (válido somente neste dia)</Label>
+                  <Input
+                    type="date"
+                    value={lodgingDate}
+                    onChange={(e) => setLodgingDate(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
           )}
           {step === 3 && (
             <div className="space-y-4">
@@ -809,18 +833,36 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, instances, handlePrin
         </div>
         <DialogFooter>
           {step > 1 && <Button variant="ghost" onClick={() => setStep(s => s - 1)}>Voltar</Button>}
-          {step < 3 ? <Button onClick={() => setStep(s => s + 1)} disabled={!serviceType || (step === 2 && !instanceId)}>Próximo</Button> : <Button onClick={() => mutation.mutate()} disabled={isNominal && !eventualId}>Emitir Voucher</Button>}
+          {step < 3 ? (
+            <Button
+              onClick={() => setStep(s => s + 1)}
+              disabled={
+                !serviceType ||
+                (step === 2 && (!instanceId || (serviceType === "lodging" && !lodgingDate)))
+              }
+            >
+              Próximo
+            </Button>
+          ) : (
+            <Button
+              onClick={() => mutation.mutate()}
+              disabled={(isNominal && !eventualId) || mutation.isPending}
+            >
+              Emitir Voucher
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
-function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
+function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: any) {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
+  const [lodgingDate, setLodgingDate] = useState<string>("");
   const [quantity, setQuantity] = useState(10);
   const [label, setLabel] = useState("");
   const qc = useQueryClient();
@@ -829,16 +871,16 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
     mutationFn: async () => {
       console.log("DEBUG: Iniciando emissão de lote...");
       if (!serviceType) {
-        console.error("DEBUG: Erro de validação - serviceType ausente");
         throw new Error("Selecione o tipo de serviço.");
       }
       if (!instanceId) {
-        console.error("DEBUG: Erro de validação - instanceId ausente");
         throw new Error("Selecione a instância do serviço.");
       }
       if (quantity <= 0) {
-        console.error("DEBUG: Erro de validação - quantity <= 0");
         throw new Error("A quantidade deve ser maior que zero.");
+      }
+      if (serviceType === "lodging" && !lodgingDate) {
+        throw new Error("Selecione a data do alojamento — voucher de alojamento exige dia explícito.");
       }
 
       const auditPayload = { 
@@ -851,6 +893,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
 
       try {
         console.log("DEBUG: Criando registro do lote...");
+        const targetDate = serviceType === "lodging" ? lodgingDate : null;
         const { data: batch, error: bErr } = await supabase.from("service_voucher_batches").insert({
           event_id: eventId,
           label,
@@ -859,14 +902,11 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           target_meal_window_id: serviceType === "meals" ? instanceId : null,
           target_trip_id: serviceType === "transport" ? instanceId : null,
           target_facility_id: serviceType === "lodging" ? instanceId : null,
+          target_date: targetDate,
         }).select().single();
-        
-        if (bErr) {
-          console.error("DEBUG: Erro ao criar lote (batches):", bErr);
-          throw bErr;
-        }
 
-        const stageId = instances.stageId;
+        if (bErr) throw bErr;
+
         if (!stageId) throw new Error("Selecione uma etapa antes de emitir lote de vouchers.");
         const vouchersToInsert = Array.from({ length: quantity }).map(() => ({
           event_id: eventId,
@@ -883,6 +923,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
           target_meal_window_id: serviceType === "meals" ? instanceId : null,
           target_trip_id: serviceType === "transport" ? instanceId : null,
           target_facility_id: serviceType === "lodging" ? instanceId : null,
+          target_date: targetDate,
         }));
 
         console.log(`DEBUG: Inserindo ${quantity} vouchers individuais...`);
@@ -951,14 +992,26 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
             </div>
           )}
           {step === 2 && (
-             <Select value={instanceId} onValueChange={setInstanceId}>
+            <div className="space-y-3">
+              <Select value={instanceId} onValueChange={setInstanceId}>
                 <SelectTrigger><SelectValue placeholder="Instância de Serviço" /></SelectTrigger>
                 <SelectContent>
                   {serviceType === "meals" && instances.meals.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.label} ({m.service_date})</SelectItem>)}
                   {serviceType === "transport" && instances.trips.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.routes?.name} ({format(new Date(t.scheduled_at), "dd/MM HH:mm")})</SelectItem>)}
                   {serviceType === "lodging" && instances.locations.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                 </SelectContent>
-             </Select>
+              </Select>
+              {serviceType === "lodging" && (
+                <div>
+                  <Label>Data do alojamento (válido somente neste dia)</Label>
+                  <Input
+                    type="date"
+                    value={lodgingDate}
+                    onChange={(e) => setLodgingDate(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
           )}
           {step === 3 && (
             <div className="space-y-4">
@@ -969,7 +1022,24 @@ function IssueBatchWizard({ open, onOpenChange, eventId, instances }: any) {
         </div>
         <DialogFooter>
           {step > 1 && <Button variant="ghost" onClick={() => setStep(s => s - 1)}>Voltar</Button>}
-          {step < 3 ? <Button onClick={() => setStep(s => s + 1)} disabled={!serviceType || (step === 2 && !instanceId)}>Próximo</Button> : <Button onClick={() => mutation.mutate()}>Gerar {quantity} Vouchers</Button>}
+          {step < 3 ? (
+            <Button
+              onClick={() => setStep(s => s + 1)}
+              disabled={
+                !serviceType ||
+                (step === 2 && (!instanceId || (serviceType === "lodging" && !lodgingDate)))
+              }
+            >
+              Próximo
+            </Button>
+          ) : (
+            <Button
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending || quantity <= 0}
+            >
+              Gerar {quantity} Vouchers
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

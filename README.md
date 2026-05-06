@@ -8,6 +8,19 @@ O **JER Gestão** é uma plataforma robusta de gestão operacional para os Jogos
 
 ---
 
+## 🚀 Novidades Recentes (Maio 2026)
+
+### Vouchers — Correções P0 (auditoria etapa Hqy0B, branch `claude/audit-vouchers-module-Hqy0B`)
+- **Invariante canônico reafirmado:** 1 voucher = 1 evento × 1 etapa × 1 dia × 1 janela. Voucher só vale no dia da janela‑alvo.
+- **Emissão destravada:** wizards de voucher individual e lote agora recebem a etapa ativa via `useStageScope()`; botões ficam desabilitados sem etapa selecionada.
+- **Lodging exige data:** campo "Data" obrigatório nos wizards; trigger `derive_voucher_validity` recusa INSERT de voucher de alojamento sem `target_date`.
+- **RPC `redeem_voucher` reescrita:** uso único por `(voucher, serviço, instância)` para nominais e agregados, incremento de `current_uses`, enforce de `max_uses`, clamp de `p_offline_at` (futuro vira `now()`; >24h é `offline_too_old`), tratamento de `p_context_id` NULL como `wrong_instance` quando o voucher tem target.
+- **Validação admin endurecida:** `VoucherValidarPage` exige seleção de janela/viagem/local antes do scan; `ValidacaoQRPage` deixa de fazer fallback silencioso para `meals` em pontos `general`/`entrada`.
+- **Sync offline funcional:** removido parâmetro `p_metadata` inexistente que fazia toda a fila offline falhar.
+- **Auditoria corrigida:** JOINs ajustados (`service_voucher_batches.label`, `profiles.full_name`).
+
+Detalhes: `docs/modulos/voucher-auditoria.md`, `docs/03-regras-de-negocio.md` (JER‑VOU‑02), CHANGELOG.
+
 ## 🚀 Novidades Recentes (Abril 2026)
 
 ### Saneamento de Rotas (Fase 2 Concluída)

@@ -39,7 +39,9 @@
 | **Credencial** | Documento oficial do participante no evento, com QR Code. Vale para o evento inteiro (não muda entre etapas). |
 | **Credential Code** | Código alfanumérico da credencial. Formato: `JER-{timestamp_base36}-{random}`. |
 | **QR Code Value** | Valor codificado no QR. Formato: `jer:{event_id}:{participant_id}:{credential_code}`. |
-| **Voucher** | Instrumento de acesso temporário a um serviço. **Stage-scoped** desde a Fase F1: voucher é consumo da etapa. |
+| **Voucher** | Instrumento de acesso temporário a um serviço. Invariante canônico (JER-VOU-02): **1 evento × 1 etapa × 1 dia × 1 janela** (`meal_window` OU `transport_trip` OU `lodging_location` + `target_date`). Válido somente no dia derivado da janela-alvo. Uso único por `(voucher, serviço, instância)`. |
+| **Janela de voucher** | Período operacional ao qual um voucher está vinculado: refeição (`meal_windows.start_time`/`end_time` no `service_date`), viagem (`transport_trips.scheduled_at`) ou diária de alojamento (`target_date`). |
+| **Lote agregado** | Conjunto de vouchers anônimos emitidos juntos para um mesmo serviço/janela; cada voucher do lote tem QR único e aceita 1 consumo. |
 | **Check-in / Registrar presença** | Confirmar a chegada do participante ao evento. |
 | **Emitir credencial** | Gerar os códigos (credential_code + qr_code_value) e ativar a credencial. |
 | **Reemissão / 2ª via** | Invalidar credencial anterior e gerar nova com novos códigos. |

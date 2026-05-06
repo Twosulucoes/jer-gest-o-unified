@@ -1,7 +1,24 @@
 # Auditoria de Fechamento — Módulo de Voucher JER Gestão
 
-> **Data da Auditoria de Fechamento:** 2026-04-28.
-> **Estado:** ✅ FECHADO (Pronto para operação em campo).
+> **Auditoria 2026-05-06 (etapa Hqy0B):** revisão completa identificou 7 bloqueadores P0 (B1‑B7).
+> **Estado:** 🟡 P0 corrigidos no branch `claude/audit-vouchers-module-Hqy0B` — pendente revisão e merge.
+> Histórico anterior: ✅ FECHADO 2026-04-28 (regredido por mudança de RPC; ver detalhes abaixo).
+
+## Auditoria 2026-05-06 — Bloqueadores P0 corrigidos
+
+| # | Bloqueador | Onde | Correção |
+|---|---|---|---|
+| B1 | Emissão (individual e lote) lançava "Selecione uma etapa" mesmo com etapa ativa: wizards liam `instances.stageId` (campo inexistente). | `src/pages/admin/VouchersPage.tsx` | `stageId` propagado via prop a partir de `useStageScope()`; botões "Novo Voucher"/"Novo Lote" desabilitam quando não há etapa ativa. |
+| B2 | Voucher de **alojamento** sem `target_date` nascia eterno (`valid_from/valid_until` NULL). | Trigger `derive_voucher_validity` + wizards | Trigger recusa INSERT sem `target_date` quando `target_facility_id` informado; UI exige campo "Data" no Step 2 de lodging em ambos wizards. |
+| B3 | RPC `redeem_voucher` aceitava aggregate (lote anônimo) infinitas vezes; não incrementava `current_uses`; ignorava `max_uses`. | `redeem_voucher` | Migration `20260506500000_voucher_p0_fixes_canonical.sql` restaura uso único por `(voucher, serviço, instância)` para todos os tipos, incremento de `current_uses` e enforce de `max_uses`. |
+| B4 | `p_context_id` ausente bypassava `wrong_instance` (NULL `<>` UUID = NULL). | RPC + telas admin | RPC trata `p_context_id IS NULL` com voucher target como `wrong_instance`; `VoucherValidarPage` exige seleção de janela/viagem/local; `ValidacaoQRPage` deixa de fazer fallback para `meals` em pontos `general`/`entrada`. |
+| B5 | `p_offline_at` sem clamp permitia clock manipulado consumir fora da janela. | RPC | Futuro vira `now()`; `> 24h` no passado retorna `offline_too_old`. Voucher sem `valid_until` retorna `missing_validity` (defesa em profundidade). |
+| B6 | Sync offline passava `p_metadata` inexistente → toda fila falhava. | `src/lib/voucherOffline.ts` | Removido parâmetro extra. |
+| B7 | Auditoria com JOINs em colunas inexistentes (`batches.name`, `profiles.display_name`). | `src/pages/admin/VoucherAuditoriaPage.tsx` | Trocados para `batches.label` e `profiles.full_name`. |
+
+Referência completa: relatório de auditoria entregue em `claude/audit-vouchers-module-Hqy0B`.
+
+---
 
 Esta é uma análise consolidada da aderência do módulo de Voucher aos requisitos de negócio reformulados, após a implementação das correções bloqueantes de paridade offline e schema.
 
