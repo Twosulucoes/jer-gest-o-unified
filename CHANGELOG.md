@@ -4,6 +4,12 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Unreleased]
 
+### Added — Vouchers (P4, auditoria etapa Hqy0B-p4)
+- **[Vouchers]** RPCs canônicas de **emissão** transacional: `issue_voucher_v1` (individual) e `issue_voucher_batch_v1` (lote). O lote agora é atômico: se qualquer voucher falhar (constraint, conflito de QR, lodging sem `target_date`), `ROLLBACK` do batch inteiro — elimina o cenário de "lote criado mas 0 vouchers" anterior.
+- **[Vouchers]** Trigger `log_voucher_creation` AFTER INSERT em `service_vouchers` registra automaticamente em `service_voucher_audit` toda criação (issue ou reissue, distinguidos pela presença de `replaces_voucher_id`). Trilha completa preservada após migração para RPCs.
+- **[Vouchers]** `service_vouchers` e `service_voucher_attempts` adicionadas ao `supabase_realtime` publication — habilita o canal `postgres_changes` usado pelo P3 para auto-refresh em multi-operador.
+- **[Vouchers]** Wizards de emissão migrados para as RPCs canônicas; código duplicado de audit no client removido (passa a ser gerado pelo trigger DB, anti-spoof).
+
 ### Added — Vouchers (P3, auditoria etapa Hqy0B-p3)
 - **[Vouchers]** `pg_cron` agora roda `mark_expired_vouchers()` a cada **1 minuto** (era 15 min); chamada client-side redundante removida da listagem. Listagem fica mais leve e o status `expired` aparece em até 1 min após a janela fechar.
 - **[Vouchers]** **Realtime** em `service_vouchers`: a `VouchersPage` se inscreve em `postgres_changes` filtrado por `event_id` e invalida automaticamente as queries (`vouchers`/`voucher-batches`) quando outro operador (mesma aba ou outra) cria, revoga ou reemite voucher. Sem F5 manual em pico de evento.
