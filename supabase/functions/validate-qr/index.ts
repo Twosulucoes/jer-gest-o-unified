@@ -310,7 +310,7 @@ Deno.serve(async (req: Request) => {
         scanResult = "valid";
       } else {
         scanResult = "unknown_status";
-        scanNotes = `Status desconhecido: \${credential.status}`;
+        scanNotes = `Status desconhecido: ${credential.status}`;
       }
 
       const { data: participant } = await serviceClient
