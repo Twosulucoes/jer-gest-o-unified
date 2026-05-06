@@ -54,7 +54,7 @@ export default function ParticipanteDetalhePage() {
     queryFn: async () => {
       const { data, error } = await (supabase
         .from("participants") as any)
-        .select("id, participant_type, enrollment_class, person_id, delegation_id, event_id, status, is_active, notes, created_at")
+        .select("id, participant_type, person_id, delegation_id, event_id, status, is_active, notes, created_at")
         .eq("id", participantId!)
         .maybeSingle();
       
