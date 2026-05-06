@@ -157,14 +157,17 @@ function humanizeVoucherError(err: any): string {
   if (low.includes("voucher de alojamento exige target_date") || low.includes("voucher de alojamento exige")) {
     return "Voucher de alojamento exige a data — selecione o dia antes de salvar.";
   }
-  if (low.includes("janela já encerrada") || low.includes("janela do voucher original já fechou")) {
+  if (low.includes("não é possível emitir voucher")) {
+    return "Não é possível emitir: a janela informada já fechou. Selecione uma janela futura.";
+  }
+  if (low.includes("janela do voucher original já fechou")) {
     return "Janela já fechou — emita um voucher novo na próxima janela em vez de reemitir.";
+  }
+  if (low.includes("janela já encerrada")) {
+    return "Não é possível emitir: a janela informada já fechou. Selecione uma janela futura.";
   }
   if (low.includes("não é possível revogar voucher")) {
     return "Esse voucher não pode ser revogado neste estado.";
-  }
-  if (low.includes("não é possível emitir voucher")) {
-    return "Não é possível emitir: a janela informada já fechou.";
   }
   if (low.includes("not found") || low.includes("0 rows") || low.includes("404")) {
     return "Voucher não encontrado ou sem permissão.";
@@ -300,9 +303,17 @@ export default function VouchersPage() {
         locsQ = locsQ.eq("event_stage_id", stageId);
       }
       const [meals, trips, locations] = await Promise.all([mealsQ, tripsQ, locsQ]);
+      const now = new Date();
       return {
-        meals: meals.data ?? [],
-        trips: (trips.data as any[]) ?? [],
+        meals: (meals.data ?? []).filter((m: any) => {
+          if (!m.end_time) return true;
+          return new Date(`${m.service_date}T${m.end_time}`) > now;
+        }),
+        trips: ((trips.data as any[]) ?? []).filter((t: any) => {
+          if (!t.scheduled_at) return true;
+          // keep trips where validity window (scheduled_at + 12h) hasn't closed yet
+          return new Date(t.scheduled_at).getTime() + 12 * 60 * 60 * 1000 > now.getTime();
+        }),
         locations: locations.data ?? [],
       };
     },
