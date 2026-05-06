@@ -10,6 +10,11 @@ O **JER Gestão** é uma plataforma robusta de gestão operacional para os Jogos
 
 ## 🚀 Novidades Recentes (Maio 2026)
 
+### Vouchers — Pacote P3 (auditoria etapa Hqy0B-p3, branch `claude/audit-vouchers-module-Hqy0B-p3`)
+- **pg_cron** rodando `mark_expired_vouchers()` a cada minuto (era 15 min). Chamada client-side redundante removida.
+- **Realtime** em `service_vouchers`: outro operador revoga/emite e a sua lista atualiza sozinha.
+- **Atalhos UX:** botões "Hoje" e "Toda a etapa" no filtro de Dia, com destaque do estado ativo, em listagem e auditoria.
+
 ### Vouchers — Pacote P2 (auditoria etapa Hqy0B-p2, branch `claude/audit-vouchers-module-Hqy0B-p2`)
 - **RPCs canônicas:** `revoke_voucher_v1`, `revoke_voucher_batch_v1`, `reissue_voucher_v1`. Atomic + lock pessimista + idempotente. Frontend migrado.
 - **Trigger BEFORE UPDATE:** `revalidate_voucher_validity_on_update` recalcula `valid_from/valid_until` se `target_*_id` ou `target_date` mudarem (defesa em profundidade).

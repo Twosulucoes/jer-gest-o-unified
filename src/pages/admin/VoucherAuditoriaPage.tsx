@@ -270,16 +270,24 @@ export default function VoucherAuditoriaPage() {
                   onChange={(e) => setDayFilter(e.target.value)}
                   className="w-[160px]"
                 />
-                {dayFilter && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDayFilter("")}
-                    title="Limpar filtro de dia"
-                  >
-                    ×
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant={dayFilter === new Date().toISOString().slice(0, 10) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDayFilter(new Date().toISOString().slice(0, 10))}
+                  title="Filtrar pelo dia de hoje"
+                >
+                  Hoje
+                </Button>
+                <Button
+                  type="button"
+                  variant={dayFilter === "" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDayFilter("")}
+                  title="Mostrar toda a etapa"
+                >
+                  Toda a etapa
+                </Button>
               </div>
             </div>
             <div className="w-44 space-y-1.5">

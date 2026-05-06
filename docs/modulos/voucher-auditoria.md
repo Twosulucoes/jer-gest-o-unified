@@ -4,6 +4,17 @@
 > **Estado:** 🟢 P0 mergeado / 🟡 P1 pendente revisão.
 > Histórico: ✅ FECHADO 2026-04-28 → regressão por mudança de RPC → P0 mergeado em 2026‑05‑06 → P1 (filtros, audit, RLS).
 
+## Auditoria 2026-05-06 (Hqy0B-p3) — Pacote P3
+
+| Frente | Mudança | Migration / Arquivo |
+|---|---|---|
+| pg_cron | `mark_expired_vouchers` agora roda a cada **1 minuto** (era 15 min) — UI reflete `expired` rapidamente em pico. | `20260507200000_voucher_p3_cron_every_minute.sql` |
+| Listagem | Removida chamada client redundante a `mark_expired_vouchers` (estava em todo `queryFn`). | `src/pages/admin/VouchersPage.tsx` |
+| Realtime | `useEffect` que cria channel `vouchers-{eventId}` e invalida `vouchers`/`voucher-batches` em qualquer INSERT/UPDATE/DELETE em `service_vouchers` filtrado por evento. | mesma página |
+| Atalhos UX | Botões "Hoje" e "Toda a etapa" no filtro de Dia, com destaque do estado ativo. | listagem + `src/pages/admin/VoucherAuditoriaPage.tsx` |
+
+---
+
 ## Auditoria 2026-05-06 (Hqy0B-p2) — Pacote P2
 
 | Frente | Mudança | Migration / Arquivo |

@@ -216,15 +216,37 @@ export default function VouchersPage() {
   const [reissueTarget, setReissueTarget] = useState<VoucherRow | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
+  // Realtime: invalida queries quando outro operador (mesma aba ou
+  // outra) cria/revoga/reemite voucher. Garante que a etapa ativa
+  // mostre estado fresco em pico de evento sem F5 manual.
+  useEffect(() => {
+    if (!eventId) return;
+    const ch = supabase
+      .channel(`vouchers-${eventId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "service_vouchers",
+          filter: `event_id=eq.${eventId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+          queryClient.invalidateQueries({ queryKey: ["voucher-batches"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [eventId, queryClient]);
+
   const { data: vouchers = [], isLoading } = useQuery({
     queryKey: ["vouchers", eventId, stageId, statusFilter, scopeFilter, typeFilter, dayFilter, instanceFilter],
     queryFn: async () => {
-      // Auto-expira: marca como 'expired' todos os vouchers cujo valid_until
-      // já passou. Vouchers são canonical-mente "1 evento × 1 etapa × 1 dia ×
-      // 1 janela" (ver migration 20260504143000); fora da janela não devem
-      // aparecer como ativos. Idempotente, custo desprezível.
-      try { await supabase.rpc("mark_expired_vouchers" as any); } catch { /* silencioso */ }
-
+      // mark_expired_vouchers agora roda via pg_cron a cada minuto
+      // (migration 20260507200000) — não precisamos chamar do client.
       let q = (supabase.from("service_vouchers") as any)
         .select("*")
         .eq("event_id", eventId)
@@ -505,16 +527,24 @@ export default function VouchersPage() {
                     onChange={(e) => setDayFilter(e.target.value)}
                     className="w-[160px]"
                   />
-                  {dayFilter && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDayFilter("")}
-                      title="Limpar filtro de dia"
-                    >
-                      ×
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant={dayFilter === new Date().toISOString().slice(0, 10) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDayFilter(new Date().toISOString().slice(0, 10))}
+                    title="Filtrar pelo dia de hoje"
+                  >
+                    Hoje
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={dayFilter === "" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setDayFilter("")}
+                    title="Mostrar toda a etapa (todos os dias)"
+                  >
+                    Toda a etapa
+                  </Button>
                 </div>
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
