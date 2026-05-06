@@ -6,6 +6,7 @@ import {
   UtensilsCrossed, QrCode, AlertTriangle, Plus, Undo2,
 } from "lucide-react";
 import ReverseConsumptionDialog from "@/components/admin/ReverseConsumptionDialog";
+import { ModuleStateBoundary } from "@/components/shared/ModuleStateBoundary";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,24 @@ export default function AlimentacaoConsumoPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedWindowId, statusFilter, searchTerm]);
+
+  // M8: realtime — invalida a lista de consumos quando há insert/update/delete
+  useEffect(() => {
+    if (!selectedEventId) return;
+    const channel = supabase
+      .channel(`meal_consumptions_consumo_${selectedEventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meal_consumptions" },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [selectedEventId, qc]);
 
   // Removido query redundante de events
 
@@ -82,7 +101,7 @@ export default function AlimentacaoConsumoPage() {
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
   // Load consumptions for all windows of the event/stage to allow "All Windows" filter
-  const { data: consumptions = [], isLoading: consumptionsLoading } = useQuery({
+  const { data: consumptions = [], isLoading: consumptionsLoading, isError: consumptionsError, error: consumptionsErrorObj, refetch: refetchConsumptions } = useQuery({
     queryKey: ["meal_consumptions", selectedEventId, stageId, windows.length],
     queryFn: async () => {
       if (!selectedEventId || windows.length === 0) return [];
@@ -317,11 +336,21 @@ export default function AlimentacaoConsumoPage() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {consumptionsLoading ? (
-              <div className="p-4 space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-md" />)}</div>
-            ) : !filteredConsumptions.length ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">Nenhum consumo encontrado com os filtros aplicados.</div>
-            ) : (
+            <ModuleStateBoundary
+              isLoading={consumptionsLoading}
+              isError={consumptionsError}
+              error={consumptionsErrorObj}
+              isEmpty={!filteredConsumptions.length}
+              emptyMessage="Nenhum consumo encontrado com os filtros aplicados."
+              onRetry={() => refetchConsumptions()}
+              loadingFallback={
+                <div className="p-4 space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full rounded-md" />
+                  ))}
+                </div>
+              }
+            >
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -388,7 +417,7 @@ export default function AlimentacaoConsumoPage() {
                   })}
                 </TableBody>
               </Table>
-            )}
+            </ModuleStateBoundary>
           </CardContent>
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20">
