@@ -188,6 +188,7 @@ export default function CredenciamentoPage() {
 
   
   const [blockingDialogData, setBlockingDialogData] = useState<{ participantName: string; items: any[] } | null>(null);
+  const [participantsRefreshKey, setParticipantsRefreshKey] = useState(0);
   const canCredential = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
 
   // Persist filters to URL
@@ -337,7 +338,7 @@ export default function CredenciamentoPage() {
     statusIn: ["pending", "confirmed", "credentialed"],
     participantIdsScope: effectiveStageFilter,
     orderBy: "id",
-    cacheKey: `cred-${stageId ?? "all"}`,
+    cacheKey: `cred-${stageId ?? "all"}-${participantsRefreshKey}`,
     enabled: !!selectedEventId,
   });
 
@@ -497,7 +498,7 @@ export default function CredenciamentoPage() {
       await issueCredentialWithRetry(selectedEventId, participantId, user?.id ?? "");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      setParticipantsRefreshKey((k) => k + 1);
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credenciamento realizado com sucesso!");
       setSelectedForCred(null);
@@ -522,6 +523,7 @@ export default function CredenciamentoPage() {
       await issueCredentialWithRetry(selectedEventId, participantId, user?.id ?? "");
     },
     onSuccess: () => {
+      setParticipantsRefreshKey((k) => k + 1);
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credencial emitida com sucesso!");
     },
@@ -542,6 +544,7 @@ export default function CredenciamentoPage() {
       });
     },
     onSuccess: () => {
+      setParticipantsRefreshKey((k) => k + 1);
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credencial reemitida! A anterior foi invalidada.");
     },
@@ -624,7 +627,7 @@ export default function CredenciamentoPage() {
       if (partErr) throw partErr;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      setParticipantsRefreshKey((k) => k + 1);
       queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
       toast.success("Credenciamento desfeito com sucesso!");
     },
@@ -642,7 +645,7 @@ export default function CredenciamentoPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+      setParticipantsRefreshKey((k) => k + 1);
       toast.success("Participante confirmado com sucesso!");
     },
     onError: (err: Error) => {
@@ -740,7 +743,7 @@ export default function CredenciamentoPage() {
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
-    queryClient.invalidateQueries({ queryKey: ["credenciamento-participants"] });
+    setParticipantsRefreshKey((k) => k + 1);
     queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
 
     if (success > 0) toast.success(`${success} credencial(is) emitida(s) com sucesso.`);
@@ -767,8 +770,9 @@ export default function CredenciamentoPage() {
     }
     setBatchProcessing(false);
     setSelectedIds(new Set());
+    setParticipantsRefreshKey((k) => k + 1);
     queryClient.invalidateQueries({ queryKey: ["credenciamento-credentials"] });
-    
+
     if (success > 0) toast.success(`${success} credencial(is) emitida(s) com sucesso.`);
     if (blocked > 0) toast.error(`${blocked} participante(s) bloqueado(s) por irregularidade.`);
     if (errors > 0) toast.error(`${errors} erro(s) inesperado(s). Verifique o console.`);

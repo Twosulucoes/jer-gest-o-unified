@@ -81,8 +81,8 @@ export default function CredenciamentoSeguroPage() {
         p_event_id: activeEventId
       });
       if (error) throw error;
-      const items = (data || []) as any[];
-      return { has_blocking: items.length > 0, items };
+      const result = data as any;
+      return { has_blocking: result?.has_blocking ?? false, items: result?.items ?? [] };
     },
     enabled: !!selectedId && !!activeEventId,
   });
