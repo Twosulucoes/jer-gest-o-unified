@@ -4,6 +4,11 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ## [Unreleased]
 
+### Added — Vouchers (P3, auditoria etapa Hqy0B-p3)
+- **[Vouchers]** `pg_cron` agora roda `mark_expired_vouchers()` a cada **1 minuto** (era 15 min); chamada client-side redundante removida da listagem. Listagem fica mais leve e o status `expired` aparece em até 1 min após a janela fechar.
+- **[Vouchers]** **Realtime** em `service_vouchers`: a `VouchersPage` se inscreve em `postgres_changes` filtrado por `event_id` e invalida automaticamente as queries (`vouchers`/`voucher-batches`) quando outro operador (mesma aba ou outra) cria, revoga ou reemite voucher. Sem F5 manual em pico de evento.
+- **[Vouchers]** Atalhos UX nos filtros de Dia: botões **Hoje** e **Toda a etapa** com destaque do estado ativo, em listagem e auditoria.
+
 ### Added — Vouchers (P2, auditoria etapa Hqy0B-p2)
 - **[Vouchers]** RPCs canônicas dedicadas: `revoke_voucher_v1(p_voucher_id, p_reason)`, `revoke_voucher_batch_v1(p_batch_id, p_reason)` e `reissue_voucher_v1(p_voucher_id, p_reason, p_new_qr)`. Atomic, com lock pessimista e idempotência (segundo clique não duplica reissue nem reinicia revogação). RLS aplicada via `SECURITY INVOKER`.
 - **[Vouchers]** Trigger `revalidate_voucher_validity_on_update` em `service_vouchers`: BEFORE UPDATE recalcula `valid_from`/`valid_until` quando `target_*_id` ou `target_date` mudam (defesa em profundidade para manutenção manual via SQL).
