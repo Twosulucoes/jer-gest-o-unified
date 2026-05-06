@@ -771,6 +771,18 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
 
+  useEffect(() => {
+    if (!open) {
+      setStep(1);
+      setServiceType("");
+      setInstanceId("");
+      setLodgingDate("");
+      setIsNominal(true);
+      setEventualId("");
+      setSearch("");
+    }
+  }, [open]);
+
   const { data: eventuals = [] } = useQuery({
     queryKey: ["eventuals-search", search],
     queryFn: async () => {
@@ -837,14 +849,14 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader><DialogTitle>Novo Voucher Individual</DialogTitle></DialogHeader>
         <div className="space-y-4">
           {step === 1 && (
             <div className="grid grid-cols-3 gap-2">
-              <Button variant={serviceType === "meals" ? "default" : "outline"} onClick={() => setServiceType("meals")} className="flex-col h-20"><UtensilsCrossed /> Alimentação</Button>
-              <Button variant={serviceType === "transport" ? "default" : "outline"} onClick={() => setServiceType("transport")} className="flex-col h-20"><Bus /> Transporte</Button>
-              <Button variant={serviceType === "lodging" ? "default" : "outline"} onClick={() => setServiceType("lodging")} className="flex-col h-20"><BedDouble /> Alojamento</Button>
+              <Button variant={serviceType === "meals" ? "default" : "outline"} onClick={() => { setServiceType("meals"); setInstanceId(""); setLodgingDate(""); }} className="flex-col h-20"><UtensilsCrossed /> Alimentação</Button>
+              <Button variant={serviceType === "transport" ? "default" : "outline"} onClick={() => { setServiceType("transport"); setInstanceId(""); setLodgingDate(""); }} className="flex-col h-20"><Bus /> Transporte</Button>
+              <Button variant={serviceType === "lodging" ? "default" : "outline"} onClick={() => { setServiceType("lodging"); setInstanceId(""); setLodgingDate(""); }} className="flex-col h-20"><BedDouble /> Alojamento</Button>
             </div>
           )}
           {step === 2 && (
@@ -925,6 +937,17 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
   const [label, setLabel] = useState("");
   const qc = useQueryClient();
 
+  useEffect(() => {
+    if (!open) {
+      setStep(1);
+      setServiceType("");
+      setInstanceId("");
+      setLodgingDate("");
+      setQuantity(10);
+      setLabel("");
+    }
+  }, [open]);
+
   const mutation = useMutation({
     mutationFn: async () => {
       if (!serviceType) throw new Error("Selecione o tipo de serviço.");
@@ -965,14 +988,14 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader><DialogTitle>Emitir Novo Lote</DialogTitle></DialogHeader>
         <div className="space-y-4">
           {step === 1 && (
              <div className="grid grid-cols-3 gap-2">
-              <Button variant={serviceType === "meals" ? "default" : "outline"} onClick={() => setServiceType("meals")} className="flex-col h-20"><UtensilsCrossed /> Alimentação</Button>
-              <Button variant={serviceType === "transport" ? "default" : "outline"} onClick={() => setServiceType("transport")} className="flex-col h-20"><Bus /> Transporte</Button>
-              <Button variant={serviceType === "lodging" ? "default" : "outline"} onClick={() => setServiceType("lodging")} className="flex-col h-20"><BedDouble /> Alojamento</Button>
+              <Button variant={serviceType === "meals" ? "default" : "outline"} onClick={() => { setServiceType("meals"); setInstanceId(""); setLodgingDate(""); }} className="flex-col h-20"><UtensilsCrossed /> Alimentação</Button>
+              <Button variant={serviceType === "transport" ? "default" : "outline"} onClick={() => { setServiceType("transport"); setInstanceId(""); setLodgingDate(""); }} className="flex-col h-20"><Bus /> Transporte</Button>
+              <Button variant={serviceType === "lodging" ? "default" : "outline"} onClick={() => { setServiceType("lodging"); setInstanceId(""); setLodgingDate(""); }} className="flex-col h-20"><BedDouble /> Alojamento</Button>
             </div>
           )}
           {step === 2 && (
