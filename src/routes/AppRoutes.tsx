@@ -128,6 +128,7 @@ const AdminAlimentacaoRelatoriosPage = lazy(() => import("../pages/admin/Aliment
 const AdminAlimentacaoLocaisPage = lazy(() => import("../pages/admin/AlimentacaoLocaisPage"));
 const AdminAlimentacaoPadroesPage = lazy(() => import("../pages/admin/AlimentacaoPadroesPage"));
 const AdminAlimentacaoDivergenciasPage = lazy(() => import("../pages/admin/AlimentacaoDivergenciasPage"));
+const AdminAlimentacaoAuditoriaPage = lazy(() => import("../pages/admin/AlimentacaoAuditoriaPage"));
 
 // Alojamento Subpages (Admin)
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
@@ -310,6 +311,7 @@ export const AppRoutes = () => (
              <Route path="alimentacao/locais" element={<AdminAlimentacaoLocaisPage />} />
              <Route path="alimentacao/padroes" element={<AdminAlimentacaoPadroesPage />} />
              <Route path="alimentacao/divergencias" element={<AdminAlimentacaoDivergenciasPage />} />
+             <Route path="alimentacao/auditoria" element={<AdminAlimentacaoAuditoriaPage />} />
             <Route path="transporte" element={<TransporteHubPage />} />
             <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
             <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />

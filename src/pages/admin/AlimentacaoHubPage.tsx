@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers, Calculator, MapPin, FileText, UserX
+  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers, Calculator, MapPin, FileText, UserX, ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -282,6 +282,16 @@ export default function AlimentacaoHubPage() {
             <div>
               <p className="font-medium text-sm">Padrões de Janelas</p>
               <p className="text-xs text-muted-foreground">Configuração de horários padrão</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/auditoria` : "/admin/alimentacao/auditoria")}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <ShieldCheck className="h-8 w-8 text-primary shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Auditoria</p>
+              <p className="text-xs text-muted-foreground">Trilha de inserções e estornos</p>
             </div>
           </CardContent>
         </Card>
