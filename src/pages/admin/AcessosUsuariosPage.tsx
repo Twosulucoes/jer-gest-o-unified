@@ -379,19 +379,15 @@ export default function AcessosUsuariosPage() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["admin-users-list"] });
       if (data?.manual_link) {
-        // Caminho sem email (escolhido pelo admin) ou fallback automático após
-        // falha de SMTP. Usuário criado; admin envia o link manualmente.
         setInviteManualLink(data.manual_link);
-        toast.success(inviteSendEmail
-          ? "Usuário criado. Email não foi enviado — copie o link abaixo e envie manualmente."
-          : "Usuário criado. Copie o link abaixo e envie ao usuário."
+        toast.success(
+          inviteSendEmail
+            ? "Usuário criado. Email não pôde ser enviado — copie o link abaixo e envie manualmente."
+            : "Usuário criado. Copie o link abaixo e envie ao usuário."
         );
       } else {
-        toast.success("Convite enviado por email!");
-        setInviteOpen(false);
-        setInviteEmail("");
-        setInviteName("");
-        setInviteRoles([]);
+        toast.success(data?.email_sent ? "Convite enviado por email!" : "Usuário criado com sucesso!");
+        setInviteOpen(false); // onOpenChange cuida do reset completo
       }
     },
     onError: (err: Error) => toast.error(err.message),
@@ -402,11 +398,10 @@ export default function AcessosUsuariosPage() {
       callAdminUsers("resend_invite", { user_id }),
     onSuccess: (data: any) => {
       if (data?.manual_link) {
-        // SMTP indisponível — surface o link no estado de reset pra o admin copiar
         setResetLink(data.manual_link);
-        toast.success("Email não enviado. Link de acesso gerado — copie abaixo.");
+        toast.success("Email não pôde ser enviado. Link de acesso gerado — copie abaixo.");
       } else {
-        toast.success("Convite reenviado!");
+        toast.success(data?.email_sent ? "Convite reenviado por email!" : "Convite processado.");
       }
     },
     onError: (err: Error) => toast.error(err.message),
@@ -667,7 +662,21 @@ export default function AcessosUsuariosPage() {
       )}
 
       {/* Invite Dialog */}
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      <Dialog
+        open={inviteOpen}
+        onOpenChange={(open) => {
+          setInviteOpen(open);
+          if (!open) {
+            // Reseta todos os campos e o toggle sempre que o dialog fecha,
+            // independente do caminho (Cancelar, Concluir, Escape, clique fora).
+            setInviteManualLink(null);
+            setInviteEmail("");
+            setInviteName("");
+            setInviteRoles([]);
+            setInviteSendEmail(true);
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Convidar novo usuário</DialogTitle>
@@ -775,16 +784,7 @@ export default function AcessosUsuariosPage() {
                   >
                     <UserPlus className="mr-2 h-3 w-3" /> Convidar outro
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setInviteOpen(false);
-                      setInviteManualLink(null);
-                      setInviteEmail("");
-                      setInviteName("");
-                      setInviteRoles([]);
-                    }}
-                  >
+                  <Button size="sm" onClick={() => setInviteOpen(false)}>
                     Concluir
                   </Button>
                 </div>
@@ -792,7 +792,7 @@ export default function AcessosUsuariosPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setInviteOpen(false); setInviteManualLink(null); }}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancelar</Button>
             <Button
               onClick={() => inviteMutation.mutate()}
               disabled={!inviteEmail || !inviteName || inviteName.trim().length < 3 || inviteRoles.length === 0 || inviteMutation.isPending || !!inviteManualLink}

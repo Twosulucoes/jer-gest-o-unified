@@ -93,6 +93,30 @@ Deno.serve(async (req) => {
     }
 
 
+    // Envia email de recuperação de senha pelo endpoint público do GoTrue,
+    // que passa pelo SMTP customizado configurado em Auth → SMTP Settings.
+    // Funciona tanto para novos usuários quanto para usuários já existentes,
+    // ao contrário de inviteUserByEmail (que só aceita emails nunca cadastrados).
+    async function sendRecoveryViaSmtp(email: string, redirectTo: string): Promise<boolean> {
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      if (!anonKey) {
+        console.warn("sendRecoveryViaSmtp: SUPABASE_ANON_KEY not set");
+        return false;
+      }
+      const url = new URL(`${supabaseUrl}/auth/v1/recover`);
+      url.searchParams.set("redirect_to", redirectTo);
+      const resp = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": anonKey },
+        body: JSON.stringify({ email, gotrue_meta_security: {} }),
+      });
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        console.warn(`sendRecoveryViaSmtp failed (${resp.status}):`, text);
+      }
+      return resp.ok;
+    }
+
     const body = await req.json();
     const { action } = body;
 
@@ -236,7 +260,9 @@ Deno.serve(async (req) => {
           if (inviteErr) {
             const msg = inviteErr.message.toLowerCase();
             if (msg.includes("already") || msg.includes("existe") || msg.includes("registered")) {
-              // Usuário já em auth — recupera id e segue para upsert de profile/roles
+              // Usuário já em auth — recupera id e segue para upsert de profile/roles.
+              // Também tenta notificá-lo: envia email de recuperação (SMTP) ou,
+              // se o SMTP falhar, gera um link manual para o admin copiar.
               const { data: { users: existingUsers }, error: listErr } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
               if (listErr || !existingUsers) {
                 return jsonResponse({ error: `Usuário já existe mas não pôde ser recuperado: ${inviteErr.message}` }, 500);
@@ -246,6 +272,20 @@ Deno.serve(async (req) => {
                 return jsonResponse({ error: `Usuário já existe no Auth mas não foi encontrado na listagem.` }, 404);
               }
               userId = existingUser.id;
+              if (wantsEmail) {
+                const sent = await sendRecoveryViaSmtp(email, redirectTo);
+                if (!sent) {
+                  const { data: linkData } = await adminClient.auth.admin.generateLink({
+                    type: "recovery", email, options: { redirectTo },
+                  });
+                  manualLink = linkData?.properties?.action_link ?? null;
+                }
+              } else {
+                const { data: linkData } = await adminClient.auth.admin.generateLink({
+                  type: "recovery", email, options: { redirectTo },
+                });
+                manualLink = linkData?.properties?.action_link ?? null;
+              }
             } else {
               // Fallback agressivo: qualquer outra falha (rate limit, SMTP fora, email
               // inválido pro provider, network blip) → cria sem email e devolve link manual.
@@ -311,6 +351,7 @@ Deno.serve(async (req) => {
           success: true,
           user_id: userId,
           manual_link: manualLink,
+          email_sent: !manualLink,
         });
       }
 
@@ -472,17 +513,19 @@ Deno.serve(async (req) => {
         if (!wantsEmail) {
           manualLink = await genResendLink();
         } else {
-          const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(targetUser.email!, { redirectTo });
-          if (inviteErr) {
-            console.warn("resend_invite SMTP failed, generating manual link:", inviteErr.message);
+          // inviteUserByEmail sempre falha para usuários já existentes.
+          // /recover funciona para qualquer usuário e usa o SMTP configurado.
+          const sent = await sendRecoveryViaSmtp(targetUser.email!, redirectTo);
+          if (!sent) {
+            console.warn("resend_invite SMTP failed, generating manual link");
             manualLink = await genResendLink();
-            if (!manualLink) return jsonResponse({ error: inviteErr.message }, 500);
+            if (!manualLink) return jsonResponse({ error: "Falha ao reenviar convite e ao gerar link de acesso." }, 500);
           }
         }
 
         await logAudit(adminClient, "invite_resent", user_id, caller.id, { email: targetUser.email, manual_link: !!manualLink });
 
-        return jsonResponse({ success: true, manual_link: manualLink });
+        return jsonResponse({ success: true, manual_link: manualLink, email_sent: !manualLink });
       }
 
       case "reset_password": {
