@@ -268,41 +268,56 @@ const labelStyles = StyleSheet.create({
   }
 });
 
+// A4 com padding 10pt: ~822pt úteis de altura. Cada etiqueta tem 140pt + ~12pt de margem = ~152pt.
+// Cabem ~5 linhas × 2 colunas = 10 etiquetas por página sem corte.
+const LABELS_PER_PAGE = 10;
+
+function buildLabelView(r: VoucherExportRow) {
+  return createElement(
+    View,
+    { style: labelStyles.labelContainer, key: r.id },
+    createElement(
+      View,
+      { style: { flexDirection: "column", alignItems: "center" } },
+      r.qr_data_url && createElement(Image, { style: labelStyles.qrCode, src: r.qr_data_url }),
+      createElement(Text, { style: labelStyles.qrCodeText }, r.qr_code_value.replace("voucher:", ""))
+    ),
+    createElement(
+      View,
+      { style: labelStyles.infoContainer },
+      createElement(Text, { style: labelStyles.serviceTitle }, r.service_info || "Serviço JER"),
+      createElement(
+        Text,
+        { style: labelStyles.holderName },
+        r.voucher_type === "nominal" ? (r.participant_name || "Portador Nominal") : (r.label || "Voucher Anônimo")
+      ),
+      createElement(Text, { style: labelStyles.details }, `Validade: ${r.valid_until ? new Date(r.valid_until).toLocaleDateString("pt-BR") : "S/ data"}`),
+      createElement(Text, { style: labelStyles.details }, `Usos: ${r.max_uses ?? "Ilimitado"}`),
+      r.batch_label && createElement(Text, { style: labelStyles.batchLabel }, `Lote: ${r.batch_label}`),
+      createElement(Text, { style: labelStyles.systemLogo }, "JER Gestão • Vouchers")
+    )
+  );
+}
+
 export async function printVoucherLabelsPdf(
   rows: VoucherExportRow[],
   filenamePrefix = "etiquetas-vouchers"
 ) {
+  // Divide em páginas para evitar corte de conteúdo no react-pdf
+  const pages: VoucherExportRow[][] = [];
+  for (let i = 0; i < rows.length; i += LABELS_PER_PAGE) {
+    pages.push(rows.slice(i, i + LABELS_PER_PAGE));
+  }
+  if (pages.length === 0) pages.push([]);
+
   const doc = createElement(
     Document,
     {},
-    createElement(
-      Page,
-      { size: "A4", style: labelStyles.page },
-      ...rows.map((r) =>
-        createElement(
-          View,
-          { style: labelStyles.labelContainer, key: r.id },
-          createElement(
-            View,
-            { style: { flexDirection: 'column', alignItems: 'center' } },
-            r.qr_data_url && createElement(Image, { style: labelStyles.qrCode, src: r.qr_data_url }),
-            createElement(Text, { style: labelStyles.qrCodeText }, r.qr_code_value.replace("voucher:", ""))
-          ),
-          createElement(
-            View,
-            { style: labelStyles.infoContainer },
-            createElement(Text, { style: labelStyles.serviceTitle }, r.service_info || "Serviço JER"),
-            createElement(
-              Text, 
-              { style: labelStyles.holderName }, 
-              r.voucher_type === "nominal" ? (r.participant_name || "Portador Nominal") : (r.label || "Voucher Anônimo")
-            ),
-            createElement(Text, { style: labelStyles.details }, `Validade: ${r.valid_until ? new Date(r.valid_until).toLocaleDateString("pt-BR") : "S/ data"}`),
-            createElement(Text, { style: labelStyles.details }, `Usos: ${r.max_uses ?? "Ilimitado"}`),
-            r.batch_label && createElement(Text, { style: labelStyles.batchLabel }, `Lote: ${r.batch_label}`),
-            createElement(Text, { style: labelStyles.systemLogo }, "JER Gestão • Vouchers")
-          )
-        )
+    ...pages.map((pageRows, pageIdx) =>
+      createElement(
+        Page,
+        { size: "A4", style: labelStyles.page, key: pageIdx },
+        ...pageRows.map(buildLabelView)
       )
     )
   );
