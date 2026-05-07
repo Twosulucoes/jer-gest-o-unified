@@ -253,14 +253,7 @@ export default function TransporteScanPage() {
           recordOutcome("error");
           return;
         }
-        // credenciado offline
-        if (!cached.entry.needs_transport) {
-          const msg = "Participante não declarou necessidade de transporte.";
-          setResult({ ok: false, message: msg, source: "qr" });
-          toast.warning(msg);
-          recordOutcome("error");
-          return;
-        }
+        // credenciado offline → prossegue
         await applyBoarding(cached.entry.participant_id, cached.entry.full_name, "qr");
         return;
       }
@@ -283,10 +276,10 @@ export default function TransporteScanPage() {
         return;
       }
 
-      // Verifica elegibilidade completa (is_active, credentialed_at, needs_transport)
+      // Verifica is_active e credentialed_at (mesma lógica da alimentação)
       const { data: partData } = await (supabase as any)
         .from("participants")
-        .select("is_active, credentialed_at, needs_transport")
+        .select("is_active, credentialed_at")
         .eq("id", resolved.participant_id)
         .maybeSingle();
 
@@ -301,13 +294,6 @@ export default function TransporteScanPage() {
         const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
         setResult({ ok: false, message: msg, source: "qr" });
         toast.error("Sem credencial ativa.", { description: "Encaminhe o atleta para a secretaria." });
-        recordOutcome("error");
-        return;
-      }
-      if (partData.needs_transport === false) {
-        const msg = "Participante não declarou necessidade de transporte.";
-        setResult({ ok: false, message: msg, source: "qr" });
-        toast.warning(msg);
         recordOutcome("error");
         return;
       }
