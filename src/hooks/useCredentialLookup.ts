@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { extractCandidates } from "@/lib/resolveQrCredential";
 
 interface CredentialLookupResult {
   participant_id: string;
@@ -25,39 +26,6 @@ interface LookupError {
     | "no_credential"
     | "error";
   message: string;
-}
-
-/** Extrai possíveis identificadores de uma string escaneada (texto, JSON, URL). */
-function extractCandidates(raw: string): { values: string[]; cpfDigits: string | null } {
-  const set = new Set<string>();
-  const value = raw.trim();
-  set.add(value);
-
-  if (value.startsWith("{")) {
-    try {
-      const obj = JSON.parse(value);
-      for (const k of ["qr", "qr_code", "qr_code_value", "code", "credential_code", "cpf", "id"]) {
-        if (obj?.[k]) set.add(String(obj[k]).trim());
-      }
-    } catch (_) { /* ignore */ }
-  }
-
-  if (/^https?:\/\//i.test(value)) {
-    try {
-      const u = new URL(value);
-      for (const k of ["qr", "code", "credential_code", "cpf", "id"]) {
-        const v = u.searchParams.get(k);
-        if (v) set.add(v.trim());
-      }
-      const seg = u.pathname.split("/").filter(Boolean).pop();
-      if (seg) set.add(seg);
-    } catch (_) { /* ignore */ }
-  }
-
-  const digits = value.replace(/\D/g, "");
-  if (digits) set.add(digits);
-
-  return { values: Array.from(set).filter(Boolean), cpfDigits: digits.length === 11 ? digits : null };
 }
 
 export function useCredentialLookup() {
