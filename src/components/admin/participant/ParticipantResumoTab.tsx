@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Mail, Phone, Heart, Accessibility, Trophy, Swords, IdCard, BedDouble, UtensilsCrossed, Bus } from "lucide-react";
 import ParticipantEarlyExitCard from "./ParticipantEarlyExitCard";
+import ParticipantEtapasCard from "./ParticipantEtapasCard";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
@@ -191,6 +192,12 @@ export default function ParticipantResumoTab({ participant, person, institution 
             </CardContent>
           </Card>
         )}
+
+        {/* Etapas de participação */}
+        <ParticipantEtapasCard
+          participantId={participant.id}
+          eventId={participant.event_id}
+        />
 
         {/* Saída antecipada do evento (Etapa 2 — Alimentação) */}
         <ParticipantEarlyExitCard
