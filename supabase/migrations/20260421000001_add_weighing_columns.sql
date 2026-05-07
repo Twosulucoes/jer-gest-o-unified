@@ -19,21 +19,7 @@ BEGIN
   ) THEN
     CREATE POLICY "Allow admin and coordination to update weighing" ON public.participant_sport_events
       FOR UPDATE
-      USING (
-        EXISTS (
-          SELECT 1 FROM public.user_roles ur
-          JOIN public.roles r ON ur.role_id = r.id
-          WHERE ur.user_id = auth.uid()
-          AND r.name IN ('admin', 'coordenacao_tecnica')
-        )
-      )
-      WITH CHECK (
-        EXISTS (
-          SELECT 1 FROM public.user_roles ur
-          JOIN public.roles r ON ur.role_id = r.id
-          WHERE ur.user_id = auth.uid()
-          AND r.name IN ('admin', 'coordenacao_tecnica')
-        )
-      );
+      USING (has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'secretaria'::app_role))
+      WITH CHECK (has_role(auth.uid(), 'admin'::app_role) OR has_role(auth.uid(), 'secretaria'::app_role));
   END IF;
 END $$;
