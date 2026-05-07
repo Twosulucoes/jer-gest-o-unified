@@ -24,13 +24,14 @@ export default function AlimentacaoLocaisPage() {
   const canWrite = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
 
   const { data: locations, isLoading } = useQuery({
-    queryKey: ["meal_locations", selectedEventId],
+    queryKey: ["meal_locations", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const { data, error } = await (supabase as any).from("meal_locations")
+      let q = (supabase as any).from("meal_locations")
         .select("*")
-        .eq("event_id", selectedEventId)
-        .order("name");
+        .eq("event_id", selectedEventId);
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q.order("name");
       if (error) throw error;
       return (data ?? []) as any[];
     },
