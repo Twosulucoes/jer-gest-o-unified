@@ -37,6 +37,7 @@ USING (
 );
 
 -- 3. Política de Inserção (INSERT)
+DROP POLICY IF EXISTS "Users can create incidents" ON public.operational_incidents;
 CREATE POLICY "Users can create incidents"
 ON public.operational_incidents
 FOR INSERT

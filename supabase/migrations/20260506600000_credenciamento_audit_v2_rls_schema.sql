@@ -127,6 +127,7 @@ CREATE POLICY "Transporte can read credential_scans"
 DROP POLICY IF EXISTS "external_credentials_select" ON public.external_credentials;
 
 -- Recria sem coordenador_modalidade (este ganha policy própria escopada abaixo)
+DROP POLICY IF EXISTS "external_credentials_select" ON public.external_credentials;
 CREATE POLICY "external_credentials_select"
   ON public.external_credentials
   FOR SELECT TO authenticated

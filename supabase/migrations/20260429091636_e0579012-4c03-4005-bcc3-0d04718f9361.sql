@@ -8,6 +8,7 @@ DROP POLICY IF EXISTS "Operacional roles can view eventual people" ON public.ser
 
 -- Re-create policies using only user_roles (which is in public schema and accessible)
 -- Service Vouchers
+DROP POLICY IF EXISTS "Admins and secretaria can manage service vouchers" ON public.service_vouchers;
 CREATE POLICY "Admins and secretaria can manage service vouchers" 
 ON public.service_vouchers 
 FOR ALL 
@@ -25,6 +26,7 @@ WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "Operacional roles can view service vouchers" ON public.service_vouchers;
 CREATE POLICY "Operacional roles can view service vouchers" 
 ON public.service_vouchers 
 FOR SELECT 
@@ -37,6 +39,7 @@ USING (
 );
 
 -- Voucher Batches
+DROP POLICY IF EXISTS "Admins and secretaria can manage voucher batches" ON public.service_voucher_batches;
 CREATE POLICY "Admins and secretaria can manage voucher batches" 
 ON public.service_voucher_batches 
 FOR ALL 
@@ -54,6 +57,7 @@ WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "Operacional roles can view voucher batches" ON public.service_voucher_batches;
 CREATE POLICY "Operacional roles can view voucher batches" 
 ON public.service_voucher_batches 
 FOR SELECT 
@@ -66,6 +70,7 @@ USING (
 );
 
 -- Eventual People
+DROP POLICY IF EXISTS "Admins and secretaria can manage eventual people" ON public.service_eventual_people;
 CREATE POLICY "Admins and secretaria can manage eventual people" 
 ON public.service_eventual_people 
 FOR ALL 
@@ -83,6 +88,7 @@ WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "Operacional roles can view eventual people" ON public.service_eventual_people;
 CREATE POLICY "Operacional roles can view eventual people" 
 ON public.service_eventual_people 
 FOR SELECT 
