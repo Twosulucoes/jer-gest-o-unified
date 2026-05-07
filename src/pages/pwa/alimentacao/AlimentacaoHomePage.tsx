@@ -166,7 +166,7 @@ export default function AlimentacaoHomePage() {
           ]}
         />
 
-        <FoodIncidentDialog open={incidentOpen} onOpenChange={setIncidentOpen} />
+        <FoodIncidentDialog open={incidentOpen} onOpenChange={setIncidentOpen} eventId={activeEventId} stageId={stageId} />
       </PwaContainer>
     </PwaLayout>
   );

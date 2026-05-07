@@ -4,6 +4,7 @@ ALTER TABLE public.competition_matches ADD COLUMN IF NOT EXISTS round_type text;
 
 -- 2) Update RLS policy for competition_match_results
 DROP POLICY IF EXISTS "Public can read validated and published results" ON public.competition_match_results;
+DROP POLICY IF EXISTS "Public can read published results only" ON public.competition_match_results;
 CREATE POLICY "Public can read published results only"
 ON public.competition_match_results FOR SELECT
 USING (result_status = 'publicado');

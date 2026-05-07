@@ -226,7 +226,7 @@ CREATE POLICY "Module users can upload evidence_evid"
   ON storage.objects FOR INSERT TO authenticated
   WITH CHECK (
     bucket_id = 'operational-evidence' AND (
-      (has_role(auth.uid(), 'alimentacao') AND (storage.foldername(name))[1] = (SELECT id::text FROM events WHERE is_active = true LIMIT 1)) OR
+      (has_role(auth.uid(), 'alimentacao') AND (storage.foldername(name))[1] = (SELECT id::text FROM events WHERE status NOT IN ('draft', 'archived') LIMIT 1)) OR
       has_role(auth.uid(), 'admin')
     )
   );

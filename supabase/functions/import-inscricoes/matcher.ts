@@ -158,8 +158,8 @@ const RULES: DeterministicRule[] = [
     if (!cat.some(c => /ciclismo/.test(c.slug))) return null;
     if (/CONTRARRELOGIO|CRONO/.test(raw)) return findInCatalog(cat, s => /contrarrelogio|crono/.test(s));
     if (/ESTRADA|ROAD/.test(raw)) return findInCatalog(cat, s => /estrada/.test(s));
-    // Texto vago "CICLISMO 15 A 17 FEMININO" → assume ESTRADA (prova base mais comum)
-    if (/^CICLISMO/.test(raw.trim()) && !/CONTRA|CRONO/.test(raw)) {
+    // Texto vago "CICLISMO 15 A 17 FEMININO" ou "INDIVIDUAL" → assume ESTRADA (prova base mais comum)
+    if ((/^CICLISMO/.test(raw.trim()) || /\bINDIVIDUAL\b/.test(raw)) && !/CONTRA|CRONO/.test(raw)) {
       return findInCatalog(cat, s => /estrada/.test(s));
     }
     return null;
@@ -169,7 +169,14 @@ const RULES: DeterministicRule[] = [
   (raw, cat) => {
     if (!cat.some(c => /atletismo/.test(c.slug))) return null;
 
-    // 1) Lançamentos / arremessos (DARDO, DISCO, PESO, MARTELO)
+    // 1a) Provas combinadas (hexatlo / pentatlo)
+    if (/\bHEXATLO\b/.test(raw)) return findInCatalog(cat, s => /hexatlo/.test(s));
+    if (/\bPENTATLO\b/.test(raw)) return findInCatalog(cat, s => /pentatlo/.test(s));
+    if (/\bCOMBINADA(S)?\b/.test(raw)) {
+      return findInCatalog(cat, s => /hexatlo|pentatlo|combinada/.test(s));
+    }
+
+    // 1b) Lançamentos / arremessos (DARDO, DISCO, PESO, MARTELO)
     if (/\bDARDO\b|JAVELIN/.test(raw)) {
       return findInCatalog(cat, s => /dardo|javelin/.test(s))
         ?? findInCatalog(cat, s => /lancamento/.test(s))   // fallback p/ "lançamento" genérico

@@ -37,13 +37,21 @@ DROP POLICY IF EXISTS "Admins and secretaria can view voucher audit" ON public.s
 DROP POLICY IF EXISTS "System can insert audit logs" ON public.service_voucher_audit;
 
 -- Re-create
+DROP POLICY IF EXISTS "Admins and secretaria can manage service vouchers" ON public.service_vouchers;
 CREATE POLICY "Admins and secretaria can manage service vouchers" ON public.service_vouchers FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('admin', 'secretaria', 'super_admin')))) WITH CHECK (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('admin', 'secretaria', 'super_admin'))));
+DROP POLICY IF EXISTS "Operacional roles can view service vouchers" ON public.service_vouchers;
 CREATE POLICY "Operacional roles can view service vouchers" ON public.service_vouchers FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('transporte', 'alimentacao', 'alojamento', 'coordenacao_tecnica'))));
+DROP POLICY IF EXISTS "Admins and secretaria can manage voucher batches" ON public.service_voucher_batches;
 CREATE POLICY "Admins and secretaria can manage voucher batches" ON public.service_voucher_batches FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('admin', 'secretaria', 'super_admin')))) WITH CHECK (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('admin', 'secretaria', 'super_admin'))));
+DROP POLICY IF EXISTS "Operacional roles can view voucher batches" ON public.service_voucher_batches;
 CREATE POLICY "Operacional roles can view voucher batches" ON public.service_voucher_batches FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('transporte', 'alimentacao', 'alojamento', 'coordenacao_tecnica'))));
+DROP POLICY IF EXISTS "Admins and secretaria can manage eventual people" ON public.service_eventual_people;
 CREATE POLICY "Admins and secretaria can manage eventual people" ON public.service_eventual_people FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('admin', 'secretaria', 'super_admin')))) WITH CHECK (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('admin', 'secretaria', 'super_admin'))));
+DROP POLICY IF EXISTS "Operacional roles can view eventual people" ON public.service_eventual_people;
 CREATE POLICY "Operacional roles can view eventual people" ON public.service_eventual_people FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('transporte', 'alimentacao', 'alojamento', 'coordenacao_tecnica'))));
+DROP POLICY IF EXISTS "Admins and secretaria can view voucher audit" ON public.service_voucher_audit;
 CREATE POLICY "Admins and secretaria can view voucher audit" ON public.service_voucher_audit FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND (role::text IN ('admin', 'secretaria', 'super_admin'))));
+DROP POLICY IF EXISTS "System can insert audit logs" ON public.service_voucher_audit;
 CREATE POLICY "System can insert audit logs" ON public.service_voucher_audit FOR INSERT TO authenticated WITH CHECK (auth.uid() = issuer_id);
 
 -- 4. Re-verify Permissions

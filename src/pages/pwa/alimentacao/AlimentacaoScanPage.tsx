@@ -386,7 +386,7 @@ export default function AlimentacaoScanPage() {
     try {
       let participantId: string | null = null;
       let participantName: string | null = null;
-      const foodRestrictions: string | null = null;
+      let foodRestrictions: string | null = null;
       let method: "qr_scan" | "voucher" = "qr_scan";
 
       if (isVoucherQr(val)) {
@@ -454,13 +454,11 @@ export default function AlimentacaoScanPage() {
           return;
         }
 
-        // Nova validação de segurança: Verificar status do participante.
-        // Etapa 2: também passa a verificar saída antecipada (left_event_at)
-        // para fechar a trava no fluxo QR; o trigger no DB é o cinto e o
-        // suspensório.
+        // Verifica status do participante + elegibilidade para refeição.
+        // Mantém paridade com evaluateMealEligibility (fluxo manual).
         const { data: partData, error: partError } = await (supabase as any)
           .from("participants")
-          .select("status, is_active, credentialed_at, needs_meals, left_event_at")
+          .select("status, is_active, credentialed_at, needs_meals, left_event_at, person_id")
           .eq("id", resolved.participant_id)
           .single();
 
@@ -470,6 +468,15 @@ export default function AlimentacaoScanPage() {
           toast.error(msg);
           recordOutcome("error");
           void recordIncident("PARTICIPANT_INACTIVE", resolved.participant_id);
+          return;
+        }
+
+        if (partData.needs_meals === false) {
+          const msg = "Participante não declarou necessidade de alimentação.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          void recordIncident("NEEDS_MEALS_FALSE", resolved.participant_id);
           return;
         }
 
@@ -492,9 +499,21 @@ export default function AlimentacaoScanPage() {
           return;
         }
 
+        // Busca restrições alimentares para exibição no resultado.
+        let qrFoodRestrictions: string | null = null;
+        if (partData.person_id) {
+          const { data: personData } = await (supabase as any)
+            .from("people")
+            .select("food_restrictions")
+            .eq("id", partData.person_id)
+            .maybeSingle();
+          qrFoodRestrictions = personData?.food_restrictions ?? null;
+        }
+
         participantId = resolved.participant_id;
         participantName = resolved.full_name;
         method = "qr_scan";
+        foodRestrictions = qrFoodRestrictions;
       }
 
       if (!participantId) {

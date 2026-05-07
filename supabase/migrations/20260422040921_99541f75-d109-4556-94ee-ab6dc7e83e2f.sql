@@ -64,17 +64,27 @@ ALTER TABLE public.competition_match_results ALTER COLUMN result_status SET DEFA
 
 -- 8. Recreate RLS policies
 -- official_bulletins
+DROP POLICY IF EXISTS "Admin full access official_bulletins" ON public.official_bulletins;
 CREATE POLICY "Admin full access official_bulletins" ON public.official_bulletins FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Coordenacao tecnica can manage official_bulletins" ON public.official_bulletins;
 CREATE POLICY "Coordenacao tecnica can manage official_bulletins" ON public.official_bulletins FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'coordenacao_tecnica'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'coordenacao_tecnica'::app_role));
+DROP POLICY IF EXISTS "Public can view published bulletins" ON public.official_bulletins;
 CREATE POLICY "Public can view published bulletins" ON public.official_bulletins FOR SELECT USING (status = 'publicado');
+DROP POLICY IF EXISTS "Secretaria full access official_bulletins" ON public.official_bulletins;
 CREATE POLICY "Secretaria full access official_bulletins" ON public.official_bulletins FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'secretaria'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'secretaria'::app_role));
 
 -- competition_match_results
+DROP POLICY IF EXISTS "Admin full access competition_match_results" ON public.competition_match_results;
 CREATE POLICY "Admin full access competition_match_results" ON public.competition_match_results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::app_role));
+DROP POLICY IF EXISTS "Coord modalidade manage match_results" ON public.competition_match_results;
 CREATE POLICY "Coord modalidade manage match_results" ON public.competition_match_results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'coordenador_modalidade'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'coordenador_modalidade'::app_role));
+DROP POLICY IF EXISTS "Coordenacao tecnica can manage competition_match_results" ON public.competition_match_results;
 CREATE POLICY "Coordenacao tecnica can manage competition_match_results" ON public.competition_match_results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'coordenacao_tecnica'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'coordenacao_tecnica'::app_role));
+DROP POLICY IF EXISTS "Mesario can read assigned match_results" ON public.competition_match_results;
 CREATE POLICY "Mesario can read assigned match_results" ON public.competition_match_results FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'mesario'::app_role) AND (EXISTS (SELECT 1 FROM public.match_user_assignments mua WHERE mua.match_id = competition_match_results.match_id AND mua.user_id = auth.uid())));
+DROP POLICY IF EXISTS "Public can read validated and published results" ON public.competition_match_results;
 CREATE POLICY "Public can read validated and published results" ON public.competition_match_results FOR SELECT USING (result_status IN ('resultado_validado', 'publicado'));
+DROP POLICY IF EXISTS "Secretaria can manage competition_match_results" ON public.competition_match_results;
 CREATE POLICY "Secretaria can manage competition_match_results" ON public.competition_match_results FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'secretaria'::app_role)) WITH CHECK (public.has_role(auth.uid(), 'secretaria'::app_role));
 
 -- 9. Recreate View: vw_participant_sport_history
