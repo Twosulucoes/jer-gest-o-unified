@@ -294,8 +294,12 @@ export default function VouchersPage() {
   const { data: instances = { meals: [], trips: [], locations: [] } } = useQuery({
     queryKey: ["voucher-instances", eventId, stageId],
     queryFn: async () => {
-      let mealsQ = supabase.from("meal_windows").select("id, label, service_date, location, start_time, end_time").eq("event_id", eventId);
-      let tripsQ = supabase.from("transport_trips").select("id, scheduled_at, route_id, routes(name)").eq("event_id", eventId);
+      const now = new Date();
+      const todayStr = now.toISOString().split("T")[0];
+      const twelveHoursAgoStr = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
+
+      let mealsQ = supabase.from("meal_windows").select("id, label, service_date, location, start_time, end_time").eq("event_id", eventId).gte("service_date", todayStr);
+      let tripsQ = supabase.from("transport_trips").select("id, scheduled_at, route_id, routes(name)").eq("event_id", eventId).gte("scheduled_at", twelveHoursAgoStr);
       let locsQ = supabase.from("lodging_locations").select("id, name").eq("event_id", eventId);
       if (stageId) {
         mealsQ = mealsQ.eq("event_stage_id", stageId);
@@ -303,15 +307,15 @@ export default function VouchersPage() {
         locsQ = locsQ.eq("event_stage_id", stageId);
       }
       const [meals, trips, locations] = await Promise.all([mealsQ, tripsQ, locsQ]);
-      const now = new Date();
       return {
         meals: (meals.data ?? []).filter((m: any) => {
           if (!m.end_time) return true;
-          return new Date(`${m.service_date}T${m.end_time}`) > now;
+          // compare as UTC to match the DB trigger behaviour
+          const endMs = new Date(`${m.service_date}T${m.end_time}Z`).getTime();
+          return endMs > now.getTime();
         }),
         trips: ((trips.data as any[]) ?? []).filter((t: any) => {
           if (!t.scheduled_at) return true;
-          // keep trips where validity window (scheduled_at + 12h) hasn't closed yet
           return new Date(t.scheduled_at).getTime() + 12 * 60 * 60 * 1000 > now.getTime();
         }),
         locations: locations.data ?? [],
@@ -875,8 +879,18 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
               <Select value={instanceId} onValueChange={setInstanceId}>
                 <SelectTrigger><SelectValue placeholder="Selecione a instância" /></SelectTrigger>
                 <SelectContent>
-                  {serviceType === "meals" && instances.meals.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.label} ({m.service_date})</SelectItem>)}
-                  {serviceType === "transport" && instances.trips.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.routes?.name} ({format(new Date(t.scheduled_at), "dd/MM HH:mm")})</SelectItem>)}
+                  {serviceType === "meals" && instances.meals.map((m: any) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label} — {format(new Date(m.service_date + "T00:00:00"), "dd/MM")}
+                      {m.start_time ? ` ${m.start_time.slice(0, 5)}` : ""}
+                      {m.end_time ? `–${m.end_time.slice(0, 5)}` : ""}
+                    </SelectItem>
+                  ))}
+                  {serviceType === "transport" && instances.trips.map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.routes?.name ?? "Viagem"} — {format(new Date(t.scheduled_at), "dd/MM 'às' HH:mm")}
+                    </SelectItem>
+                  ))}
                   {serviceType === "lodging" && instances.locations.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -885,6 +899,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
                   <Label>Data do alojamento (válido somente neste dia)</Label>
                   <Input
                     type="date"
+                    min={new Date().toISOString().split("T")[0]}
                     value={lodgingDate}
                     onChange={(e) => setLodgingDate(e.target.value)}
                   />
@@ -1014,8 +1029,18 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
               <Select value={instanceId} onValueChange={setInstanceId}>
                 <SelectTrigger><SelectValue placeholder="Instância de Serviço" /></SelectTrigger>
                 <SelectContent>
-                  {serviceType === "meals" && instances.meals.map((m: any) => <SelectItem key={m.id} value={m.id}>{m.label} ({m.service_date})</SelectItem>)}
-                  {serviceType === "transport" && instances.trips.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.routes?.name} ({format(new Date(t.scheduled_at), "dd/MM HH:mm")})</SelectItem>)}
+                  {serviceType === "meals" && instances.meals.map((m: any) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label} — {format(new Date(m.service_date + "T00:00:00"), "dd/MM")}
+                      {m.start_time ? ` ${m.start_time.slice(0, 5)}` : ""}
+                      {m.end_time ? `–${m.end_time.slice(0, 5)}` : ""}
+                    </SelectItem>
+                  ))}
+                  {serviceType === "transport" && instances.trips.map((t: any) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.routes?.name ?? "Viagem"} — {format(new Date(t.scheduled_at), "dd/MM 'às' HH:mm")}
+                    </SelectItem>
+                  ))}
                   {serviceType === "lodging" && instances.locations.map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -1024,6 +1049,7 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
                   <Label>Data do alojamento (válido somente neste dia)</Label>
                   <Input
                     type="date"
+                    min={new Date().toISOString().split("T")[0]}
                     value={lodgingDate}
                     onChange={(e) => setLodgingDate(e.target.value)}
                   />
