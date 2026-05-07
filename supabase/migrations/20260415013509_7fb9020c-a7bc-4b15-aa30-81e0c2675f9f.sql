@@ -14,6 +14,7 @@ ALTER TABLE public.transport_passengers
 -- Create storage bucket for passenger identity photos
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('transport-passenger-docs', 'transport-passenger-docs', false)
+ON CONFLICT (id) DO NOTHING
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies

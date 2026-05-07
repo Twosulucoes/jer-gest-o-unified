@@ -214,6 +214,7 @@ CREATE INDEX idx_operational_evidence_status ON public.operational_evidence(stat
 -- ============================================================
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('operational-evidence', 'operational-evidence', false)
+ON CONFLICT (id) DO NOTHING
 ON CONFLICT (id) DO NOTHING;
 
 -- Políticas de Storage para operational-evidence

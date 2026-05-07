@@ -47,7 +47,8 @@ CREATE TRIGGER update_credential_templates_updated_at
 
 -- Storage bucket for template backgrounds
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('credential-templates', 'credential-templates', true);
+VALUES ('credential-templates', 'credential-templates', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies
 CREATE POLICY "Anyone can read credential template files"
