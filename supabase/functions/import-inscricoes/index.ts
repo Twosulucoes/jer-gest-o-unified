@@ -1938,6 +1938,7 @@ Deno.serve(async (req: Request) => {
               const { data: newPart, error: partErr } = await serviceClient.from("participants").insert({
                 person_id: personId, event_id: eventId, delegation_id: delId,
                 participant_type: row.participant_type, status: "confirmed",
+                needs_transport: true, needs_meals: true, needs_lodging: true,
               }).select("id").single();
               if (partErr) {
                 const { data: existing } = await serviceClient.from("participants")
