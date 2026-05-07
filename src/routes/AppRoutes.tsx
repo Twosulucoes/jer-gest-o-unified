@@ -65,6 +65,9 @@ const CompeticaoLancamentoTimeMarkPage = lazy(() => import("../pages/admin/Compe
 const CompeticaoPainelTimeMarkPage = lazy(() => import("../pages/admin/CompeticaoPainelTimeMarkPage"));
 const CompeticaoPainelRankingPage = lazy(() => import("../pages/admin/CompeticaoPainelRankingPage"));
 const CredencialModelosPage = lazy(() => import("../pages/admin/CredencialModelosPage"));
+const GerenciadorCredenciaisPage = lazy(
+  () => import("../pages/admin/GerenciadorCredenciaisPage")
+);
 const AcessosDelegacoesPage = lazy(() => import("../pages/admin/AcessosDelegacoesPage"));
 const AcessosUsuariosPage = lazy(() => import("../pages/admin/AcessosUsuariosPage"));
 const AcessosPwaAuditPage = lazy(() => import("../pages/admin/AcessosPwaAuditPage"));
@@ -351,6 +354,11 @@ export const AppRoutes = () => (
         <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
         <Route path="pessoas/eventuais" element={<Navigate to="/admin/pessoas?kind=eventual" replace />} />
         <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
+        <Route path="credenciais/gerenciador" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}>
+      <GerenciadorCredenciaisPage />
+    </ProtectedRoute>
+  }
+/>
         <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
         <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
         <Route path="acessos/pwa" element={<Navigate to="/super/acessos/pwa" replace />} />
