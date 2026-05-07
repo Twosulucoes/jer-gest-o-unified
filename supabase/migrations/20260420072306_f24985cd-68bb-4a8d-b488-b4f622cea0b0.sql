@@ -169,7 +169,6 @@ CREATE POLICY "Delegation reads own protest audit" ON public.protest_audit_log
 -- =====================================================
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('protestos','protestos', false)
-ON CONFLICT (id) DO NOTHING
 ON CONFLICT (id) DO NOTHING;
 
 -- Path convention: {protest_id}/{filename}
