@@ -59,11 +59,14 @@ import {
   Users,
   Check,
   ChevronRight,
+  ChevronDown,
   UserPlus,
   Layers,
   ArrowRight,
   Trash2,
   Calendar,
+  Package,
+  PackageOpen,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -195,6 +198,85 @@ function getServiceInstanceLabel(v: any, instances: any) {
   return "Serviço não especificado";
 }
 
+// -------- Batch Expand Panel --------
+function BatchExpandPanel({
+  batch,
+  instances,
+  onRevokeSingle,
+  onPrintSingle,
+}: {
+  batch: BatchRow;
+  instances: any;
+  onRevokeSingle: (v: VoucherRow) => void;
+  onPrintSingle: (v: VoucherRow) => void;
+}) {
+  const { data: batchVouchers = [], isLoading } = useQuery({
+    queryKey: ["batch-vouchers-expand", batch.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_vouchers")
+        .select("*")
+        .eq("batch_id", batch.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as VoucherRow[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="pt-3 space-y-1">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-8 w-full rounded" />
+        ))}
+      </div>
+    );
+  }
+
+  if (batchVouchers.length === 0) {
+    return <p className="pt-3 text-xs text-muted-foreground text-center">Nenhum voucher encontrado neste lote.</p>;
+  }
+
+  return (
+    <div className="pt-3 space-y-1 max-h-64 overflow-y-auto">
+      {batchVouchers.map((v) => {
+        const status = STATUS_LABEL[v.status] || { label: v.status, variant: "outline" as const };
+        return (
+          <div
+            key={v.id}
+            className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50 text-xs gap-2"
+          >
+            <span className="font-mono text-[10px] text-muted-foreground flex-1">{v.qr_code_value}</span>
+            <Badge variant={status.variant as any} className="text-[9px] px-1.5 py-0">{status.label}</Badge>
+            <div className="flex gap-1 shrink-0">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                title="Imprimir etiqueta"
+                onClick={() => onPrintSingle(v)}
+              >
+                <Printer className="h-3 w-3" />
+              </Button>
+              {v.status === "active" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 text-destructive"
+                  title="Revogar voucher"
+                  onClick={() => onRevokeSingle(v)}
+                >
+                  <Ban className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // -------- Main Page --------
 export default function VouchersPage() {
   const eventId = useActiveEventId();
@@ -205,10 +287,12 @@ export default function VouchersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [originFilter, setOriginFilter] = useState<string>("standalone");
   // Default "hoje" para reduzir erro humano em etapa ativa.
   const [dayFilter, setDayFilter] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [instanceFilter, setInstanceFilter] = useState<string>("all");
 
+  const [activeTab, setActiveTab] = useState("vouchers");
   const [issueOpen, setIssueOpen] = useState(false);
   const [batchIssueOpen, setBatchIssueOpen] = useState(false);
   const [printVoucher, setPrintVoucher] = useState<VoucherRow | null>(null);
@@ -217,6 +301,7 @@ export default function VouchersPage() {
   const [revokeBatchTarget, setRevokeBatchTarget] = useState<BatchRow | null>(null);
   const [reissueTarget, setReissueTarget] = useState<VoucherRow | null>(null);
   const [revokeReason, setRevokeReason] = useState("");
+  const [expandedBatch, setExpandedBatch] = useState<string | null>(null);
 
   // Realtime: invalida queries quando outro operador (mesma aba ou
   // outra) cria/revoga/reemite voucher. Garante que a etapa ativa
@@ -236,6 +321,7 @@ export default function VouchersPage() {
         () => {
           queryClient.invalidateQueries({ queryKey: ["vouchers"] });
           queryClient.invalidateQueries({ queryKey: ["voucher-batches"] });
+          queryClient.invalidateQueries({ queryKey: ["batch-vouchers-expand"] });
         },
       )
       .subscribe();
@@ -289,6 +375,26 @@ export default function VouchersPage() {
       return data as BatchRow[];
     },
     enabled: !!eventId,
+  });
+
+  // Conta vouchers ativos por lote (para exibir no card do lote)
+  const { data: batchActiveCounts = {} } = useQuery({
+    queryKey: ["batch-active-counts", eventId, stageId, batches.map(b => b.id)],
+    queryFn: async () => {
+      if (batches.length === 0) return {};
+      const { data, error } = await (supabase.from("service_vouchers") as any)
+        .select("batch_id, status")
+        .in("batch_id", batches.map(b => b.id));
+      if (error) throw error;
+      const counts: Record<string, { active: number; total: number }> = {};
+      for (const v of (data ?? [])) {
+        if (!counts[v.batch_id]) counts[v.batch_id] = { active: 0, total: 0 };
+        counts[v.batch_id].total++;
+        if (v.status === "active") counts[v.batch_id].active++;
+      }
+      return counts;
+    },
+    enabled: batches.length > 0,
   });
 
   const { data: instances = { meals: [], trips: [], locations: [] } } = useQuery({
@@ -355,9 +461,13 @@ export default function VouchersPage() {
   });
 
   const filteredVouchers = useMemo(() => {
-    if (!search.trim()) return vouchers;
+    let result = vouchers;
+    if (originFilter === "standalone") result = result.filter(v => !v.batch_id);
+    else if (originFilter === "batch") result = result.filter(v => !!v.batch_id);
+
+    if (!search.trim()) return result;
     const term = search.toLowerCase();
-    return vouchers.filter((v) => {
+    return result.filter((v) => {
       const p = v.eventual_person_id ? eventualsMap.get(v.eventual_person_id) : null;
       return (
         (v.label ?? "").toLowerCase().includes(term) ||
@@ -365,7 +475,7 @@ export default function VouchersPage() {
         v.qr_code_value.toLowerCase().includes(term)
       );
     });
-  }, [vouchers, eventualsMap, search]);
+  }, [vouchers, eventualsMap, search, originFilter]);
 
   const revokeMutation = useMutation({
     mutationFn: async () => {
@@ -394,8 +504,10 @@ export default function VouchersPage() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["vouchers"] });
       queryClient.invalidateQueries({ queryKey: ["voucher-batches"] });
+      queryClient.invalidateQueries({ queryKey: ["batch-active-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["batch-vouchers-expand"] });
       if (revokeBatchTarget) {
-        toast.success(`Lote revogado — ${data?.revoked_count ?? 0} voucher(s) afetado(s)`);
+        toast.success(`Lote revogado — ${data?.revoked_count ?? 0} voucher(s) invalidado(s)`);
       } else if (data?.noop) {
         toast.info("Voucher já estava revogado.");
       } else {
@@ -496,6 +608,9 @@ export default function VouchersPage() {
     toast.success("PDF de etiquetas gerado");
   };
 
+  // Conta vouchers de lote filtrados na aba Individual para mostrar aviso
+  const batchCountInView = useMemo(() => vouchers.filter(v => !!v.batch_id).length, [vouchers]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -525,12 +640,20 @@ export default function VouchersPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="vouchers" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="vouchers">Vouchers Individuais</TabsTrigger>
-          <TabsTrigger value="batches">Lotes de Vouchers</TabsTrigger>
+          <TabsTrigger value="batches" className="relative">
+            Lotes de Vouchers
+            {batches.length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold px-1.5 min-w-[18px]">
+                {batches.length}
+              </span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
+        {/* ---- Aba Vouchers Individuais ---- */}
         <TabsContent value="vouchers" className="space-y-6 mt-6">
           <Card className="p-4">
             <div className="flex flex-wrap gap-3 items-end">
@@ -621,10 +744,32 @@ export default function VouchersPage() {
                   <SelectItem value="nominal">Nominais</SelectItem>
                 </SelectContent>
               </Select>
+              {/* Filtro de origem — esconde vouchers de lote para reduzir poluição visual */}
+              <Select value={originFilter} onValueChange={setOriginFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos (avulsos + lotes)</SelectItem>
+                  <SelectItem value="standalone">Apenas avulsos</SelectItem>
+                  <SelectItem value="batch">Apenas de lotes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="mt-2 text-[10px] text-muted-foreground">
-              {stageId ? "Filtrando pela etapa ativa" : "Sem etapa ativa — mostrando todas as etapas do evento"}
-              {dayFilter ? ` · Dia ${dayFilter}` : " · Todos os dias"}
+            <div className="mt-2 flex items-center justify-between flex-wrap gap-2">
+              <span className="text-[10px] text-muted-foreground">
+                {stageId ? "Filtrando pela etapa ativa" : "Sem etapa ativa — mostrando todas as etapas do evento"}
+                {dayFilter ? ` · Dia ${dayFilter}` : " · Todos os dias"}
+              </span>
+              {/* Aviso contextual quando há vouchers de lote ocultos */}
+              {originFilter === "standalone" && batchCountInView > 0 && (
+                <button
+                  className="text-[10px] text-primary underline underline-offset-2 cursor-pointer"
+                  onClick={() => setActiveTab("batches")}
+                >
+                  {batchCountInView} voucher(s) de lote ocultos — ver na aba Lotes
+                </button>
+              )}
             </div>
           </Card>
 
@@ -638,7 +783,9 @@ export default function VouchersPage() {
             <Card className="py-12 text-center text-sm text-muted-foreground">
               <p className="font-medium">Nenhum voucher encontrado para os filtros aplicados.</p>
               <p className="mt-1 text-xs">
-                {dayFilter
+                {originFilter === "standalone"
+                  ? "Vouchers de lotes são exibidos na aba \"Lotes de Vouchers\"."
+                  : dayFilter
                   ? `Tente limpar o filtro de dia (atual: ${dayFilter}) ou alterar o status.`
                   : "Tente ajustar status, escopo ou tipo."}
               </p>
@@ -654,6 +801,9 @@ export default function VouchersPage() {
                       <div className="min-w-0">
                         <p className="font-semibold truncate">{p?.full_name || v.label || "Voucher Anônimo"}</p>
                         <p className="text-[10px] text-muted-foreground">{getServiceInstanceLabel(v, instances)}</p>
+                        {v.batch_id && (
+                          <span className="text-[9px] text-muted-foreground/60 font-mono">de lote</span>
+                        )}
                       </div>
                       <Badge variant={status.variant as any}>{status.label}</Badge>
                     </div>
@@ -675,11 +825,12 @@ export default function VouchersPage() {
           )}
         </TabsContent>
 
+        {/* ---- Aba Lotes de Vouchers ---- */}
         <TabsContent value="batches" className="mt-6">
           {loadingBatches ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                <Skeleton key={i} className="h-20 w-full rounded-lg" />
               ))}
             </div>
           ) : batches.length === 0 ? (
@@ -688,33 +839,126 @@ export default function VouchersPage() {
               <p className="mt-1 text-xs">Use "Novo Lote" para gerar vouchers anônimos em massa.</p>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {batches.map(b => (
-                <Card key={b.id} className="p-4 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold">{b.label || "Lote sem nome"}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {getServiceInstanceLabel(b, instances)} • {b.quantity} vouchers • {format(new Date(b.created_at), "dd/MM/yy HH:mm")}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => handlePrintBatch(b.id)}><Printer className="h-3.5 w-3.5 mr-1" /> Imprimir</Button>
-                    <Button size="sm" variant="ghost" title="Revogar Lote" className="text-destructive" onClick={() => setRevokeBatchTarget(b)}><Ban className="h-3.5 w-3.5" /></Button>
-                  </div>
-                </Card>
-              ))}
+            <div className="space-y-3">
+              {batches.map(b => {
+                const counts = batchActiveCounts[b.id] || { active: 0, total: b.quantity };
+                const isExpanded = expandedBatch === b.id;
+                const allRevoked = counts.total > 0 && counts.active === 0;
+
+                return (
+                  <Card key={b.id} className={`overflow-hidden transition-all ${allRevoked ? "opacity-60" : ""}`}>
+                    {/* Cabeçalho do lote */}
+                    <div className="p-4 flex items-center gap-3">
+                      {/* Ícone indicador de estado */}
+                      <div className={`shrink-0 rounded-lg p-2 ${allRevoked ? "bg-destructive/10" : "bg-primary/10"}`}>
+                        {allRevoked ? (
+                          <Ban className="h-5 w-5 text-destructive" />
+                        ) : (
+                          <Package className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+
+                      {/* Info principal */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold truncate">{b.label || "Lote sem nome"}</h3>
+                          {allRevoked && <Badge variant="destructive" className="text-[9px]">Revogado</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {getServiceInstanceLabel(b, instances)}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {format(new Date(b.created_at), "dd/MM/yy HH:mm")}
+                          </span>
+                          <span className="text-[10px] font-medium">
+                            <span className={counts.active > 0 ? "text-green-500" : "text-muted-foreground"}>
+                              {counts.active} ativos
+                            </span>
+                            <span className="text-muted-foreground"> / {counts.total} total</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Ações */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePrintBatch(b.id)}
+                          title="Imprimir todas as etiquetas do lote"
+                        >
+                          <Printer className="h-3.5 w-3.5 mr-1.5" />
+                          Imprimir lote
+                        </Button>
+                        {!allRevoked && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                            title="Revogar todos os vouchers do lote"
+                            onClick={() => setRevokeBatchTarget(b)}
+                          >
+                            <Ban className="h-3.5 w-3.5 mr-1.5" />
+                            Revogar lote
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="px-2"
+                          onClick={() => setExpandedBatch(isExpanded ? null : b.id)}
+                          title={isExpanded ? "Recolher vouchers" : "Ver vouchers do lote"}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Painel expansível com vouchers do lote */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 border-t pt-1">
+                        <BatchExpandPanel
+                          batch={b}
+                          instances={instances}
+                          onRevokeSingle={(v) => setRevokeTarget(v)}
+                          onPrintSingle={(v) => handlePrintIndividual(v)}
+                        />
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
       </Tabs>
 
-      <IssueVoucherWizard open={issueOpen} onOpenChange={setIssueOpen} eventId={eventId} stageId={stageId} instances={instances} handlePrintIndividual={handlePrintIndividual} />
-      <IssueBatchWizard open={batchIssueOpen} onOpenChange={setBatchIssueOpen} eventId={eventId} stageId={stageId} instances={instances} />
+      <IssueVoucherWizard
+        open={issueOpen}
+        onOpenChange={setIssueOpen}
+        eventId={eventId}
+        stageId={stageId}
+        instances={instances}
+        handlePrintIndividual={handlePrintIndividual}
+      />
+      <IssueBatchWizard
+        open={batchIssueOpen}
+        onOpenChange={setBatchIssueOpen}
+        eventId={eventId}
+        stageId={stageId}
+        instances={instances}
+        onBatchCreated={() => setActiveTab("batches")}
+      />
       <UsageHistoryDialog voucher={historyVoucher} onClose={() => setHistoryVoucher(null)} />
-      
+
       {/* Revoke/Reissue Reason Dialog */}
-      <AlertDialog 
-        open={!!revokeTarget || !!revokeBatchTarget || !!reissueTarget} 
+      <AlertDialog
+        open={!!revokeTarget || !!revokeBatchTarget || !!reissueTarget}
         onOpenChange={(o) => {
           if (!o) {
             setRevokeTarget(null);
@@ -727,12 +971,18 @@ export default function VouchersPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {reissueTarget ? "Confirmar Reemissão" : "Confirmar Revogação"}
+              {reissueTarget
+                ? "Confirmar Reemissão"
+                : revokeBatchTarget
+                ? `Revogar lote "${revokeBatchTarget.label || "sem nome"}"`
+                : "Confirmar Revogação"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {reissueTarget 
-                ? "O voucher original será invalidado e um novo será gerado para a mesma instância." 
-                : "Esta ação é definitiva. O(s) voucher(s) não poderão mais ser utilizados."}
+              {reissueTarget
+                ? "O voucher original será invalidado e um novo será gerado para a mesma instância."
+                : revokeBatchTarget
+                ? `Todos os vouchers ativos deste lote serão invalidados e não poderão mais ser utilizados. Esta ação não pode ser desfeita.`
+                : "Esta ação é definitiva. O voucher não poderá mais ser utilizado."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
@@ -747,17 +997,17 @@ export default function VouchersPage() {
                 <SelectItem value="Outro">Outro (digite abaixo)</SelectItem>
               </SelectContent>
             </Select>
-            <Textarea 
-              placeholder="Descreva o motivo com mais detalhes se necessário..." 
-              value={revokeReason} 
-              onChange={e => setRevokeReason(e.target.value)} 
+            <Textarea
+              placeholder="Descreva o motivo com mais detalhes se necessário..."
+              value={revokeReason}
+              onChange={e => setRevokeReason(e.target.value)}
             />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               className={reissueTarget ? "bg-primary" : "bg-destructive text-destructive-foreground"}
-              onClick={() => reissueTarget ? reissueMutation.mutate() : revokeMutation.mutate()} 
+              onClick={() => reissueTarget ? reissueMutation.mutate() : revokeMutation.mutate()}
               disabled={!revokeReason || (reissueTarget ? reissueMutation.isPending : revokeMutation.isPending)}
             >
               {reissueTarget ? "Confirmar e Reemitir" : "Confirmar Revogação"}
@@ -939,7 +1189,7 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
   );
 }
 
-function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: any) {
+function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances, onBatchCreated }: any) {
   const [step, setStep] = useState(1);
   const [serviceType, setServiceType] = useState<string>("");
   const [instanceId, setInstanceId] = useState<string>("");
@@ -988,6 +1238,9 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances }: a
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["vouchers"] });
       qc.invalidateQueries({ queryKey: ["voucher-batches"] });
+      qc.invalidateQueries({ queryKey: ["batch-active-counts"] });
+      // Redireciona para aba de lotes após criação
+      onBatchCreated?.();
     },
     onError: (err: any) => {
       toast.error("Erro ao emitir lote", {
@@ -1072,12 +1325,12 @@ function UsageHistoryDialog({ voucher, onClose }: any) {
         supabase.from("service_voucher_uses").select("id, service_kind, used_at, used_by, context_id").eq("voucher_id", voucher.id),
         supabase.from("service_voucher_attempts").select("id, service_kind, attempted_at, outcome, reason, context_id").eq("voucher_id", voucher.id).neq("outcome", "success")
       ]);
-      
+
       const combined = [
         ...(uses.data || []).map(u => ({ ...u, type: 'use', timestamp: u.used_at })),
         ...(attempts.data || []).map(a => ({ ...a, type: 'attempt', timestamp: a.attempted_at }))
       ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      
+
       return combined;
     },
     enabled: !!voucher
