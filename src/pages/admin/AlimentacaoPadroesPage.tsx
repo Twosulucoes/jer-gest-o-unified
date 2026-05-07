@@ -381,6 +381,7 @@ export default function AlimentacaoPadroesPage() {
         onSubmit={handleSubmit}
         isPending={createMut.isPending || updateMut.isPending}
         eventId={selectedEventId!}
+        stageId={selectedStageId !== "all" && selectedStageId !== "global" ? selectedStageId : null}
       />
     </div>
   );
