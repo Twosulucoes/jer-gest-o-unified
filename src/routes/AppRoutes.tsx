@@ -74,6 +74,8 @@ const BoletinsPorModalidadePage = lazy(() => import("../pages/admin/relatorios/B
 const DashboardOperacionalPage = lazy(() => import("../pages/admin/relatorios/DashboardOperacionalPage"));
 const QuadroMedalhasPage = lazy(() => import("../pages/admin/relatorios/QuadroMedalhasPage"));
 const PrestacaoContasOscPage = lazy(() => import("../pages/admin/relatorios/PrestacaoContasOscPage"));
+const RelatoriosHubPage = lazy(() => import("../pages/admin/RelatoriosHubPage"));
+const RelatoriosCredenciamentoPage = lazy(() => import("../pages/admin/relatorios/RelatoriosCredenciamentoPage"));
 const CompeticaoPublicacaoPage = lazy(() => import("../pages/admin/CompeticaoPublicacaoPage"));
 const CompeticaoBoletinsPage = lazy(() => import("../pages/admin/CompeticaoBoletinsPage"));
 const LinksPage = lazy(() => import("../pages/admin/LinksPage"));
@@ -366,6 +368,8 @@ export const AppRoutes = () => (
         <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
         <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
         <Route path="dados" element={<Navigate to="/super/dados" replace />} />
+        <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "super_admin"]}><RelatoriosHubPage /></ProtectedRoute>} />
+        <Route path="relatorios/credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RelatoriosCredenciamentoPage /></ProtectedRoute>} />
         <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
         <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
         <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
