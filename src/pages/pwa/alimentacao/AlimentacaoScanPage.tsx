@@ -12,6 +12,7 @@ import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
+import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
@@ -91,6 +92,17 @@ export default function AlimentacaoScanPage() {
   const [manualSearching, setManualSearching] = useState(false);
   // L4: trava de double-submit. Bloqueia handleScan/handleManualPick paralelos.
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [onlineState, setOnlineState] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const up = () => setOnlineState(true);
+    const down = () => setOnlineState(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
+  }, []);
+
+  const { lookupQr } = useParticipantStatusCache({ eventId: activeEventId, online: onlineState });
 
   useEffect(() => {
     setPrefs(loadScanPreferences(MODULE, userId));
@@ -444,6 +456,58 @@ export default function AlimentacaoScanPage() {
         reopenIfContinuous();
         return;
       } else {
+        // --- Offline: usa cache para verificar o estado do participante ---
+        if (!isOnline()) {
+          const cached = lookupQr(val);
+
+          if (cached.state === "sem_cache") {
+            const msg = "Sem conexão e dados não sincronizados. Abra o módulo online para baixar o cache.";
+            setResult({ ok: false, message: msg, source: "qr" });
+            toast.error("Cache indisponível.", { description: msg });
+            recordOutcome("error");
+            void recordIncident("OTHER");
+            reopenIfContinuous();
+            setIsSubmitting(false);
+            return;
+          }
+          if (cached.state === "nao_cadastrado") {
+            const msg = getSystemMessage("ERR_NOT_FOUND", lang);
+            setResult({ ok: false, message: msg, source: "qr" });
+            toast.error(msg);
+            recordOutcome("error");
+            void recordIncident("OTHER");
+            reopenIfContinuous();
+            setIsSubmitting(false);
+            return;
+          }
+          if (cached.state === "nao_credenciado") {
+            const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
+            setResult({ ok: false, message: msg, source: "qr" });
+            toast.error("Sem credencial ativa.", { description: "Encaminhe o atleta para a secretaria." });
+            recordOutcome("error");
+            void recordIncident("NO_CREDENTIAL", cached.entry.participant_id);
+            reopenIfContinuous();
+            setIsSubmitting(false);
+            return;
+          }
+          // credenciado offline
+          const entry = cached.entry;
+          if (!entry.needs_meals) {
+            const msg = "Participante não declarou necessidade de alimentação.";
+            setResult({ ok: false, message: msg, source: "qr" });
+            toast.error(msg);
+            recordOutcome("error");
+            void recordIncident("NEEDS_MEALS_FALSE", entry.participant_id);
+            reopenIfContinuous();
+            setIsSubmitting(false);
+            return;
+          }
+          await registerMealConsumption(entry.participant_id, entry.full_name, "qr_scan", "qr");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // --- Online ---
         const resolved = await resolveQrCredential(val, { eventId: activeEventId });
         if (!resolved) {
           const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);

@@ -208,6 +208,129 @@ export async function resolveQrCredential(
   return null;
 }
 
+// ---- Resolução com 3 estados de participante ----
+
+export type ParticipantFieldState =
+  | { state: "credenciado"; participant: ResolvedCredential }
+  | { state: "nao_credenciado"; participant_id: string; full_name: string | null }
+  | { state: "nao_cadastrado" };
+
+/**
+ * Resolve o estado do participante em 3 cenários:
+ *  1. credenciado   – credencial ativa encontrada
+ *  2. nao_credenciado – está no sistema mas sem credencial ativa
+ *  3. nao_cadastrado  – não encontrado no sistema
+ *
+ * Quando offline, usa o cache populado por populateParticipantCache().
+ * @param rawValue    Valor bruto do QR ou busca manual
+ * @param options.eventId  ID do evento ativo
+ * @param options.offlineLookup  Função de lookup offline (do useParticipantStatusCache)
+ */
+export async function resolveParticipantFieldState(
+  rawValue: string,
+  options: {
+    eventId?: string | null;
+    offlineLookup?: (rawValue: string) => import("./participantStatusCache").OfflineLookupResult;
+  } = {},
+): Promise<ParticipantFieldState> {
+  // Tenta resolver online primeiro
+  try {
+    const resolved = await resolveQrCredential(rawValue, { eventId: options.eventId });
+    if (resolved) {
+      // Credencial ativa encontrada — mas ainda valida credentialed_at no participante
+      const { data: partData } = await (supabase as any)
+        .from("participants")
+        .select("is_active, credentialed_at")
+        .eq("id", resolved.participant_id)
+        .maybeSingle();
+
+      if (partData?.credentialed_at) {
+        return { state: "credenciado", participant: resolved };
+      }
+      if (partData) {
+        // Credencial ativa mas credentialed_at não definido (inconsistência) → trata como não credenciado
+        return {
+          state: "nao_credenciado",
+          participant_id: resolved.participant_id,
+          full_name: resolved.full_name,
+        };
+      }
+    }
+
+    // Não encontrou credencial ativa — verifica se existe como participante (não credenciado)
+    const { values: candidates, cpfDigits } = extractCandidates(rawValue);
+    const eventId = options.eventId ?? getActiveEventId();
+
+    // Busca por CPF
+    if (cpfDigits) {
+      const cpfFmt = cpfDigits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+      const { data: person } = await (supabase as any)
+        .from("people")
+        .select("id, full_name")
+        .or(`cpf.eq.${cpfDigits},cpf.eq.${cpfFmt}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (person) {
+        let pq = (supabase as any)
+          .from("participants")
+          .select("id, is_active, credentialed_at")
+          .eq("person_id", person.id);
+        if (eventId) pq = pq.eq("event_id", eventId);
+        const { data: part } = await pq.limit(1).maybeSingle();
+        if (part) {
+          if (part.credentialed_at) {
+            // Credenciado mas credencial_code não estava ativa — incomum
+            return {
+              state: "credenciado",
+              participant: {
+                participant_id: part.id,
+                full_name: person.full_name ?? null,
+                source: "cpf",
+                matched_by: "cpf",
+              },
+            };
+          }
+          return {
+            state: "nao_credenciado",
+            participant_id: part.id,
+            full_name: person.full_name ?? null,
+          };
+        }
+      }
+    }
+
+    return { state: "nao_cadastrado" };
+  } catch {
+    // Offline ou falha de rede → usa cache local
+    if (options.offlineLookup) {
+      const cached = options.offlineLookup(rawValue);
+      if (cached.state === "credenciado") {
+        return {
+          state: "credenciado",
+          participant: {
+            participant_id: cached.entry.participant_id,
+            full_name: cached.entry.full_name,
+            source: "participant_credentials",
+          },
+        };
+      }
+      if (cached.state === "nao_credenciado") {
+        return {
+          state: "nao_credenciado",
+          participant_id: cached.entry.participant_id,
+          full_name: cached.entry.full_name,
+        };
+      }
+      if (cached.state === "nao_cadastrado") {
+        return { state: "nao_cadastrado" };
+      }
+    }
+    // sem cache disponível → não cadastrado (melhor hipótese offline)
+    return { state: "nao_cadastrado" };
+  }
+}
+
 /**
  * Extrai um token "plano" de um QR escaneado para módulos baseados em RPC
  * (ex.: Alojamento usa `alojamento.resolve_qr` com `qr_tokens.token`).
