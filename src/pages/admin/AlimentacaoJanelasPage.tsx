@@ -451,6 +451,8 @@ export default function AlimentacaoJanelasPage() {
         mealTypes={mealTypes}
         onSubmit={handleSubmit}
         isPending={createMut.isPending || updateMut.isPending}
+        eventId={selectedEventId}
+        stageId={stageId}
       />
 
       <AlertDialog open={reportOpen} onOpenChange={setReportOpen}>

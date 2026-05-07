@@ -41,9 +41,11 @@ interface Props {
   mealTypes: any[];
   onSubmit: (values: MealWindowFormValues) => void;
   isPending: boolean;
+  eventId?: string | null;
+  stageId?: string | null;
 }
 
-export default function MealWindowFormDialog({ open, onOpenChange, window: mealWindow, mealTypes, onSubmit, isPending }: Props) {
+export default function MealWindowFormDialog({ open, onOpenChange, window: mealWindow, mealTypes, onSubmit, isPending, eventId, stageId }: Props) {
   const isEditing = !!mealWindow;
   // No query client needed here as we are just setting state
   const [rules, setRules] = useState<any[]>([]);
@@ -127,14 +129,22 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
     }
   }, [mealWindow, form]);
 
-  // Fetch locations
+  // Fetch locations scoped to the current event and stage
+  const resolvedEventId = eventId ?? mealWindow?.event_id ?? null;
+  const resolvedStageId = stageId ?? mealWindow?.event_stage_id ?? null;
   const { data: mealLocations = [] } = useQuery({
-    queryKey: ["meal_locations_simple", mealWindow?.event_id],
+    queryKey: ["meal_locations_simple", resolvedEventId, resolvedStageId],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("meal_locations").select("id, name").eq("is_active", true).order("name");
+      if (!resolvedEventId) return [];
+      let q = (supabase as any).from("meal_locations")
+        .select("id, name")
+        .eq("is_active", true)
+        .eq("event_id", resolvedEventId);
+      if (resolvedStageId) q = q.eq("event_stage_id", resolvedStageId);
+      const { data } = await q.order("name");
       return data || [];
     },
-    enabled: open,
+    enabled: open && !!resolvedEventId,
   });
 
   // Fetch delegations for rules — nome vem de institutions (canônico)
