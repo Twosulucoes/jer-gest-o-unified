@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git branch *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "mcp__03560881-4b32-402c-b729-5081f55809ec__list_teams"
     ]
   }
 }
