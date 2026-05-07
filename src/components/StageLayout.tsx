@@ -43,6 +43,7 @@ const STAGE_NAV: StageNavItem[] = [
   { label: "Visão Geral", to: "", icon: <Home className="h-4 w-4" />, roles: [...ALL_OPS, "transporte", "alimentacao", "coordenador_modalidade"] },
   { label: "Credenciamento", to: "credenciamento", icon: <BadgeCheck className="h-4 w-4" />, roles: ALL_OPS },
   { label: "Vinculação de Credencial", to: "credenciamento-externo", icon: <ScanLine className="h-4 w-4" />, roles: ALL_OPS },
+  { label: "Validação QR", to: "validacao-qr", icon: <ScanLine className="h-4 w-4" />, roles: [...ALL_OPS, "transporte", "alimentacao"] },
   { label: "Competição", to: "competicao", icon: <Trophy className="h-4 w-4" />, roles: [...ALL_OPS, "coordenador_modalidade"] },
   { label: "Alojamento", to: "alojamento", icon: <Building className="h-4 w-4" />, roles: [...ALL_OPS, "alojamento"] },
   { label: "Alimentação", to: "alimentacao", icon: <UtensilsCrossed className="h-4 w-4" />, roles: [...ALL_OPS, "alimentacao"] },
