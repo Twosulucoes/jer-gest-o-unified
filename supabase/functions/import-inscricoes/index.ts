@@ -1839,9 +1839,6 @@ Deno.serve(async (req: Request) => {
               institution_id: instId,
               event_id: eventId,
               status: "confirmed",
-              school_name: schoolName,
-              school_slug: slug,
-              school_network_type: "pending_review",
             }).select("id").single();
           if (error) {
             const { data: existing } = await serviceClient.from("delegations")
