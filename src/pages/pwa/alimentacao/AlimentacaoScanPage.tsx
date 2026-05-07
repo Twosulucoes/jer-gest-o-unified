@@ -13,6 +13,7 @@ import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
+import { ParticipantRecoveryPanel, type RecoveryResult } from "@/components/pwa/ParticipantRecoveryPanel";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
@@ -92,6 +93,10 @@ export default function AlimentacaoScanPage() {
   const [manualSearching, setManualSearching] = useState(false);
   // L4: trava de double-submit. Bloqueia handleScan/handleManualPick paralelos.
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingRecovery, setPendingRecovery] = useState<{
+    code: string;
+    state: "nao_credenciado" | "nao_cadastrado" | "sem_cache";
+  } | null>(null);
   const [onlineState, setOnlineState] = useState(navigator.onLine);
 
   useEffect(() => {
@@ -473,20 +478,18 @@ export default function AlimentacaoScanPage() {
           if (cached.state === "nao_cadastrado") {
             const msg = getSystemMessage("ERR_NOT_FOUND", lang);
             setResult({ ok: false, message: msg, source: "qr" });
-            toast.error(msg);
+            setPendingRecovery({ code: val, state: "nao_cadastrado" });
             recordOutcome("error");
             void recordIncident("OTHER");
-            reopenIfContinuous();
             setIsSubmitting(false);
             return;
           }
           if (cached.state === "nao_credenciado") {
             const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
             setResult({ ok: false, message: msg, source: "qr" });
-            toast.error("Sem credencial ativa.", { description: "Encaminhe o atleta para a secretaria." });
+            setPendingRecovery({ code: val, state: "nao_credenciado" });
             recordOutcome("error");
             void recordIncident("NO_CREDENTIAL", cached.entry.participant_id);
-            reopenIfContinuous();
             setIsSubmitting(false);
             return;
           }
@@ -512,7 +515,12 @@ export default function AlimentacaoScanPage() {
         if (!resolved) {
           const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);
           setResult({ ok: false, message: errorMsg, source: "qr" });
-          toast.error(errorMsg);
+          // Usa cache para determinar o estado e abrir o painel de recuperação
+          const cachedState = lookupQr(val).state;
+          const recoveryState = (cachedState === "nao_credenciado" || cachedState === "nao_cadastrado")
+            ? cachedState
+            : "nao_cadastrado";
+          setPendingRecovery({ code: val, state: recoveryState });
           recordOutcome("error");
           void recordIncident("OTHER");
           return;
@@ -547,7 +555,7 @@ export default function AlimentacaoScanPage() {
         if (!partData.credentialed_at) {
           const msg = "Participante não possui credencial ativa (Aguardando Credenciamento)";
           setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg, { description: "Encaminhe o atleta para a secretaria." });
+          setPendingRecovery({ code: val, state: "nao_credenciado" });
           recordOutcome("error");
           void recordIncident("NO_CREDENTIAL", resolved.participant_id);
           return;
@@ -840,6 +848,21 @@ export default function AlimentacaoScanPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {pendingRecovery && activeEventId && (
+          <ParticipantRecoveryPanel
+            pendingCode={pendingRecovery.code}
+            detectedState={pendingRecovery.state}
+            eventId={activeEventId}
+            operationLabel="registrar refeição"
+            onLinked={(r: RecoveryResult) => {
+              setPendingRecovery(null);
+              setResult(null);
+              void registerMealConsumption(r.participant_id, r.full_name, "manual", "manual");
+            }}
+            onDismiss={() => setPendingRecovery(null)}
+          />
         )}
       </main>
 

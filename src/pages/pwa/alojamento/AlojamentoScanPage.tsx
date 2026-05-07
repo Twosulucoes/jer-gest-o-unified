@@ -28,6 +28,7 @@ import {
 } from "@/lib/alojamentoRpc";
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
+import { ParticipantRecoveryPanel, type RecoveryResult } from "@/components/pwa/ParticipantRecoveryPanel";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
@@ -72,6 +73,10 @@ export default function AlojamentoScanPage() {
   const { enqueue, isOnline } = useAlojamentoOffline();
   const { lookupQr } = useParticipantStatusCache({ eventId: eventId ?? null, online: isOnline });
   
+  const [pendingRecovery, setPendingRecovery] = useState<{
+    code: string;
+    state: "nao_credenciado" | "nao_cadastrado" | "sem_cache";
+  } | null>(null);
   const [mode, setMode] = useState<ScanMode>("checkin");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [result, setResult] = useState<Record<string, any> | null>(null);
@@ -256,16 +261,14 @@ export default function AlojamentoScanPage() {
           const cached = lookupQr(val);
           if (cached.state === "nao_credenciado") {
             setResult({ ok: false, error: "NO_CREDENTIAL", message: "Participante não possui credencial ativa (Aguardando Credenciamento).", full_name: cached.entry.full_name });
-            toast.error("Sem credencial ativa.", { description: "Encaminhe para a secretaria." });
+            setPendingRecovery({ code: val, state: "nao_credenciado" });
             recordOutcome("error");
-            reopenIfContinuous();
             return;
           }
           if (cached.state === "nao_cadastrado") {
             setResult({ ok: false, error: "NOT_FOUND", message: "Participante não encontrado no sistema." });
-            toast.error("Participante não cadastrado.");
+            setPendingRecovery({ code: val, state: "nao_cadastrado" });
             recordOutcome("error");
-            reopenIfContinuous();
             return;
           }
           // "credenciado" ou "sem_cache" → permite enfileirar (backend valida na sincronização)
@@ -288,22 +291,19 @@ export default function AlojamentoScanPage() {
       if ((mode === "checkin" || mode === "presence")) {
         const resolved = await rpcResolveQr(token);
         if (!resolved.ok || !resolved.entity_id) {
-          // Não encontrado — tenta distinguir estado pelo cache
           const cached = lookupQr(val);
-          const isNaoCredenciado = cached.state === "nao_credenciado";
+          const recoveryState = (cached.state === "nao_credenciado" || cached.state === "nao_cadastrado")
+            ? cached.state : "nao_cadastrado";
           setResult({
             ok: false,
-            error: isNaoCredenciado ? "NO_CREDENTIAL" : "NOT_FOUND",
-            message: isNaoCredenciado
+            error: recoveryState === "nao_credenciado" ? "NO_CREDENTIAL" : "NOT_FOUND",
+            message: recoveryState === "nao_credenciado"
               ? "Participante não possui credencial ativa (Aguardando Credenciamento)."
               : "Participante não encontrado no sistema.",
           });
-          toast.error(isNaoCredenciado ? "Sem credencial ativa." : "Participante não encontrado.", {
-            description: isNaoCredenciado ? "Encaminhe para a secretaria." : undefined,
-          });
+          setPendingRecovery({ code: val, state: recoveryState });
           if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
           recordOutcome("error");
-          reopenIfContinuous();
           return;
         }
 
@@ -321,10 +321,9 @@ export default function AlojamentoScanPage() {
             message: "Participante não possui credencial ativa (Aguardando Credenciamento).",
             full_name: resolved.full_name,
           });
-          toast.error("Aguardando credenciamento.", { description: "Encaminhe para a secretaria." });
+          setPendingRecovery({ code: val, state: "nao_credenciado" });
           if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
           recordOutcome("error");
-          reopenIfContinuous();
           return;
         }
 
@@ -621,6 +620,23 @@ export default function AlojamentoScanPage() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {pendingRecovery && eventId && (
+          <ParticipantRecoveryPanel
+            pendingCode={pendingRecovery.code}
+            detectedState={pendingRecovery.state}
+            eventId={eventId}
+            operationLabel="fazer check-in"
+            onLinked={(r: RecoveryResult) => {
+              setPendingRecovery(null);
+              setResult(null);
+              // Após vincular, reabre o scanner para o operador escanear novamente
+              // (o código agora é credencial ativa e será aceito)
+              toast.info(`${r.full_name} credenciado. Escaneie novamente para fazer o check-in.`);
+            }}
+            onDismiss={() => setPendingRecovery(null)}
+          />
         )}
       </main>
 

@@ -13,6 +13,7 @@ import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
+import { ParticipantRecoveryPanel, type RecoveryResult } from "@/components/pwa/ParticipantRecoveryPanel";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
 import {
   loadScanPreferences,
@@ -45,6 +46,10 @@ export default function TransporteScanPage() {
   const [searchParams] = useSearchParams();
   const tripId = searchParams.get("tripId");
   const [result, setResult] = useState<{ ok: boolean; message: string; source?: "qr" | "manual" } | null>(null);
+  const [pendingRecovery, setPendingRecovery] = useState<{
+    code: string;
+    state: "nao_credenciado" | "nao_cadastrado" | "sem_cache";
+  } | null>(null);
   const [manualQuery, setManualQuery] = useState("");
   const [debouncedManual, setDebouncedManual] = useState("");
   const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
@@ -242,14 +247,14 @@ export default function TransporteScanPage() {
         if (cached.state === "nao_cadastrado") {
           const msg = "Participante não encontrado no sistema.";
           setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg);
+          setPendingRecovery({ code: val, state: "nao_cadastrado" });
           recordOutcome("error");
           return;
         }
         if (cached.state === "nao_credenciado") {
           const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
           setResult({ ok: false, message: msg, source: "qr" });
-          toast.error("Sem credencial ativa.", { description: "Encaminhe para a secretaria." });
+          setPendingRecovery({ code: val, state: "nao_credenciado" });
           recordOutcome("error");
           return;
         }
@@ -261,17 +266,14 @@ export default function TransporteScanPage() {
       // --- Online: resolve credencial e verifica elegibilidade ---
       const resolved = await resolveQrCredential(val, { eventId: activeEventId });
       if (!resolved) {
-        // Distingue estado 2 (não credenciado) de estado 3 (não cadastrado) via cache
-        const cached = lookupQr(val);
-        if (cached.state === "nao_credenciado") {
-          const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
-          setResult({ ok: false, message: msg, source: "qr" });
-          toast.error("Sem credencial ativa.", { description: "Encaminhe para a secretaria." });
-        } else {
-          const msg = "Credencial não encontrada ou inativa.";
-          setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg);
-        }
+        const cachedState = lookupQr(val).state;
+        const recoveryState = (cachedState === "nao_credenciado" || cachedState === "nao_cadastrado")
+          ? cachedState : "nao_cadastrado";
+        const msg = recoveryState === "nao_credenciado"
+          ? "Participante não possui credencial ativa (Aguardando Credenciamento)."
+          : "Credencial não encontrada ou inativa.";
+        setResult({ ok: false, message: msg, source: "qr" });
+        setPendingRecovery({ code: val, state: recoveryState });
         recordOutcome("error");
         return;
       }
@@ -293,7 +295,7 @@ export default function TransporteScanPage() {
       if (!partData.credentialed_at) {
         const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
         setResult({ ok: false, message: msg, source: "qr" });
-        toast.error("Sem credencial ativa.", { description: "Encaminhe o atleta para a secretaria." });
+        setPendingRecovery({ code: val, state: "nao_credenciado" });
         recordOutcome("error");
         return;
       }
@@ -438,6 +440,21 @@ export default function TransporteScanPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {pendingRecovery && activeEventId && (
+          <ParticipantRecoveryPanel
+            pendingCode={pendingRecovery.code}
+            detectedState={pendingRecovery.state}
+            eventId={activeEventId}
+            operationLabel="registrar embarque"
+            onLinked={(r: RecoveryResult) => {
+              setPendingRecovery(null);
+              setResult(null);
+              void applyBoarding(r.participant_id, r.full_name, "manual");
+            }}
+            onDismiss={() => setPendingRecovery(null)}
+          />
         )}
       </main>
 
