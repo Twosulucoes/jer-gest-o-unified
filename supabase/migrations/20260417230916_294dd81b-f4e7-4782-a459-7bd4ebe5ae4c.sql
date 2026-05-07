@@ -7,6 +7,7 @@
 --    Agora delegacao lê sua própria institution via delegations (sem auto-referência).
 DROP POLICY IF EXISTS "Delegacao can read own institution" ON public.institutions;
 
+DROP POLICY IF EXISTS "Delegacao can read own institution" ON public.institutions;
 CREATE POLICY "Delegacao can read own institution"
 ON public.institutions
 FOR SELECT
