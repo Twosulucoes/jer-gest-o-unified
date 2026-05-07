@@ -401,7 +401,8 @@ export default function VouchersPage() {
     queryKey: ["voucher-instances", eventId, stageId],
     queryFn: async () => {
       const now = new Date();
-      const todayStr = now.toISOString().split("T")[0];
+      // Use local date to avoid UTC offset excluding today's windows (e.g. after midnight UTC in BRT)
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const twelveHoursAgoStr = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString();
 
       let mealsQ = supabase.from("meal_windows").select("id, label, service_date, location, start_time, end_time").eq("event_id", eventId).gte("service_date", todayStr);
@@ -416,8 +417,8 @@ export default function VouchersPage() {
       return {
         meals: (meals.data ?? []).filter((m: any) => {
           if (!m.end_time) return true;
-          // compare as UTC to match the DB trigger behaviour
-          const endMs = new Date(`${m.service_date}T${m.end_time}Z`).getTime();
+          // end_time is stored in local timezone — parse without Z so browser treats it as local
+          const endMs = new Date(`${m.service_date}T${m.end_time}`).getTime();
           return endMs > now.getTime();
         }),
         trips: ((trips.data as any[]) ?? []).filter((t: any) => {
