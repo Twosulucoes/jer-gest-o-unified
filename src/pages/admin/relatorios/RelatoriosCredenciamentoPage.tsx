@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
+import { useEventBranding } from "@/hooks/useEventBranding";
 import { useDashboardData } from "./useDashboardData";
+import { exportCredenciamentoPdf } from "./credenciamentoPdfExporter";
+import { exportCredenciamentoXlsx } from "./credenciamentoXlsxExporter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, BadgeCheck, RefreshCw, ShieldCheck, CalendarCheck } from "lucide-react";
+import { Users, BadgeCheck, RefreshCw, ShieldCheck, CalendarCheck, Download, FileSpreadsheet } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
@@ -39,8 +42,11 @@ function KpiCard({ icon: Icon, label, value, sub, tint }: { icon: any; label: st
 export default function RelatoriosCredenciamentoPage() {
   const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
+  const { data: branding } = useEventBranding(eventId);
   const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId);
   const [showAll, setShowAll] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportingXlsx, setExportingXlsx] = useState(false);
 
   const r = data.resumo;
   const pct = (n: number, t: number) => (t > 0 ? Math.round((n / t) * 100) : 0);
@@ -53,6 +59,46 @@ export default function RelatoriosCredenciamentoPage() {
   const handleRefresh = async () => {
     await refetchAll();
     toast.success("Dados atualizados");
+  };
+
+  const handleExportPdf = async () => {
+    if (!eventId) return;
+    try {
+      setExportingPdf(true);
+      const blob = await exportCredenciamentoPdf(data, {
+        eventName: activeEvent?.name || "Evento",
+        branding: branding ?? null,
+        generatedAt: new Date(),
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `Credenciamento_${(activeEvent?.name || "Evento").replace(/\s+/g, "_")}_${dateStr}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("PDF exportado");
+    } catch (e: any) {
+      toast.error("Falha ao exportar PDF: " + (e?.message ?? "erro desconhecido"));
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handleExportXlsx = async () => {
+    if (!eventId) return;
+    try {
+      setExportingXlsx(true);
+      await exportCredenciamentoXlsx(data, {
+        eventName: activeEvent?.name || "Evento",
+        generatedAt: new Date(),
+      });
+      toast.success("Planilha exportada");
+    } catch (e: any) {
+      toast.error("Falha ao exportar planilha: " + (e?.message ?? "erro desconhecido"));
+    } finally {
+      setExportingXlsx(false);
+    }
   };
 
   if (!eventId) {
@@ -77,10 +123,20 @@ export default function RelatoriosCredenciamentoPage() {
             {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-          Atualizar dados
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportXlsx} disabled={isLoading || exportingXlsx}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            {exportingXlsx ? "Exportando..." : "XLSX"}
+          </Button>
+          <Button size="sm" onClick={handleExportPdf} disabled={isLoading || exportingPdf}>
+            <Download className="h-4 w-4 mr-2" />
+            {exportingPdf ? "Exportando..." : "Exportar PDF"}
+          </Button>
+        </div>
       </header>
 
       {/* KPIs */}
