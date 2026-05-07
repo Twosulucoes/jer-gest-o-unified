@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { RefreshCw, AlertTriangle, Search, Eye, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { RefreshCw, AlertTriangle, Search, Eye, CheckCircle, XCircle, ExternalLink, ListChecks } from "lucide-react";
 import { Link } from "react-router-dom";
 import ModuleHeader from "@/components/admin/ModuleHeader";
+import ParticipantSportEventsManager from "@/components/admin/participant/ParticipantSportEventsManager";
 
 interface Irregularity {
   id: string;
@@ -54,6 +55,7 @@ export default function IrregularidadesPage() {
   const [searchName, setSearchName] = useState("");
   const [filterRule, setFilterRule] = useState<string>("all");
   const [selectedIrr, setSelectedIrr] = useState<Irregularity | null>(null);
+  const [managingParticipant, setManagingParticipant] = useState<{ id: string; name: string; eventId: string } | null>(null);
 
   const { data: irregularities = [], isLoading } = useQuery({
     queryKey: ["participation-irregularities", activeEventId],
@@ -277,6 +279,23 @@ export default function IrregularidadesPage() {
                     </Link>
                   </Button>
                 )}
+                {canEdit && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setManagingParticipant({
+                        id: selectedIrr.participant_id,
+                        name: selectedIrr.participant?.person?.full_name ?? "Atleta",
+                        eventId: selectedIrr.event_id,
+                      });
+                      setSelectedIrr(null);
+                    }}
+                  >
+                    <ListChecks className="mr-1 h-3 w-3" />
+                    Gerenciar inscrições
+                  </Button>
+                )}
               </div>
 
               {/* Actions */}
@@ -303,6 +322,22 @@ export default function IrregularidadesPage() {
                 </div>
               )}
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* Sport Events Manager Dialog */}
+      <Dialog open={!!managingParticipant} onOpenChange={(open) => !open && setManagingParticipant(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Inscrições por modalidade</DialogTitle>
+            <DialogDescription>{managingParticipant?.name}</DialogDescription>
+          </DialogHeader>
+          {managingParticipant && (
+            <ParticipantSportEventsManager
+              participantId={managingParticipant.id}
+              eventId={managingParticipant.eventId}
+              hasBlockingIrregularity
+            />
           )}
         </DialogContent>
       </Dialog>
