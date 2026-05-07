@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, BarChart3, Trophy, Receipt } from "lucide-react";
+import { FileText, BarChart3, Trophy, Receipt, BadgeCheck } from "lucide-react";
 
 interface ReportEntry {
   key: string;
@@ -13,6 +13,14 @@ interface ReportEntry {
 }
 
 const REPORTS: ReportEntry[] = [
+  {
+    key: "credenciamento",
+    title: "Credenciamento",
+    description: "Status de check-in, emissão de credenciais e progresso por delegação.",
+    icon: <BadgeCheck className="h-6 w-6 text-primary" />,
+    status: "available",
+    to: "/admin/relatorios/credenciamento",
+  },
   {
     key: "boletins",
     title: "Boletins por Modalidade",

@@ -3,11 +3,11 @@ import { FileBarChart, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const REPORTS = [
-  { label: "Credenciamento", description: "Status de check-in e emissão de credenciais.", to: "/admin/relatorios?area=credenciamento" },
-  { label: "Competição", description: "Resultados, classificações e pendências.", to: "/admin/relatorios?area=competicao" },
-  { label: "Alojamento", description: "Ocupação por local e unidade.", to: "/admin/relatorios?area=alojamento" },
-  { label: "Alimentação", description: "Consumos e pendências por janela.", to: "/admin/relatorios?area=alimentacao" },
-  { label: "Transporte", description: "Embarques, viagens e ocorrências.", to: "/admin/relatorios?area=transporte" },
+  { label: "Credenciamento", description: "Status de check-in e emissão de credenciais.", to: "/admin/relatorios/credenciamento" },
+  { label: "Competição", description: "Resultados, classificações e pendências.", to: "/admin/relatorios/boletins" },
+  { label: "Alojamento", description: "Ocupação por local e unidade.", to: "/admin/relatorios/dashboard" },
+  { label: "Alimentação", description: "Consumos e pendências por janela.", to: "/admin/relatorios/dashboard" },
+  { label: "Transporte", description: "Embarques, viagens e ocorrências.", to: "/admin/relatorios/dashboard" },
 ];
 
 export default function StageReportsPage() {
