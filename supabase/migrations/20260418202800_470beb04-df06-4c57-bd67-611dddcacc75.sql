@@ -47,6 +47,7 @@ CREATE TRIGGER trg_event_branding_updated_at
 -- Bucket público para logos de relatório
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('report-assets', 'report-assets', true)
+ON CONFLICT (id) DO NOTHING
 ON CONFLICT (id) DO NOTHING;
 
 -- Políticas do bucket: leitura pública (bucket público), upload/update/delete só admin
