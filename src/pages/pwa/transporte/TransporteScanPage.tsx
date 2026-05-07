@@ -12,6 +12,7 @@ import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
+import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
 import {
   loadScanPreferences,
@@ -51,11 +52,22 @@ export default function TransporteScanPage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [prefs, setPrefs] = useState<ScanPreferences>(() => loadScanPreferences(MODULE, userId));
   const [telemetry, setTelemetry] = useState<ScanTelemetry>(() => loadScanTelemetry(MODULE, userId));
+  const [onlineState, setOnlineState] = useState(navigator.onLine);
 
   useEffect(() => {
     setPrefs(loadScanPreferences(MODULE, userId));
     setTelemetry(loadScanTelemetry(MODULE, userId));
   }, [userId]);
+
+  useEffect(() => {
+    const up = () => setOnlineState(true);
+    const down = () => setOnlineState(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
+  }, []);
+
+  const { lookupQr } = useParticipantStatusCache({ eventId: activeEventId, online: onlineState });
 
   const updatePrefs = (next: ScanPreferences) => {
     setPrefs(next);
@@ -216,11 +228,72 @@ export default function TransporteScanPage() {
         return;
       }
 
+      // --- Offline: usa cache local para determinar o estado do participante ---
+      if (!isOnline()) {
+        const cached = lookupQr(val);
+
+        if (cached.state === "sem_cache") {
+          const msg = "Sem conexão e dados não sincronizados. Abra o módulo online primeiro para baixar o cache.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error("Cache indisponível", { description: msg });
+          recordOutcome("error");
+          return;
+        }
+        if (cached.state === "nao_cadastrado") {
+          const msg = "Participante não encontrado no sistema.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          return;
+        }
+        if (cached.state === "nao_credenciado") {
+          const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error("Sem credencial ativa.", { description: "Encaminhe para a secretaria." });
+          recordOutcome("error");
+          return;
+        }
+        // credenciado offline → prossegue
+        await applyBoarding(cached.entry.participant_id, cached.entry.full_name, "qr");
+        return;
+      }
+
+      // --- Online: resolve credencial e verifica elegibilidade ---
       const resolved = await resolveQrCredential(val, { eventId: activeEventId });
       if (!resolved) {
-        const errorMsg = "Credencial não encontrada ou inativa";
-        setResult({ ok: false, message: errorMsg });
-        toast.error(errorMsg);
+        // Distingue estado 2 (não credenciado) de estado 3 (não cadastrado) via cache
+        const cached = lookupQr(val);
+        if (cached.state === "nao_credenciado") {
+          const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error("Sem credencial ativa.", { description: "Encaminhe para a secretaria." });
+        } else {
+          const msg = "Credencial não encontrada ou inativa.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+        }
+        recordOutcome("error");
+        return;
+      }
+
+      // Verifica is_active e credentialed_at (mesma lógica da alimentação)
+      const { data: partData } = await (supabase as any)
+        .from("participants")
+        .select("is_active, credentialed_at")
+        .eq("id", resolved.participant_id)
+        .maybeSingle();
+
+      if (!partData?.is_active) {
+        const msg = "Participante Inativo ou não encontrado.";
+        setResult({ ok: false, message: msg, source: "qr" });
+        toast.error(msg);
+        recordOutcome("error");
+        return;
+      }
+      if (!partData.credentialed_at) {
+        const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
+        setResult({ ok: false, message: msg, source: "qr" });
+        toast.error("Sem credencial ativa.", { description: "Encaminhe o atleta para a secretaria." });
         recordOutcome("error");
         return;
       }
@@ -236,6 +309,21 @@ export default function TransporteScanPage() {
   const handleManualPick = async (row: ParticipantManualSearchRow) => {
     setManualQuery("");
     setManualHits([]);
+
+    if (row.is_active === false) {
+      setResult({ ok: false, message: "Participante Inativo.", source: "manual" });
+      toast.error("Participante inativo.");
+      recordOutcome("error");
+      return;
+    }
+    if (!row.credentialed_at) {
+      const msg = "Participante não possui credencial ativa (Aguardando Credenciamento).";
+      setResult({ ok: false, message: msg, source: "manual" });
+      toast.error("Sem credencial ativa.", { description: "Encaminhe para a secretaria." });
+      recordOutcome("error");
+      return;
+    }
+
     try {
       await applyBoarding(row.participant_id, row.full_name, "manual");
     } catch (err: unknown) {
