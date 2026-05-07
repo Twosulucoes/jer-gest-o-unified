@@ -26,6 +26,7 @@ import { APP_VERSION } from "@/config/version";
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 const RELOADED_FOR_VERSION = "jer_pwa_reloaded_for";
+const RELOADED_FOR_VERSION_BUST = "jer_pwa_reloaded_for_bust";
 
 interface VersionResponse {
   commit?: string;
@@ -48,13 +49,22 @@ async function fetchServerVersion(): Promise<string | null> {
 }
 
 async function performHardReload(serverVersion: string) {
-  // Marca pra evitar loop se mesmo após reload o navegador continuar servindo
-  // o bundle antigo (em geral significa SW completamente travado).
   const previous = sessionStorage.getItem(RELOADED_FOR_VERSION);
+
   if (previous === serverVersion) {
-    console.warn("[pwa-update] Reload já tentado para", serverVersion, "— abortando.");
+    // Primeiro reload não carregou o bundle novo (ex: cache HTTP do browser no iOS PWA).
+    // Tenta navegação forçada para a origem, que bypassa o cache de página do browser.
+    if (sessionStorage.getItem(RELOADED_FOR_VERSION_BUST) === serverVersion) {
+      // Ambas as tentativas falharam — para evitar loop infinito, aguarda intervenção.
+      console.warn("[pwa-update] Duas tentativas falharam para", serverVersion, "— aguardando usuário.");
+      return;
+    }
+    sessionStorage.setItem(RELOADED_FOR_VERSION_BUST, serverVersion);
+    console.warn("[pwa-update] Reload não atualizou bundle. Tentando navegação forçada.");
+    window.location.href = window.location.origin + "/?_v=" + Date.now();
     return;
   }
+
   sessionStorage.setItem(RELOADED_FOR_VERSION, serverVersion);
 
   try {
@@ -69,7 +79,10 @@ async function performHardReload(serverVersion: string) {
   } catch (err) {
     console.warn("[pwa-update] Falha ao limpar cache/SW antes do reload:", err);
   }
-  window.location.reload();
+
+  // Usa href em vez de reload() para forçar request HTTP novo à origem,
+  // contornando o cache de página do browser (crítico em PWA instalado no iOS).
+  window.location.href = window.location.origin + "/?_v=" + Date.now();
 }
 
 export function usePwaUpdateCheck(options?: { intervalMs?: number; onUpdateDetected?: (server: string) => void }) {
@@ -103,12 +116,6 @@ export function usePwaUpdateCheck(options?: { intervalMs?: number; onUpdateDetec
         || server.startsWith(APP_VERSION)
         || APP_VERSION.startsWith(server);
       if (sameCommit) return;
-
-      const previous = sessionStorage.getItem(RELOADED_FOR_VERSION);
-      if (previous === server) {
-        console.warn("[pwa-update] Reload já tentado para", server, "— abortando para evitar loop.");
-        return;
-      }
 
       console.warn(
         `[pwa-update] Deploy novo detectado. Cliente=${APP_VERSION} Servidor=${server} → reload limpo.`,
