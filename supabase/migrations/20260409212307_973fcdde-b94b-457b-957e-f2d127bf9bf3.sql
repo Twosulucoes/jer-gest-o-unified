@@ -35,7 +35,6 @@ CREATE INDEX idx_match_attachments_match ON public.match_attachments(match_id);
 -- Storage bucket
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('match-attachments', 'match-attachments', true)
-ON CONFLICT (id) DO NOTHING
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies
