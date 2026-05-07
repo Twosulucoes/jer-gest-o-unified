@@ -36,9 +36,10 @@ interface Props {
   onSubmit: (values: MealWindowPatternFormValues) => void;
   isPending: boolean;
   eventId: string;
+  stageId?: string | null;
 }
 
-export default function MealWindowPatternFormDialog({ open, onOpenChange, pattern, mealTypes, onSubmit, isPending, eventId }: Props) {
+export default function MealWindowPatternFormDialog({ open, onOpenChange, pattern, mealTypes, onSubmit, isPending, eventId, stageId }: Props) {
   const isEditing = !!pattern;
 
   const form = useForm<MealWindowPatternFormValues>({
@@ -75,11 +76,13 @@ export default function MealWindowPatternFormDialog({ open, onOpenChange, patter
     }
   }, [pattern, form, open]);
 
-  // Fetch locations
+  // Fetch locations scoped to current event and stage
   const { data: mealLocations = [] } = useQuery({
-    queryKey: ["meal_locations_simple", eventId],
+    queryKey: ["meal_locations_simple", eventId, stageId],
     queryFn: async () => {
-      const { data } = await supabase.from("meal_locations").select("id, name").eq("event_id", eventId).eq("is_active", true).order("name");
+      let q = (supabase as any).from("meal_locations").select("id, name").eq("event_id", eventId).eq("is_active", true);
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      const { data } = await q.order("name");
       return data || [];
     },
     enabled: open && !!eventId,

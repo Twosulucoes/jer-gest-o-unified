@@ -26,14 +26,18 @@ interface FoodIncidentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preselectedWindowId?: string | null;
+  eventId?: string | null;
+  stageId?: string | null;
 }
 
 export function FoodIncidentDialog({
   open,
   onOpenChange,
   preselectedWindowId,
+  eventId: propEventId,
+  stageId,
 }: FoodIncidentDialogProps) {
-  const { windows } = useTodayMealWindows(open);
+  const { windows } = useTodayMealWindows(open, { eventId: propEventId, stageId });
   const [selectedWindow, setSelectedWindow] = useState<string>("none");
   const [description, setDescription] = useState("");
   const [sending, setSending] = useState(false);
@@ -63,7 +67,7 @@ export function FoodIncidentDialog({
 
       const chosenWindow = windows.find((w) => w.id === selectedWindow);
 
-      let eventId: string | null = chosenWindow?.event_id ?? null;
+      let eventId: string | null = chosenWindow?.event_id ?? propEventId ?? null;
       if (!eventId) {
         const stored = localStorage.getItem("jer_active_event");
         if (stored) {

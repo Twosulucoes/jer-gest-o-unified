@@ -17,7 +17,13 @@ export interface UseTodayMealWindowsResult {
   refetch: () => void;
 }
 
-export function useTodayMealWindows(enabled = true): UseTodayMealWindowsResult {
+interface UseTodayMealWindowsOptions {
+  eventId?: string | null;
+  stageId?: string | null;
+}
+
+export function useTodayMealWindows(enabled = true, options: UseTodayMealWindowsOptions = {}): UseTodayMealWindowsResult {
+  const { eventId, stageId } = options;
   const [windows, setWindows] = useState<TodayMealWindow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -32,10 +38,13 @@ export function useTodayMealWindows(enabled = true): UseTodayMealWindowsResult {
     setError(null);
 
     const today = new Date().toISOString().slice(0, 10);
-    supabase
+    let q = supabase
       .from("meal_windows")
       .select("id, service_date, start_time, end_time, event_id, event_stage_id, meal_type:meal_types(name)")
-      .eq("service_date", today)
+      .eq("service_date", today);
+    if (eventId) q = (q as any).eq("event_id", eventId);
+    if (stageId) q = (q as any).eq("event_stage_id", stageId);
+    (q as any)
       .order("start_time")
       .then(({ data, error: queryError }) => {
         if (cancelled) return;
@@ -62,7 +71,7 @@ export function useTodayMealWindows(enabled = true): UseTodayMealWindowsResult {
     return () => {
       cancelled = true;
     };
-  }, [enabled, reloadKey]);
+  }, [enabled, reloadKey, eventId, stageId]);
 
   return { windows, loading, error, refetch };
 }
