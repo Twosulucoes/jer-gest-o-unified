@@ -27,6 +27,7 @@ import {
   setSelectedUnit
 } from "@/lib/alojamentoRpc";
 import { extractQrToken } from "@/lib/resolveQrCredential";
+import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
@@ -69,6 +70,7 @@ export default function AlojamentoScanPage() {
   const userId = user?.id ?? null;
   const lang = getPwaLang();
   const { enqueue, isOnline } = useAlojamentoOffline();
+  const { lookupQr } = useParticipantStatusCache({ eventId: eventId ?? null, online: isOnline });
   
   const [mode, setMode] = useState<ScanMode>("checkin");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -249,6 +251,26 @@ export default function AlojamentoScanPage() {
 
     try {
       if (!isOnline) {
+        // Verifica estado do participante pelo cache antes de enfileirar
+        if (mode === "checkin" || mode === "presence") {
+          const cached = lookupQr(val);
+          if (cached.state === "nao_credenciado") {
+            setResult({ ok: false, error: "NO_CREDENTIAL", message: "Participante não possui credencial ativa (Aguardando Credenciamento).", full_name: cached.entry.full_name });
+            toast.error("Sem credencial ativa.", { description: "Encaminhe para a secretaria." });
+            recordOutcome("error");
+            reopenIfContinuous();
+            return;
+          }
+          if (cached.state === "nao_cadastrado") {
+            setResult({ ok: false, error: "NOT_FOUND", message: "Participante não encontrado no sistema." });
+            toast.error("Participante não cadastrado.");
+            recordOutcome("error");
+            reopenIfContinuous();
+            return;
+          }
+          // "credenciado" ou "sem_cache" → permite enfileirar (backend valida na sincronização)
+        }
+
         if (mode === "checkin") {
           enqueue("checkin", { token, location_id: facilityId, unit_id: selectedUnitId, mode: "person_qr" });
           toast.info("Check-in enfileirado (offline)");
@@ -262,10 +284,52 @@ export default function AlojamentoScanPage() {
         return;
       }
 
-      // Validação de Credencial Ativa na Etapa (Requirement)
-      if ((mode === "checkin" || mode === "presence") && stageId) {
+      // Validação de Credencial Ativa (credentialed_at + etapa)
+      if ((mode === "checkin" || mode === "presence")) {
         const resolved = await rpcResolveQr(token);
-        if (resolved.ok && resolved.entity_id) {
+        if (!resolved.ok || !resolved.entity_id) {
+          // Não encontrado — tenta distinguir estado pelo cache
+          const cached = lookupQr(val);
+          const isNaoCredenciado = cached.state === "nao_credenciado";
+          setResult({
+            ok: false,
+            error: isNaoCredenciado ? "NO_CREDENTIAL" : "NOT_FOUND",
+            message: isNaoCredenciado
+              ? "Participante não possui credencial ativa (Aguardando Credenciamento)."
+              : "Participante não encontrado no sistema.",
+          });
+          toast.error(isNaoCredenciado ? "Sem credencial ativa." : "Participante não encontrado.", {
+            description: isNaoCredenciado ? "Encaminhe para a secretaria." : undefined,
+          });
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+          recordOutcome("error");
+          reopenIfContinuous();
+          return;
+        }
+
+        // Verifica credentialed_at diretamente no participante
+        const { data: partData } = await (supabase as any)
+          .from("participants")
+          .select("credentialed_at")
+          .eq("id", resolved.entity_id)
+          .maybeSingle();
+
+        if (!partData?.credentialed_at) {
+          setResult({
+            ok: false,
+            error: "NO_CREDENTIAL",
+            message: "Participante não possui credencial ativa (Aguardando Credenciamento).",
+            full_name: resolved.full_name,
+          });
+          toast.error("Aguardando credenciamento.", { description: "Encaminhe para a secretaria." });
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+          recordOutcome("error");
+          reopenIfContinuous();
+          return;
+        }
+
+        // Verifica etapa, se aplicável
+        if (stageId) {
           const { data: pse, error: pseErr } = await supabase
             .from("participant_event_stages")
             .select("status")
@@ -278,9 +342,9 @@ export default function AlojamentoScanPage() {
               ok: false,
               error: "CREDENTIAL_INACTIVE",
               message: "Participante não possui credencial ativa para esta etapa.",
-              full_name: resolved.full_name
+              full_name: resolved.full_name,
             });
-            toast.error("Atenção: Participante sem credencial ativa!");
+            toast.error("Credencial inativa para esta etapa.");
             if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
             recordOutcome("error");
             reopenIfContinuous();

@@ -4,7 +4,7 @@ import {
   AlertTriangle, ClipboardList, FileBarChart,
   LayoutDashboard, ListChecks, GitBranch, Users, CalendarClock, Layers,
   ScanLine, KeyRound, ChartBar, Navigation, Route, Settings, Filter,
-  ShieldCheck,
+  ShieldCheck, ArrowLeftRight,
 } from "lucide-react";
 import { StageMiniDash, type StageMiniDashKpi } from "./StageMiniDash";
 import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
@@ -51,6 +51,7 @@ const MODULES: ModuleConfig[] = [
       { label: "Equipes", to: "competicao/equipes", icon: <Users className="h-3.5 w-3.5" />, roles: COMPETITION_ROLES },
       { label: "Agenda", to: "competicao/partidas-agenda", icon: <CalendarClock className="h-3.5 w-3.5" />, roles: COMPETITION_ROLES },
       { label: "Resultados", to: "competicao/resultados", icon: <ChartBar className="h-3.5 w-3.5" />, roles: COMPETITION_ROLES },
+      { label: "Substituições", to: "competicao/substituicoes", icon: <ArrowLeftRight className="h-3.5 w-3.5" />, roles: ALL_OPS },
       { label: "Regras", to: "competicao/regras", icon: <Settings className="h-3.5 w-3.5" />, roles: COMPETITION_ROLES },
     ],
   },
