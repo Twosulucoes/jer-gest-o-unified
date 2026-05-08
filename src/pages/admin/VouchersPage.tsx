@@ -1130,7 +1130,9 @@ function IssueVoucherWizard({ open, onOpenChange, eventId, stageId, instances, h
               <Select value={instanceId} onValueChange={setInstanceId}>
                 <SelectTrigger><SelectValue placeholder="Selecione a instância" /></SelectTrigger>
                 <SelectContent>
-                  {serviceType === "meals" && instances.meals.map((m: any) => (
+                  {serviceType === "meals" && instances.meals
+                    .filter((m: any) => !m.end_time || new Date(`${m.service_date}T${m.end_time}`).getTime() > Date.now())
+                    .map((m: any) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.label} — {format(new Date(m.service_date + "T00:00:00"), "dd/MM")}
                       {m.start_time ? ` ${m.start_time.slice(0, 5)}` : ""}
@@ -1283,7 +1285,9 @@ function IssueBatchWizard({ open, onOpenChange, eventId, stageId, instances, onB
               <Select value={instanceId} onValueChange={setInstanceId}>
                 <SelectTrigger><SelectValue placeholder="Instância de Serviço" /></SelectTrigger>
                 <SelectContent>
-                  {serviceType === "meals" && instances.meals.map((m: any) => (
+                  {serviceType === "meals" && instances.meals
+                    .filter((m: any) => !m.end_time || new Date(`${m.service_date}T${m.end_time}`).getTime() > Date.now())
+                    .map((m: any) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.label} — {format(new Date(m.service_date + "T00:00:00"), "dd/MM")}
                       {m.start_time ? ` ${m.start_time.slice(0, 5)}` : ""}
