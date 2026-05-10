@@ -3,6 +3,22 @@ import { syncOfflineQueue } from "@/lib/offlineQueue";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
+async function checkStorageQuota() {
+  if (!navigator.storage?.estimate) return;
+  try {
+    const { usage = 0, quota = 1 } = await navigator.storage.estimate();
+    if (usage / quota > 0.85) {
+      console.warn(`[PWA] localStorage próximo do limite: ${Math.round((usage / quota) * 100)}% usado`);
+      toast.warning("Armazenamento do dispositivo quase cheio. Sincronize os dados o quanto antes.", {
+        id: "storage-quota-warning",
+        duration: 8000,
+      });
+    }
+  } catch {
+    // estimate não disponível em todos os browsers
+  }
+}
+
 /**
  * Background manager for offline data synchronization.
  * Triggers sync on network recovery and periodically.
@@ -19,6 +35,7 @@ export function OfflineSyncManager() {
       if (isSyncingRef.current || !navigator.onLine) return;
       isSyncingRef.current = true;
         try {
+          await checkStorageQuota();
           const result = await syncOfflineQueue();
           if (!isMounted) return;
           

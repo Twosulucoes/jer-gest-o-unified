@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, createContext, useContext, useRef } f
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { saveUserDataCache, loadUserDataCache, clearUserDataCache } from "@/lib/offlineSessionCache";
 
 /** Valid roles in the system from the Database schema */
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -22,6 +23,8 @@ interface AuthState {
   profile: { full_name: string | null; avatar_url: string | null } | null;
   /** Loading state during initial session check */
   loading: boolean;
+  /** True quando roles/profile foram restaurados do cache local por falta de rede */
+  isOfflineFallback: boolean;
   /** Function to log out the user */
   signOut: () => Promise<void>;
   /** Helper function to check if the user has a specific role */
@@ -36,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [profile, setProfile] = useState<AuthState["profile"]>(null);
   const [loading, setLoading] = useState(true);
+  const [isOfflineFallback, setIsOfflineFallback] = useState(false);
 
   // Guard against processing the same user twice concurrently
   const processingRef = useRef<string | null>(null);
@@ -84,11 +88,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (processingRef.current !== nextUserId) return;
         setRoles(userData.roles);
         setProfile(userData.profile);
+        setIsOfflineFallback(false);
+        saveUserDataCache(nextSession.user.id, userData.roles, userData.profile);
       } catch (err) {
         console.error("Failed to fetch user data:", err);
-        // On partial failure, we still want to show the app with basic user info
+        // Se estiver offline, tenta restaurar roles/profile do cache local
+        if (!navigator.onLine && nextUserId) {
+          const cached = loadUserDataCache(nextUserId);
+          if (cached && isMounted) {
+            setRoles(cached.roles);
+            setProfile(cached.profile);
+            setIsOfflineFallback(true);
+            return;
+          }
+        }
         setRoles([]);
         setProfile(null);
+        setIsOfflineFallback(false);
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -122,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     try {
       processingRef.current = null;
+      clearUserDataCache();
       await supabase.auth.signOut();
     } catch (err) {
       console.error("Sign out error:", err);
@@ -130,13 +147,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setRoles([]);
       setProfile(null);
+      setIsOfflineFallback(false);
     }
   }, []);
 
   const hasRole = useCallback((role: AppRole) => roles.includes(role), [roles]);
 
   return (
-    <AuthContext.Provider value={{ user, session, roles, profile, loading, signOut, hasRole }}>
+    <AuthContext.Provider value={{ user, session, roles, profile, loading, isOfflineFallback, signOut, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

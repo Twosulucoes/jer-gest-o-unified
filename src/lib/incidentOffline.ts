@@ -25,6 +25,34 @@ export type IncidentQueueItem = {
 
 const STORAGE_KEY = "pwa_meal_incident_offline_queue";
 const MAX_ATTEMPTS = 5;
+const SYNC_LOCK_KEY = "pwa_incident_queue_sync_lock";
+const SYNC_LOCK_TIMEOUT = 5 * 60 * 1000;
+
+function acquireLock(): boolean {
+  const raw = localStorage.getItem(SYNC_LOCK_KEY);
+  if (raw) {
+    const { ts } = JSON.parse(raw) as { ts: number };
+    if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+  }
+  localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ ts: Date.now() }));
+  return true;
+}
+
+function releaseLock() {
+  localStorage.removeItem(SYNC_LOCK_KEY);
+}
+
+function resetStuckItems() {
+  const queue = getIncidentQueue();
+  const hasLock = !!localStorage.getItem(SYNC_LOCK_KEY);
+  if (hasLock) return;
+  const changed = queue.map((item) =>
+    item.status === "syncing" ? { ...item, status: "pending" as const } : item,
+  );
+  if (changed.some((i, idx) => i.status !== queue[idx].status)) {
+    saveIncidentQueue(changed);
+  }
+}
 
 export function getIncidentQueue(): IncidentQueueItem[] {
   if (typeof window === "undefined") return [];
@@ -39,7 +67,14 @@ export function getIncidentQueue(): IncidentQueueItem[] {
 
 function saveIncidentQueue(queue: IncidentQueueItem[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      const trimmed = queue.filter((i) => i.status === "pending" || i.status === "failed");
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed)); } catch { /* sem espaço */ }
+    }
+  }
 }
 
 export function enqueueIncident(input: {
@@ -73,6 +108,8 @@ export async function syncIncidentQueue(): Promise<{
   if (isSyncing || typeof navigator === "undefined" || !navigator.onLine) {
     return { synced: 0, failed: 0 };
   }
+  if (!acquireLock()) return { synced: 0, failed: 0 };
+  resetStuckItems();
   const pending = getIncidentQueue().filter(
     (i) => i.status === "pending" || i.status === "failed",
   );
@@ -118,6 +155,7 @@ export async function syncIncidentQueue(): Promise<{
   }
 
   isSyncing = false;
+  releaseLock();
   return { synced, failed };
 }
 

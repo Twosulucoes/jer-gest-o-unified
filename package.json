@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "bun run update-version && bun run validate:data && vite build",
     "build:dev": "vite build --mode development",
+    "build:vercel": "bun run update-version && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",

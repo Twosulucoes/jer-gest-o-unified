@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
 import { getOperationalRedirect, type AppRole } from "@/config/accessControl";
+import { OfflineSessionBanner } from "@/components/auth/OfflineSessionBanner";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,7 +11,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, roles, loading, hasRole } = useAuth();
+  const { user, roles, loading, hasRole, isOfflineFallback } = useAuth();
 
   if (loading) {
     return <AuthLoadingScreen />;
@@ -27,7 +28,12 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
   // super_admin bypasses all checks
   if (hasRole("super_admin")) {
-    return <>{children}</>;
+    return (
+      <>
+        {isOfflineFallback && <OfflineSessionBanner />}
+        {children}
+      </>
+    );
   }
 
   // Block operational-only users from /admin
@@ -44,5 +50,10 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     }
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {isOfflineFallback && <OfflineSessionBanner />}
+      {children}
+    </>
+  );
 }

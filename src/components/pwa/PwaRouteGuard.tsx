@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { VersionBadge } from "../VersionBadge";
 import { logPwaEvent } from "@/utils/pwaTelemetry";
 import { toast } from "sonner";
+import { OfflineSessionBanner } from "@/components/auth/OfflineSessionBanner";
 
 
 interface PwaRouteGuardProps {
@@ -22,7 +23,7 @@ interface PwaRouteGuardProps {
 }
 
 export default function PwaRouteGuard({ children, allowedRoles, requireStage = true }: PwaRouteGuardProps) {
-  const { user, loading, hasRole, roles } = useAuth();
+  const { user, loading, hasRole, roles, isOfflineFallback } = useAuth();
   const { activeEventId, eventsLoading } = useEventContext();
   const { activeStageId, stagesLoading } = useStageContext();
   const { incidentId } = useParams();
@@ -177,6 +178,7 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
 
   return (
     <div className="tactical-cockpit min-h-screen pb-20">
+      {isOfflineFallback && <OfflineSessionBanner />}
       {children}
       <VersionBadge />
     </div>
