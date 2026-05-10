@@ -99,16 +99,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 1. Set up listener FIRST (as per Supabase best practice)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      // After initial load, onAuthStateChange is the source of truth
-      if (initializedRef.current) {
-        void applySession(nextSession);
-      }
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // SIGNED_OUT fires when the refresh token is invalid — process it even
+      // before initialization so we never leave the app in a stuck auth state.
+      if (!initializedRef.current && event !== 'SIGNED_OUT') return;
+      void applySession(nextSession);
     });
 
     // 2. Then restore session from storage
-    void supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
+    void supabase.auth.getSession().then(({ data: { session: nextSession }, error }) => {
       if (!isMounted) return;
+      if (error) console.warn("[Auth] Session restore failed:", error.message);
       initializedRef.current = true;
       void applySession(nextSession);
     });
