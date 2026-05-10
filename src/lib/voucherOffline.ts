@@ -18,6 +18,34 @@ export interface VoucherOfflineItem {
 }
 
 const STORAGE_KEY = "pwa_voucher_offline_queue";
+const SYNC_LOCK_KEY = "pwa_voucher_queue_sync_lock";
+const SYNC_LOCK_TIMEOUT = 5 * 60 * 1000;
+
+function acquireVoucherLock(): boolean {
+  const raw = localStorage.getItem(SYNC_LOCK_KEY);
+  if (raw) {
+    const { ts } = JSON.parse(raw) as { ts: number };
+    if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+  }
+  localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ ts: Date.now() }));
+  return true;
+}
+
+function releaseVoucherLock() {
+  localStorage.removeItem(SYNC_LOCK_KEY);
+}
+
+function resetStuckVoucherItems() {
+  const queue = getVoucherQueue();
+  const hasLock = !!localStorage.getItem(SYNC_LOCK_KEY);
+  if (hasLock) return;
+  const changed = queue.map((item) =>
+    item.status === "syncing" ? { ...item, status: "failed" as const, last_error: "Sync interrompido" } : item,
+  );
+  if (changed.some((i, idx) => i.status !== queue[idx].status)) {
+    saveVoucherQueue(changed);
+  }
+}
 
 export const getVoucherQueue = (): VoucherOfflineItem[] => {
   if (typeof window === 'undefined') return [];
@@ -27,7 +55,14 @@ export const getVoucherQueue = (): VoucherOfflineItem[] => {
 
 export const saveVoucherQueue = (queue: VoucherOfflineItem[]) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      const trimmed = queue.filter((i) => i.status === "pending" || i.status === "conflict");
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed)); } catch { /* sem espaço */ }
+    }
+  }
 };
 
 export const addToVoucherQueue = (
@@ -72,7 +107,9 @@ let isVoucherSyncing = false;
 
 export const syncVoucherQueue = async () => {
   if (isVoucherSyncing || !navigator.onLine) return { count: 0, conflicts: 0 };
-  
+  if (!acquireVoucherLock()) return { count: 0, conflicts: 0 };
+  resetStuckVoucherItems();
+
   const queue = getVoucherQueue();
   const pending = queue.filter(i => i.status === "pending" || i.status === "failed");
   if (pending.length === 0) return { count: 0, conflicts: 0 };
@@ -128,6 +165,7 @@ export const syncVoucherQueue = async () => {
   }
 
   isVoucherSyncing = false;
+  releaseVoucherLock();
   // Mantém conflitos para resolução manual no PWA
   saveVoucherQueue(getVoucherQueue().filter(i => i.status !== "synced"));
   return { count: syncedCount, conflicts: conflictCount };

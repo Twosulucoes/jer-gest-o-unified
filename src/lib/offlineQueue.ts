@@ -1,5 +1,34 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const SYNC_LOCK_KEY = "pwa_offline_queue_sync_lock";
+const SYNC_LOCK_TIMEOUT = 5 * 60 * 1000; // 5 min
+
+function acquireSyncLock(): boolean {
+  const raw = localStorage.getItem(SYNC_LOCK_KEY);
+  if (raw) {
+    const { ts } = JSON.parse(raw) as { ts: number };
+    if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+  }
+  localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ ts: Date.now() }));
+  return true;
+}
+
+function releaseSyncLock() {
+  localStorage.removeItem(SYNC_LOCK_KEY);
+}
+
+function resetStuckSyncingItems() {
+  const queue = getOfflineQueue();
+  const lock = localStorage.getItem(SYNC_LOCK_KEY);
+  if (lock) return; // lock ativo, outra aba ainda está sincronizando
+  const changed = queue.map((item) =>
+    item.status === "syncing" ? { ...item, status: "failed" as const, lastError: "Sync interrompido" } : item,
+  );
+  if (changed.some((i, idx) => i.status !== queue[idx].status)) {
+    saveOfflineQueue(changed);
+  }
+}
+
 export type OfflineQueueItem = {
   id: string;
   module: "alimentacao" | "transporte";
@@ -45,7 +74,19 @@ export const purgeExpiredOfflineItems = (
 };
 
 export const saveOfflineQueue = (queue: OfflineQueueItem[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      // Remove itens já sincronizados ou conflitos mais antigos para liberar espaço
+      const trimmed = queue.filter((i) => i.status === "pending" || i.status === "failed");
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+      } catch {
+        // Nada a fazer sem espaço
+      }
+    }
+  }
 };
 
 /**
@@ -116,7 +157,9 @@ let isSyncing = false;
 
 export const syncOfflineQueue = async () => {
   if (isSyncing || !navigator.onLine) return { success: false, count: 0 };
+  if (!acquireSyncLock()) return { success: false, count: 0 };
 
+  resetStuckSyncingItems();
   purgeExpiredOfflineItems();
 
   const queue = getOfflineQueue();
@@ -245,6 +288,7 @@ export const syncOfflineQueue = async () => {
   }
 
   isSyncing = false;
+  releaseSyncLock();
   return { success: errorCount === 0, count: successCount, errors: errorCount };
 };
 
