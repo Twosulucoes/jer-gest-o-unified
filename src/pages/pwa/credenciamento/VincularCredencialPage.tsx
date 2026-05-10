@@ -3,24 +3,63 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScanLine, CheckCircle, Search, Loader2, User, IdCard, Link as LinkIcon, RefreshCcw } from "lucide-react";
+import {
+  ScanLine,
+  CheckCircle,
+  Search,
+  Loader2,
+  User,
+  IdCard,
+  Link as LinkIcon,
+  RefreshCcw,
+  UserPlus,
+  Save,
+} from "lucide-react";
 import { toast } from "sonner";
-import { PwaHeader } from "@/components/pwa/PwaHeader";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import { resolveQrCredential, extractCandidates, type ResolvedCredential } from "@/lib/resolveQrCredential";
+import {
+  resolveQrCredential,
+  extractCandidates,
+  type ResolvedCredential,
+} from "@/lib/resolveQrCredential";
 import { isVoucherQr } from "@/lib/voucherScan";
-import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
+import {
+  searchParticipantsByNameOrCpf,
+  type ParticipantManualSearchRow,
+} from "@/lib/participantManualSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+type SchoolOption = {
+  id: string;
+  name: string;
+};
+
+type QuickCreateForm = {
+  full_name: string;
+  cpf: string;
+  birth_date: string;
+  sex: string;
+  school_id: string;
+  participant_type: string;
+  function_name: string;
+};
 
 export default function VincularCredencialPage() {
   useAuth();
+
   const { activeEventId } = useEventContext();
   usePwaAudit("credenciamento/vincular", activeEventId);
 
@@ -29,20 +68,51 @@ export default function VincularCredencialPage() {
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [resolved, setResolved] = useState<ResolvedCredential | null>(null);
   const [currentOwner, setCurrentOwner] = useState<{ name: string; id: string } | null>(null);
-  
+
   const [manualQuery, setManualQuery] = useState("");
   const [debouncedManual, setDebouncedManual] = useState("");
   const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
   const [manualSearching, setManualSearching] = useState(false);
-  
+
   const [linking, setLinking] = useState(false);
-  // Confirmação destrutiva: vinculação é definitiva, então paramos antes
-  // do INSERT para o operador conferir credencial × participante.
   const [pendingLink, setPendingLink] = useState<ParticipantManualSearchRow | null>(null);
 
-  // Dedupe de scanner: o decoder pode emitir o mesmo onScan várias vezes
-  // em sucessão; sem isso, dispararíamos múltiplas RPCs para o mesmo código.
+  const [showQuickCreate, setShowQuickCreate] = useState(false);
+  const [creatingParticipant, setCreatingParticipant] = useState(false);
+  const [schoolQuery, setSchoolQuery] = useState("");
+  const [schools, setSchools] = useState<SchoolOption[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(false);
+
+  const [quickForm, setQuickForm] = useState<QuickCreateForm>({
+    full_name: "",
+    cpf: "",
+    birth_date: "",
+    sex: "",
+    school_id: "",
+    participant_type: "athlete",
+    function_name: "",
+  });
+
   const lastScanRef = useRef<{ value: string; at: number } | null>(null);
+
+  const normalizeCredentialCode = (value: string) => value.trim().replace(/\s+/g, "");
+  const onlyDigits = (value: string) => value.replace(/\D/g, "");
+  const normalizeCpf = (value: string) => onlyDigits(value);
+
+  const formatBirthDateToISO = (value: string) => {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) {
+      const [, day, month, year] = match;
+      return `${year}-${month}-${day}`;
+    }
+
+    return null;
+  };
+
+  const selectedSchool = schools.find((s) => s.id === quickForm.school_id);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
@@ -55,8 +125,10 @@ export default function VincularCredencialPage() {
       setManualSearching(false);
       return;
     }
+
     let cancelled = false;
     setManualSearching(true);
+
     void searchParticipantsByNameOrCpf(debouncedManual, activeEventId)
       .then((rows) => {
         if (!cancelled) setManualHits(rows);
@@ -64,34 +136,71 @@ export default function VincularCredencialPage() {
       .finally(() => {
         if (!cancelled) setManualSearching(false);
       });
+
     return () => {
       cancelled = true;
     };
   }, [debouncedManual, activeEventId]);
 
+  useEffect(() => {
+    if (schoolQuery.trim().length < 2) {
+      setSchools([]);
+      setLoadingSchools(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadSchools = async () => {
+      setLoadingSchools(true);
+
+      const { data, error } = await supabase
+        .from("institutions")
+        .select("id, name")
+        .ilike("name", `%${schoolQuery.trim()}%`)
+        .limit(20);
+
+      if (!cancelled) {
+        if (error) {
+          console.error(error);
+          setSchools([]);
+        } else {
+          setSchools((data || []) as SchoolOption[]);
+        }
+
+        setLoadingSchools(false);
+      }
+    };
+
+    void loadSchools();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [schoolQuery]);
+
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
     if (!rawValue.trim()) return;
 
-    // Dedupe: ignora reemissão do mesmo QR em < 1500ms (decoder em loop).
     const now = Date.now();
     const last = lastScanRef.current;
+
     if (last && last.value === rawValue && now - last.at < 1500) return;
+
     lastScanRef.current = { value: rawValue, at: now };
 
-    // Defesa contra falso-positivo: voucher escaneado por engano não pode
-    // ser vinculado como credencial externa. Sem essa guarda, o code do
-    // voucher entrava em external_credentials, quebrando os 2 sistemas.
     if (isVoucherQr(rawValue)) {
       toast.error("Este QR é um voucher, não uma credencial.", {
-        description: "Vouchers são consumidos no módulo de Alimentação, Transporte ou Alojamento — não podem ser vinculados aqui.",
+        description:
+          "Vouchers são consumidos no módulo de Alimentação, Transporte ou Alojamento — não podem ser vinculados aqui.",
         duration: 6000,
       });
       return;
     }
 
     const { values } = extractCandidates(rawValue);
-    const code = values[0];
+    const code = values[0] || normalizeCredentialCode(rawValue);
 
     if (!code) {
       toast.error("Código inválido");
@@ -99,12 +208,17 @@ export default function VincularCredencialPage() {
     }
 
     setScannedCode(code);
-    
+
     try {
       const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
       setResolved(res);
+
       if (res) {
-        setCurrentOwner({ name: res.full_name || "Sem nome", id: res.participant_id });
+        setCurrentOwner({
+          name: res.full_name || "Sem nome",
+          id: res.participant_id,
+        });
+
         if (res.source === "cpf") {
           toast.success(`CPF de ${res.full_name} identificado!`);
         } else {
@@ -124,7 +238,6 @@ export default function VincularCredencialPage() {
     setParticipantScannerOpen(false);
     if (!rawValue.trim() || !activeEventId) return;
 
-    // Mesma defesa do handleScan — voucher não identifica pessoa.
     if (isVoucherQr(rawValue)) {
       toast.error("Este QR é um voucher, não identifica participante.");
       return;
@@ -132,20 +245,20 @@ export default function VincularCredencialPage() {
 
     try {
       setManualSearching(true);
+
       const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
-      
+
       if (res && res.participant_id) {
-        // Encontrou o participante via QR (pode ser CPF ou Token do sistema)
         await handleLink({
           participant_id: res.participant_id,
           full_name: res.full_name || "Participante identificado",
           person_id: "",
           cpf: "",
-          participant_type: ""
+          participant_type: "",
         });
       } else {
-        // Tenta buscar por CPF se for apenas dígitos
         const { cpfDigits } = extractCandidates(rawValue);
+
         if (cpfDigits) {
           setManualQuery(cpfDigits);
           toast.info("Pesquisando pelo CPF extraído...");
@@ -166,20 +279,23 @@ export default function VincularCredencialPage() {
     setResolved(null);
     setCurrentOwner(null);
     setManualQuery("");
+    setShowQuickCreate(false);
   };
 
   const handleLink = async (participant: ParticipantManualSearchRow) => {
     if (!scannedCode || !activeEventId) return;
 
     setLinking(true);
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.user) {
         throw new Error("Sessão expirada — faça login novamente.");
       }
 
-      // RPC link_external_credential exige p_replace_id quando o participante
-      // já tem credencial externa ativa (caso de troca de pulseira).
       const { data: existing } = await supabase
         .from("external_credentials")
         .select("id")
@@ -188,10 +304,6 @@ export default function VincularCredencialPage() {
         .eq("status", "active")
         .maybeSingle();
 
-      // Atomic: insere external_credentials, sincroniza participant_credentials
-      // e marca participant.status='credentialed' numa única transação.
-      // Sem isso, o admin via participante como "não credenciado" mesmo após
-      // PWA confirmar.
       const { error } = await (supabase as any).rpc("link_external_credential", {
         p_event_id: activeEventId,
         p_participant_id: participant.participant_id,
@@ -203,26 +315,215 @@ export default function VincularCredencialPage() {
 
       if (error) {
         const raw = (error.message || "").toLowerCase();
-        if (raw.includes("já vinculada a outro") || raw.includes("uq_external_credentials_event_code")) {
+
+        if (
+          raw.includes("já vinculada a outro") ||
+          raw.includes("uq_external_credentials_event_code")
+        ) {
           throw new Error(
             "Esta credencial já está com outro participante. Cancele a vinculação atual no admin antes de transferir.",
           );
         }
-        if (raw.includes("uq_external_credentials_active_participant") || raw.includes("uq_participant_credentials_active")) {
+
+        if (
+          raw.includes("uq_external_credentials_active_participant") ||
+          raw.includes("uq_participant_credentials_active")
+        ) {
           throw new Error(
             "Este participante já possui uma credencial ativa. Use a opção de substituir.",
           );
         }
+
         throw error;
       }
 
       toast.success("Credencial vinculada com sucesso!");
+
       if (navigator.vibrate) navigator.vibrate(200);
+
       handleReset();
     } catch (err: any) {
       toast.error(`Erro ao vincular: ${err.message}`);
     } finally {
       setLinking(false);
+    }
+  };
+
+  const createPerson = async () => {
+    const cpf = normalizeCpf(quickForm.cpf);
+    const birthDate = formatBirthDateToISO(quickForm.birth_date);
+
+    if (!birthDate) {
+      throw new Error("Data de nascimento inválida.");
+    }
+
+    const { data: existingPerson, error: existingError } = await supabase
+      .from("people")
+      .select("id")
+      .eq("cpf", cpf)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existingPerson?.id) return existingPerson.id;
+
+    const fullName = quickForm.full_name.trim().toUpperCase();
+
+    const { data, error } = await (supabase as any)
+      .from("people")
+      .insert({
+        full_name: fullName,
+        cpf,
+        birth_date: birthDate,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
+  const getOrCreateDelegation = async () => {
+    if (!activeEventId || !selectedSchool?.id) {
+      throw new Error("Selecione a escola/delegação.");
+    }
+
+    const { data: existing, error: existingError } = await supabase
+      .from("delegations")
+      .select("id")
+      .eq("event_id", activeEventId)
+      .eq("institution_id", selectedSchool.id)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existing?.id) return existing.id;
+
+    const { data, error } = await supabase
+      .from("delegations")
+      .insert({
+        event_id: activeEventId,
+        institution_id: selectedSchool.id,
+        status: "confirmed",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
+  const createParticipant = async (personId: string) => {
+    if (!activeEventId) {
+      throw new Error("Nenhum evento ativo selecionado.");
+    }
+
+    const { data: existingParticipants, error: existingError } = await supabase
+      .from("participants")
+      .select("id, participant_type")
+      .eq("person_id", personId)
+      .eq("event_id", activeEventId);
+
+    if (existingError) throw existingError;
+
+    if (existingParticipants?.length) {
+      return existingParticipants[0].id;
+    }
+
+    const delegationId = await getOrCreateDelegation();
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await (supabase as any)
+      .from("participants")
+      .insert({
+        person_id: personId,
+        event_id: activeEventId,
+        delegation_id: delegationId,
+        participant_type: quickForm.participant_type,
+        function_name: quickForm.function_name || null,
+        status: "credentialed",
+        needs_meals: true,
+        credentialed_at: now,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
+  const handleQuickCreateAndLink = async () => {
+    if (!scannedCode) {
+      toast.error("Nenhuma credencial escaneada.");
+      return;
+    }
+
+    if (!activeEventId) {
+      toast.error("Nenhum evento ativo selecionado.");
+      return;
+    }
+
+    const cpf = normalizeCpf(quickForm.cpf);
+
+    if (!quickForm.full_name.trim()) {
+      toast.error("Informe o nome completo.");
+      return;
+    }
+
+    if (cpf.length !== 11) {
+      toast.error("Informe um CPF com 11 dígitos.");
+      return;
+    }
+
+    if (!quickForm.birth_date) {
+      toast.error("Informe a data de nascimento.");
+      return;
+    }
+
+    if (!quickForm.sex) {
+      toast.error("Informe o sexo.");
+      return;
+    }
+
+    if (!quickForm.school_id) {
+      toast.error("Selecione a escola/delegação.");
+      return;
+    }
+
+    setCreatingParticipant(true);
+
+    try {
+      const personId = await createPerson();
+      const participantId = await createParticipant(personId);
+
+      await handleLink({
+        participant_id: participantId,
+        person_id: personId,
+        full_name: quickForm.full_name.trim().toUpperCase(),
+        cpf,
+        participant_type: quickForm.participant_type,
+      });
+
+      setQuickForm({
+        full_name: "",
+        cpf: "",
+        birth_date: "",
+        sex: "",
+        school_id: "",
+        participant_type: "athlete",
+        function_name: "",
+      });
+
+      setSchoolQuery("");
+      setSchools([]);
+      setShowQuickCreate(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Erro ao cadastrar participante: ${err.message}`);
+    } finally {
+      setCreatingParticipant(false);
     }
   };
 
@@ -237,13 +538,17 @@ export default function VincularCredencialPage() {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ScanLine className="h-8 w-8" />
               </div>
+
               <h2 className="text-lg font-bold">Passo 1: Escanear</h2>
-              <p className="text-sm text-muted-foreground">Escaneie o QR Code da credencial física (ex: pulseira ou cartão)</p>
+
+              <p className="text-sm text-muted-foreground">
+                Escaneie o QR Code da credencial física.
+              </p>
             </div>
-            
-            <Button 
-              variant="module" 
-              className="h-16 w-full rounded-2xl text-lg font-bold shadow-app-lg" 
+
+            <Button
+              variant="module"
+              className="h-16 w-full rounded-2xl text-lg font-bold shadow-app-lg"
               onClick={() => setScannerOpen(true)}
             >
               <ScanLine className="mr-3 h-6 w-6" />
@@ -258,11 +563,15 @@ export default function VincularCredencialPage() {
                   <div className="bg-primary text-primary-foreground p-2 rounded-lg">
                     <IdCard className="h-5 w-5" />
                   </div>
+
                   <div>
-                    <p className="text-[10px] uppercase font-bold text-primary/70 tracking-wider">Código Escaneado</p>
+                    <p className="text-[10px] uppercase font-bold text-primary/70 tracking-wider">
+                      Código Escaneado
+                    </p>
                     <p className="text-lg font-mono font-bold">{scannedCode}</p>
                   </div>
                 </div>
+
                 <Button variant="ghost" size="icon" onClick={handleReset}>
                   <RefreshCcw className="h-4 w-4" />
                 </Button>
@@ -271,71 +580,91 @@ export default function VincularCredencialPage() {
 
             {resolved?.source === "cpf" ? (
               <div className="rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4 space-y-3 text-center animate-in zoom-in-95 duration-300">
-                <div className="flex flex-col items-center gap-1">
-                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Pessoa encontrada via CPF</p>
-                  <p className="text-xl font-black text-blue-900 dark:text-blue-100">{resolved.full_name}</p>
-                </div>
-                
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl h-14 shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
-                  onClick={() => setPendingLink({
-                    participant_id: resolved.participant_id,
-                    full_name: resolved.full_name || "",
-                    person_id: "",
-                    cpf: scannedCode,
-                    participant_type: "",
-                  })}
+                <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                  Pessoa encontrada via CPF
+                </p>
+
+                <p className="text-xl font-black text-blue-900 dark:text-blue-100">
+                  {resolved.full_name}
+                </p>
+
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl h-14"
+                  onClick={() =>
+                    setPendingLink({
+                      participant_id: resolved.participant_id,
+                      full_name: resolved.full_name || "",
+                      person_id: "",
+                      cpf: scannedCode,
+                      participant_type: "",
+                    })
+                  }
                   disabled={linking}
                 >
                   <LinkIcon className="mr-2 h-5 w-5" />
                   Confirmar Vínculo
                 </Button>
-                <p className="text-xs text-blue-700/70 dark:text-blue-400/70 italic">
-                  O CPF será usado como o código da credencial para garantir o rastreio.
-                </p>
               </div>
             ) : currentOwner ? (
-              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-2 text-center animate-in zoom-in-95 duration-300">
+              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-2 text-center">
                 <p className="text-sm font-medium text-orange-800 dark:text-orange-300 flex items-center justify-center gap-2">
                   <User className="h-4 w-4" /> Código já vinculado a:
                 </p>
-                <p className="font-bold text-orange-900 dark:text-orange-100">{currentOwner.name}</p>
-                <p className="text-xs text-orange-700 dark:text-orange-400">Vincular a outra pessoa irá transferir este código.</p>
+
+                <p className="font-bold text-orange-900 dark:text-orange-100">
+                  {currentOwner.name}
+                </p>
               </div>
             ) : (
-              <div className="rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300 animate-in zoom-in-95 duration-300">
+              <div className="rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
                 <CheckCircle className="h-5 w-5" />
-                <span className="text-sm font-medium text-green-800 dark:text-green-200">Código disponível para vínculo</span>
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Código disponível para vínculo
+                </span>
               </div>
             )}
 
             <div className="space-y-4">
               <div className="text-center space-y-1">
                 <h2 className="text-lg font-bold">Passo 2: Quem é o dono?</h2>
-                <p className="text-sm text-muted-foreground">Busque o participante pelo nome, CPF ou escaneie o QR Code dele (mesmo de outro sistema)</p>
+
+                <p className="text-sm text-muted-foreground">
+                  Busque o participante pelo nome ou CPF.
+                </p>
               </div>
 
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
                   <Input
                     placeholder="Buscar por nome ou CPF…"
                     value={manualQuery}
-                    onChange={(e) => setManualQuery(e.target.value)}
+                    onChange={(e) => {
+                      setManualQuery(e.target.value);
+
+                      setQuickForm((prev) => ({
+                        ...prev,
+                        full_name:
+                          e.target.value.replace(/\d/g, "").trim().length > 2
+                            ? e.target.value
+                            : prev.full_name,
+                        cpf:
+                          onlyDigits(e.target.value).length >= 8
+                            ? onlyDigits(e.target.value)
+                            : prev.cpf,
+                      }));
+                    }}
                     className="h-12 border-border/80 bg-card/90 pl-10 shadow-app-sm rounded-xl"
                     autoFocus
-                    inputMode="search"
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    autoComplete="off"
                   />
                 </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+
+                <Button
+                  type="button"
+                  variant="outline"
                   className="h-12 w-12 rounded-xl p-0 border-primary/20 bg-primary/5 text-primary shadow-app-sm"
                   onClick={() => setParticipantScannerOpen(true)}
-                  title="Escanear QR do Participante"
                 >
                   <ScanLine className="h-5 w-5" />
                 </Button>
@@ -360,10 +689,17 @@ export default function VincularCredencialPage() {
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                           <User className="h-6 w-6" />
                         </div>
+
                         <div className="flex-1 min-w-0">
-                          <p className="truncate text-base font-bold text-foreground">{h.full_name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{h.participant_type}</p>
+                          <p className="truncate text-base font-bold text-foreground">
+                            {h.full_name}
+                          </p>
+
+                          <p className="truncate text-xs text-muted-foreground">
+                            {h.participant_type}
+                          </p>
                         </div>
+
                         <div className="bg-primary/5 text-primary p-2 rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                           <LinkIcon className="h-5 w-5" />
                         </div>
@@ -371,8 +707,20 @@ export default function VincularCredencialPage() {
                     ))}
                   </div>
                 ) : debouncedManual.length >= 2 ? (
-                  <div className="text-center py-10 bg-muted/30 rounded-2xl border-2 border-dashed border-muted">
-                    <p className="text-muted-foreground font-medium">Nenhum participante encontrado.</p>
+                  <div className="space-y-3 text-center py-6 bg-muted/30 rounded-2xl border-2 border-dashed border-muted px-4">
+                    <p className="text-muted-foreground font-medium">
+                      Nenhum participante encontrado.
+                    </p>
+
+                    <Button
+                      type="button"
+                      variant="module"
+                      className="w-full gap-2"
+                      onClick={() => setShowQuickCreate(true)}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Cadastrar novo participante
+                    </Button>
                   </div>
                 ) : (
                   <div className="text-center py-10 text-muted-foreground">
@@ -380,6 +728,232 @@ export default function VincularCredencialPage() {
                   </div>
                 )}
               </div>
+
+              {showQuickCreate && (
+                <Card className="border-amber-500/40 bg-card/95">
+                  <CardContent className="space-y-3 p-4">
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5 text-amber-500" />
+
+                      <div>
+                        <p className="font-bold">Cadastro rápido</p>
+
+                        <p className="text-xs text-muted-foreground">
+                          Cadastra o participante e vincula a credencial{" "}
+                          <strong>{scannedCode}</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Nome completo
+                      </label>
+
+                      <Input
+                        value={quickForm.full_name}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            full_name: e.target.value,
+                          }))
+                        }
+                        placeholder="Nome completo"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        CPF
+                      </label>
+
+                      <Input
+                        value={quickForm.cpf}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            cpf: normalizeCpf(e.target.value),
+                          }))
+                        }
+                        placeholder="Somente números"
+                        inputMode="numeric"
+                        maxLength={11}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-muted-foreground">
+                          Data nascimento
+                        </label>
+
+                        <Input
+                          type="date"
+                          value={quickForm.birth_date}
+                          onChange={(e) =>
+                            setQuickForm((prev) => ({
+                              ...prev,
+                              birth_date: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-muted-foreground">
+                          Sexo
+                        </label>
+
+                        <select
+                          value={quickForm.sex}
+                          onChange={(e) =>
+                            setQuickForm((prev) => ({
+                              ...prev,
+                              sex: e.target.value,
+                            }))
+                          }
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="">Selecione</option>
+                          <option value="M">Masculino</option>
+                          <option value="F">Feminino</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Tipo
+                      </label>
+
+                      <select
+                        value={quickForm.participant_type}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            participant_type: e.target.value,
+                          }))
+                        }
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="athlete">Atleta</option>
+                        <option value="coach">Técnico</option>
+                        <option value="head_of_delegation">Chefe de Delegação</option>
+                        <option value="official">Oficial</option>
+                        <option value="staff">Staff / Equipe geral</option>
+                        <option value="motorista">Motorista</option>
+                        <option value="agente_operacao">Operacional</option>
+                        <option value="logistica">Logística</option>
+                        <option value="cozinheira">Cozinheira / Alimentação</option>
+                        <option value="guia">Guia</option>
+                        <option value="secretaria">Secretaria</option>
+                        <option value="mesario">Mesário</option>
+                        <option value="arbitro">Árbitro</option>
+                        <option value="delegado">Delegado</option>
+                        <option value="fiscal">Fiscal</option>
+                        <option value="operador_pesquisa">Operador de Pesquisa</option>
+                        <option value="tecnico_ti">Técnico de TI</option>
+                        <option value="terceiro">Terceirizado</option>
+                        <option value="colaborador">Colaborador</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Função detalhada
+                      </label>
+
+                      <Input
+                        value={quickForm.function_name}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            function_name: e.target.value,
+                          }))
+                        }
+                        placeholder="Ex: Fisioterapeuta, Fotógrafo, Credenciamento..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Escola / Delegação
+                      </label>
+
+                      <Input
+                        value={schoolQuery}
+                        onChange={(e) => {
+                          setSchoolQuery(e.target.value);
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            school_id: "",
+                          }));
+                        }}
+                        placeholder="Digite o nome da escola"
+                      />
+
+                      {loadingSchools && (
+                        <p className="text-xs text-muted-foreground">
+                          Buscando escolas...
+                        </p>
+                      )}
+
+                      {schools.length > 0 && (
+                        <div className="max-h-40 overflow-y-auto rounded-xl border bg-background">
+                          {schools.map((school) => (
+                            <button
+                              key={school.id}
+                              type="button"
+                              onClick={() => {
+                                setQuickForm((prev) => ({
+                                  ...prev,
+                                  school_id: school.id,
+                                }));
+                                setSchoolQuery(school.name);
+                              }}
+                              className={`w-full border-b px-3 py-2 text-left text-sm last:border-0 hover:bg-muted ${
+                                quickForm.school_id === school.id
+                                  ? "bg-muted font-bold"
+                                  : ""
+                              }`}
+                            >
+                              {school.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowQuickCreate(false)}
+                        disabled={creatingParticipant}
+                      >
+                        Cancelar
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="module"
+                        className="w-full gap-2"
+                        onClick={handleQuickCreateAndLink}
+                        disabled={creatingParticipant}
+                      >
+                        {creatingParticipant ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+
+                        Salvar e vincular
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}
@@ -391,14 +965,14 @@ export default function VincularCredencialPage() {
         onScan={handleScan}
         title="Escanear Credencial Física"
       />
-      
+
       <QrCodeScanner
         isOpen={participantScannerOpen}
         onClose={() => setParticipantScannerOpen(false)}
         onScan={handleParticipantScan}
         title="Identificar Participante"
       />
-      
+
       {linking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-4">
@@ -408,22 +982,25 @@ export default function VincularCredencialPage() {
         </div>
       )}
 
-      {/* Confirmação destrutiva: vinculação é definitiva no fluxo PWA;
-          operador no campo (sol, dedos molhados) precisa de double-check
-          claro entre credencial × pessoa antes do INSERT. */}
       <AlertDialog open={!!pendingLink} onOpenChange={(o) => !o && setPendingLink(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar vínculo de credencial</AlertDialogTitle>
+
             <AlertDialogDescription>
-              Vincular a credencial <strong className="font-mono">{scannedCode ?? "—"}</strong>{" "}
-              ao participante <strong>{pendingLink?.full_name || "—"}</strong>?
+              Vincular a credencial{" "}
+              <strong className="font-mono">{scannedCode ?? "—"}</strong> ao
+              participante <strong>{pendingLink?.full_name || "—"}</strong>?
               <br />
-              <span className="text-destructive font-medium">Esta ação é definitiva no PWA.</span>
+              <span className="text-destructive font-medium">
+                Esta ação é definitiva no PWA.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
+
             <AlertDialogAction
               onClick={() => {
                 if (pendingLink) {
