@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { createSupabaseFetchInterceptor } from '@/lib/monitoring/supabaseInstrumentation';
 
-// Defaults (fallback do projeto Lovable original)
+// Defaults (projeto Supabase de produção)
+// Cada ambiente Vercel sobrescreve via VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY.
 const DEFAULT_SUPABASE_URL = "https://dfzjrijdcskncrwaiykr.supabase.co";
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmempyaWpkY3NrbmNyd2FpeWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNTUwNjYsImV4cCI6MjA5MDczMTA2Nn0.jYPuKoPcNC5sEBLXtgTyo9e4oqDsc69zOVrzHrf4lUw";
 
