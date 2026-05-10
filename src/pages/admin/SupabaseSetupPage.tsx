@@ -7,12 +7,32 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle2, XCircle, AlertTriangle, Database, RefreshCw, Save, RotateCcw, Eye, EyeOff } from "lucide-react";
 import {
+  supabase,
   ACTIVE_SUPABASE,
   SUPABASE_DEFAULTS,
   SUPABASE_OVERRIDE_KEYS,
 } from "@/integrations/supabase/client";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
+
+/** Remove all sb-*-auth-token entries so stale sessions never bleed into a new project. */
+async function clearSupabaseSession() {
+  try {
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch {
+    // ignore — we still clear storage manually below
+  }
+  try {
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) toRemove.push(key);
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // ignore
+  }
+}
 
 function maskKey(k: string) {
   if (!k) return "";
@@ -85,16 +105,18 @@ export default function SupabaseSetupPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return;
+    await clearSupabaseSession();
     localStorage.setItem(SUPABASE_OVERRIDE_KEYS.url, url.trim());
     localStorage.setItem(SUPABASE_OVERRIDE_KEYS.anonKey, anonKey.trim());
     toast.success("Credenciais salvas. Recarregando…");
     setTimeout(() => window.location.reload(), 800);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!confirm("Remover override e voltar para o projeto Supabase padrão?")) return;
+    await clearSupabaseSession();
     localStorage.removeItem(SUPABASE_OVERRIDE_KEYS.url);
     localStorage.removeItem(SUPABASE_OVERRIDE_KEYS.anonKey);
     toast.success("Override removido. Recarregando…");
