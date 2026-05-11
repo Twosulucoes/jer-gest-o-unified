@@ -43,7 +43,21 @@ CREATE POLICY "notifications_insert_service" ON notifications
   FOR INSERT WITH CHECK (true);
 
 -- Habilita Realtime para push em tempo real no frontend
-ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime'
+        AND schemaname = 'public'
+        AND tablename = 'notifications'
+    ) THEN
+      ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+    END IF;
+  ELSE
+    RAISE NOTICE 'Publication supabase_realtime não encontrada — realtime indisponível neste banco.';
+  END IF;
+END $$;
 
 
 -- ─── alert_rules ──────────────────────────────────────────
