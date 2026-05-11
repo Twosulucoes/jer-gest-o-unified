@@ -31,7 +31,7 @@ WITH first_stage_per_event AS (
   SELECT DISTINCT ON (event_id) event_id, id AS stage_id
   FROM public.event_stages
   WHERE status IS NULL OR status != 'archived'
-  ORDER BY event_id, COALESCE(start_date, created_at) ASC NULLS LAST
+  ORDER BY event_id, COALESCE(starts_at, created_at) ASC NULLS LAST
 )
 UPDATE public.lodging_locations ll
 SET event_stage_id = fs.stage_id
@@ -51,7 +51,7 @@ WITH first_stage_per_event AS (
   SELECT DISTINCT ON (event_id) event_id, id AS stage_id
   FROM public.event_stages
   WHERE status IS NULL OR status != 'archived'
-  ORDER BY event_id, COALESCE(start_date, created_at) ASC NULLS LAST
+  ORDER BY event_id, COALESCE(starts_at, created_at) ASC NULLS LAST
 )
 UPDATE public.lodging_units u
 SET event_stage_id = fs.stage_id
