@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/participant-management-admin-sp8dA",
-  "commit": "62bcaefe",
-  "commitFull": "62bcaefe95dd0e8d7320068f24dc98a4bb1d47ed",
-  "buildDate": "2026-05-11T03:40:56.228Z",
+  "branch": "claude/backup-recovery-audit-Qzgex",
+  "commit": "1d8b3d4b",
+  "commitFull": "1d8b3d4ba264870c6b7962701ca03042f08eab61",
+  "buildDate": "2026-05-11T04:21:25.193Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
