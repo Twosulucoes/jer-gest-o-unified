@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { VersionBadge } from "../VersionBadge";
 import { logPwaEvent } from "@/utils/pwaTelemetry";
+import { logAccessError } from "@/lib/accessLogger";
 import { toast } from "sonner";
 import { OfflineSessionBanner } from "@/components/auth/OfflineSessionBanner";
 
@@ -136,6 +137,12 @@ export default function PwaRouteGuard({ children, allowedRoles, requireStage = t
         metadata: { allowedRoles, userRoles: roles, path: location.pathname },
         event_id: activeEventId,
         stage_id: activeStageId
+      });
+      void logAccessError({
+        action: "route_access",
+        resource: location.pathname,
+        status: "denied",
+        metadata: { allowedRoles, userRoles: roles, event_id: activeEventId, stage_id: activeStageId },
       });
 
       if (!accessDeniedToastShown.current) {

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isPermissionError, logAccessError } from "@/lib/accessLogger";
 
 let installed = false;
 const queue: Array<Record<string, unknown>> = [];
@@ -51,6 +52,19 @@ export function reportError(payload: {
   if (!payload.silent && payload.severity === "critical") {
     // We could trigger a global state update or toast here if needed
   }
+
+  // Cross-log permission errors to access_logs for admin visibility
+  if (isPermissionError({ message: payload.message, code: payload.context?.code })) {
+    void logAccessError({
+      action: "data_access",
+      resource: String(payload.context?.resource ?? window.location.pathname),
+      status: "denied",
+      errorCode: String(payload.context?.code ?? ""),
+      errorMsg: payload.message,
+      metadata: payload.context,
+    });
+  }
+
   queue.push({
     source: "frontend",
     severity: payload.severity ?? "error",

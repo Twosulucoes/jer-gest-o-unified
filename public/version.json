@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/consumption-reports-audit-ZJZ2m",
-  "commit": "063d6c0c",
-  "commitFull": "063d6c0c129e234f9fa1010e5681540c076a7d5c",
-  "buildDate": "2026-05-11T02:12:37.429Z",
+  "branch": "claude/audit-user-access-wigmO",
+  "commit": "cef7a8c8",
+  "commitFull": "cef7a8c8f67c1fc56af620c1c54a17be8ef16dc9",
+  "buildDate": "2026-05-11T02:48:08.166Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }

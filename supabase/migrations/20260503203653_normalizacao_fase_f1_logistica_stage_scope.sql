@@ -14,6 +14,16 @@
 -- a migration aborta — operador deve criar a etapa antes.
 
 -- ============================================================
+-- 0. Garantir que as colunas existam (idempotente; necessário em
+--    rebuilds limpos onde meal_locations.event_stage_id não foi
+--    criada por nenhuma migration anterior).
+-- ============================================================
+ALTER TABLE public.meal_types
+  ADD COLUMN IF NOT EXISTS event_stage_id UUID REFERENCES public.event_stages(id) ON DELETE SET NULL;
+ALTER TABLE public.meal_locations
+  ADD COLUMN IF NOT EXISTS event_stage_id UUID REFERENCES public.event_stages(id) ON DELETE SET NULL;
+
+-- ============================================================
 -- Helper: backfill_event_stage(t)
 --   Para cada linha de t com event_stage_id IS NULL e event_id NOT NULL,
 --   preenche com o primeiro event_stage active do evento.
