@@ -9,6 +9,7 @@ import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { format } from "date-fns";
 import { useTodayString } from "@/hooks/useTodayString";
+import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 
 interface ConsumptionItem {
   id: string;
@@ -28,11 +29,13 @@ export default function AlimentacaoHistoricoPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
       let query = supabase
         .from("meal_consumptions")
         .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows!inner(event_id, event_stage_id, meal_type:meal_types(name))")
         .eq("meal_windows.event_id", activeEventId)
-        .gte("consumed_at", today + "T00:00:00");
+        .gte("consumed_at", startIso)
+        .lt("consumed_at", endIsoExclusive);
 
       if (activeStageId) {
         query = query.eq("meal_windows.event_stage_id", activeStageId);
