@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IdCard, Clock, Eye, Tag, ScanLine, CheckCircle, XCircle, AlertCircle, Filter, Link2, Cpu } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import VincularQrDialog from "./VincularQrDialog";
 
 interface Props {
   participantId: string;
@@ -42,6 +43,7 @@ const SCAN_POINT_LABELS: Record<string, string> = {
 export default function ParticipantCredencialTab({ participantId, eventId, onEmitLabel, onPreviewCredential }: Props) {
   const [scanFilter, setScanFilter] = useState<string>("all");
   const scanFilterLabelId = useId();
+  const [vincularOpen, setVincularOpen] = useState(false);
 
   const { data: credentials = [], isLoading } = useQuery({
     queryKey: ["participant_credentials", participantId, eventId],
@@ -155,7 +157,10 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
               <CardTitle className="text-base flex items-center gap-2">
                 <IdCard className="h-4 w-4 text-primary" />Credencial Ativa
               </CardTitle>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 flex-wrap">
+                <Button size="sm" variant="outline" onClick={() => setVincularOpen(true)}>
+                  <Link2 className="h-3.5 w-3.5 mr-1" />Vincular QR
+                </Button>
                 {onPreviewCredential && (
                   <Button size="sm" variant="outline" onClick={onPreviewCredential}>
                     <Eye className="h-3.5 w-3.5 mr-1" />Visualizar
@@ -322,6 +327,14 @@ export default function ParticipantCredencialTab({ participantId, eventId, onEmi
           </CardContent>
         </Card>
       )}
+
+      <VincularQrDialog
+        open={vincularOpen}
+        onOpenChange={setVincularOpen}
+        participantId={participantId}
+        eventId={eventId}
+        activeCredentialId={active?.id ?? null}
+      />
     </div>
   );
 }
