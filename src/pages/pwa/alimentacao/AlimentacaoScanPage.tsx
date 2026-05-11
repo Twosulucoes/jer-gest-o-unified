@@ -17,6 +17,7 @@ import {
   Lock,
   ListChecks,
   Settings2,
+  WifiOff,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -855,6 +856,22 @@ export default function AlimentacaoScanPage() {
 
       <main className="relative mx-auto max-w-md space-y-3 p-3">
         <VoucherConflictCentral />
+
+        {/* === BANNER MODO EMERGÊNCIA (offline) === */}
+        {!online && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/60 bg-amber-500/10 px-4 py-3">
+            <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-amber-500">
+                Modo emergência — salvando localmente
+              </p>
+              <p className="mt-0.5 text-[11px] text-amber-400/80">
+                Sem conexão com o servidor. Os registros são salvos no dispositivo e
+                sincronizados automaticamente quando a conexão retornar.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* === BLOCO JANELA ATIVA === */}
         {windows.length === 0 ? (

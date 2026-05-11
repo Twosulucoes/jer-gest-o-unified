@@ -1,24 +1,38 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
 import { useAuth } from "@/hooks/useAuth";
-import { ShieldCheck, Filter } from "lucide-react";
+import { ShieldCheck, Filter, RotateCcw, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ModuleStateBoundary } from "@/components/shared/ModuleStateBoundary";
+import { toast } from "sonner";
+import { restaurarConsumo } from "@/lib/cancelarConsumo";
 
-type ActionFilter = "all" | "insert" | "update" | "delete" | "reverse";
+type ActionFilter = "all" | "insert" | "update" | "delete" | "reverse" | "restore";
 
 const ACTION_BADGE: Record<string, { label: string; className: string }> = {
   insert: { label: "Inserção", className: "bg-blue-500/10 text-blue-700 border-blue-200 dark:text-blue-300 dark:border-blue-800" },
   update: { label: "Atualização", className: "bg-amber-500/10 text-amber-700 border-amber-200 dark:text-amber-300 dark:border-amber-800" },
   delete: { label: "Exclusão", className: "bg-muted text-muted-foreground border-border" },
   reverse: { label: "Estorno", className: "bg-destructive/10 text-destructive border-destructive/30" },
+  restore: { label: "Restauração", className: "bg-green-500/10 text-green-700 border-green-200 dark:text-green-300 dark:border-green-800" },
 };
 
 const REASON_LABELS: Record<string, string> = {
@@ -47,10 +61,13 @@ export default function AlimentacaoAuditoriaPage() {
   const eventId = useActiveEventId();
   const { stageId } = useStageScope();
   const { hasRole } = useAuth();
+  const qc = useQueryClient();
   const canView = hasRole("admin") || hasRole("secretaria") || hasRole("coordenacao_tecnica");
+  const canRestore = hasRole("admin");
 
   const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [restoreTarget, setRestoreTarget] = useState<{ consumptionId: string; participantName: string | null } | null>(null);
 
   const logsQuery = useQuery({
     queryKey: ["meal_audit_logs", eventId, stageId, actionFilter],
@@ -152,6 +169,27 @@ export default function AlimentacaoAuditoriaPage() {
       });
   }, [logsQuery.data, windowsQuery.data, eventId, stageId, searchTerm, partsMap, peopleMap, actorsMap]);
 
+  const restoreMutation = useMutation({
+    mutationFn: async (consumptionId: string) => restaurarConsumo(consumptionId),
+    onSuccess: () => {
+      toast.success("Consumo restaurado com sucesso.", {
+        description: "A operação foi registrada na trilha de auditoria.",
+      });
+      void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
+      void qc.invalidateQueries({ queryKey: ["meal_audit_logs"] });
+      setRestoreTarget(null);
+    },
+    onError: (err: any) => {
+      const msg = err?.message ?? "Falha ao restaurar consumo.";
+      const isConflict = msg.includes("23505") || msg.toLowerCase().includes("conflito");
+      toast.error(
+        isConflict
+          ? "Conflito: o participante já tem um consumo ativo nesta janela."
+          : msg,
+      );
+    },
+  });
+
   return (
     <div className="animate-fade-in space-y-6">
       <div>
@@ -159,7 +197,7 @@ export default function AlimentacaoAuditoriaPage() {
           <ShieldCheck className="h-6 w-6 text-primary" aria-hidden /> Auditoria de Alimentação
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Trilha imutável de inserções, alterações, exclusões e estornos em consumos.
+          Trilha imutável de inserções, alterações, exclusões, estornos e restaurações em consumos.
         </p>
       </div>
 
@@ -186,6 +224,7 @@ export default function AlimentacaoAuditoriaPage() {
                   <SelectItem value="update">Atualização</SelectItem>
                   <SelectItem value="delete">Exclusão</SelectItem>
                   <SelectItem value="reverse">Estorno</SelectItem>
+                  <SelectItem value="restore">Restauração</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -211,6 +250,7 @@ export default function AlimentacaoAuditoriaPage() {
                   <TableHead>Janela</TableHead>
                   <TableHead>Operador</TableHead>
                   <TableHead>Motivo</TableHead>
+                  {canRestore && <TableHead className="w-12 text-right" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -220,6 +260,7 @@ export default function AlimentacaoAuditoriaPage() {
                   const win = r.meal_window_id ? (windowsMap.get(r.meal_window_id) as any) : null;
                   const actor = r.actor_id ? actorsMap.get(r.actor_id) : null;
                   const badge = ACTION_BADGE[r.action] ?? { label: r.action, className: "" };
+                  const isReversed = r.action === "reverse";
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs text-muted-foreground">
@@ -274,6 +315,27 @@ export default function AlimentacaoAuditoriaPage() {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
+                      {canRestore && (
+                        <TableCell className="text-right">
+                          {isReversed && r.consumption_id ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-green-700 hover:bg-green-500/10 hover:text-green-700 dark:text-green-400"
+                              aria-label="Restaurar consumo"
+                              onClick={() =>
+                                setRestoreTarget({
+                                  consumptionId: r.consumption_id!,
+                                  participantName: person?.full_name ?? null,
+                                })
+                              }
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                              <span className="ml-1 hidden md:inline text-xs">Restaurar</span>
+                            </Button>
+                          ) : null}
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -282,6 +344,59 @@ export default function AlimentacaoAuditoriaPage() {
           </ModuleStateBoundary>
         </CardContent>
       </Card>
+
+      {/* Dialog de confirmação de restauração */}
+      <AlertDialog
+        open={restoreTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !restoreMutation.isPending) setRestoreTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5 text-green-600" aria-hidden />
+              Restaurar consumo
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              {restoreTarget?.participantName && (
+                <span className="block">
+                  Participante:{" "}
+                  <span className="font-medium text-foreground">{restoreTarget.participantName}</span>
+                </span>
+              )}
+              <span className="block pt-1">
+                O consumo será reativado (status ativo) e o registro de restauração será salvo na trilha de auditoria.
+              </span>
+              <span className="block text-amber-600 dark:text-amber-400 text-sm">
+                Falha se o participante já tiver outro consumo ativo na mesma janela.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoreMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (restoreTarget?.consumptionId) {
+                  restoreMutation.mutate(restoreTarget.consumptionId);
+                }
+              }}
+              disabled={restoreMutation.isPending}
+              className="bg-green-600 text-white hover:bg-green-700"
+            >
+              {restoreMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                  Restaurando…
+                </>
+              ) : (
+                "Confirmar restauração"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
