@@ -26,6 +26,11 @@ interface QrCodeScannerProps {
   allowedPrefixes?: string[];
   title?: string;
   continuous?: boolean;
+  /** Layout do scanner.
+   *  - "fullscreen" (padrão): overlay tactical cockpit ocupando a tela toda.
+   *  - "inline": viewfinder embutido na própria página, sem header e sem
+   *    fallback manual (usar busca da própria tela). */
+  variant?: "fullscreen" | "inline";
 }
 
 type ScanState = "requesting" | "active" | "error" | "idle";
@@ -37,6 +42,7 @@ export default function QrCodeScanner({
   allowedPrefixes,
   title = "Escanear QR",
   continuous = false,
+  variant = "fullscreen",
 }: QrCodeScannerProps) {
   const [state, setState] = useState<ScanState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -302,6 +308,102 @@ export default function QrCodeScanner({
 
   const accent = "hsl(var(--tac-accent))";
   const muted = "hsl(var(--tac-muted))";
+
+  if (variant === "inline") {
+    return (
+      <div
+        className="tactical-cockpit relative w-full overflow-hidden rounded-2xl border-2 border-module bg-black text-white"
+        style={{ height: "12rem" }}
+      >
+        {showSuccess && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[hsl(var(--tac-accent)/0.95)] text-black">
+            <CheckCircle2 className="h-10 w-10" />
+            <span className="mt-1 text-xs font-black uppercase tracking-[0.25em]">SCAN OK</span>
+          </div>
+        )}
+
+        {state === "requesting" && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/60">
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: accent }} />
+            <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: muted }}>
+              Iniciando câmera…
+            </p>
+          </div>
+        )}
+
+        {state === "error" && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 px-4 text-center bg-black/80">
+            <AlertTriangle className="h-6 w-6" style={{ color: "hsl(var(--tac-danger))" }} />
+            <p className="text-xs leading-snug">{errorMsg}</p>
+            <button
+              onClick={() => void startScanner(useFront)}
+              className="mt-1 h-8 px-3 rounded-md text-[11px] font-bold uppercase tracking-wide active:scale-95 transition-transform"
+              style={{ background: accent, color: "hsl(var(--tac-bg))" }}
+            >
+              Tentar de novo
+            </button>
+          </div>
+        )}
+
+        {/* Camera surface — html5-qrcode mounts inside this container */}
+        <div id={containerId} className="absolute inset-0" />
+
+        {(state === "active" || state === "requesting") && (
+          <>
+            {[
+              "top-2 left-2 border-t-2 border-l-2 rounded-tl-md",
+              "top-2 right-2 border-t-2 border-r-2 rounded-tr-md",
+              "bottom-2 left-2 border-b-2 border-l-2 rounded-bl-md",
+              "bottom-2 right-2 border-b-2 border-r-2 rounded-br-md",
+            ].map((cls, i) => (
+              <div
+                key={i}
+                className={`absolute w-5 h-5 ${cls}`}
+                style={{ borderColor: accent }}
+              />
+            ))}
+            {state === "active" && (
+              <div className="absolute inset-2 overflow-hidden rounded-md pointer-events-none">
+                <div className="tac-scan-line" />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Top-right close */}
+        <button
+          onClick={handleClose}
+          className="absolute top-2 right-2 z-40 rounded-md bg-black/60 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm hover:bg-black/80 active:scale-95"
+          aria-label="Fechar câmera"
+        >
+          ✕ Fechar
+        </button>
+
+        {/* Bottom controls (flip/torch) */}
+        {state === "active" && (
+          <div className="absolute bottom-2 left-2 z-30 flex items-center gap-1.5">
+            <button
+              onClick={() => void flipCamera()}
+              className="h-8 w-8 rounded-md bg-black/60 text-white/80 backdrop-blur-sm flex items-center justify-center active:scale-95"
+              title="Alternar câmera"
+              aria-label="Alternar câmera"
+            >
+              <SwitchCamera className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => void toggleTorch()}
+              className="h-8 w-8 rounded-md bg-black/60 text-white/80 backdrop-blur-sm flex items-center justify-center active:scale-95"
+              title="Lanterna"
+              aria-label="Lanterna"
+              style={torchOn ? { color: accent } : undefined}
+            >
+              <Flashlight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
