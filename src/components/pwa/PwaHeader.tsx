@@ -8,6 +8,7 @@ import { useStageContext } from "@/contexts/StageContext";
 import { usePwaNavigation, type PwaModule } from "@/hooks/pwa/usePwaNavigation";
 import { PwaRefreshButton } from "./PwaRefreshButton";
 import { PwaLayoutCtx } from "./PwaLayoutContext";
+import { AlertBell } from "@/components/shared/AlertBell";
 
 interface PwaHeaderProps {
   title: string;
@@ -117,6 +118,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
         </div>
         <div className="flex items-center gap-1">
           <PwaRefreshButton />
+          <AlertBell />
           {rightSlot}
           {isAdmin && (
             <Button

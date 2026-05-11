@@ -115,6 +115,7 @@ const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
 const VoucherValidarPage = lazy(() => import("../pages/admin/VoucherValidarPage"));
 const VoucherAuditoriaPage = lazy(() => import("../pages/admin/VoucherAuditoriaPage"));
 const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
+const AlertasPage = lazy(() => import("../pages/admin/AlertasPage"));
 
 // Transporte Subpages (Admin)
 const AdminTransporteViagensPage = lazy(() => import("../pages/admin/TransporteViagensPage"));
@@ -375,6 +376,7 @@ export const AppRoutes = () => (
         <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>}>
         </Route>
         <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
+        <Route path="alertas" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "secretaria", "coordenacao_tecnica"]}><AlertasPage /></ProtectedRoute>} />
         <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
         <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
         <Route path="dados" element={<Navigate to="/super/dados" replace />} />
