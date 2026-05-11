@@ -111,6 +111,7 @@ export default function AlimentacaoConsumoPage() {
         .from("meal_consumptions")
         .select("*")
         .in("meal_window_id", windowIds)
+        .neq("status", "cancelado")
         .order("consumed_at", { ascending: false });
 
       if (error) throw error;
