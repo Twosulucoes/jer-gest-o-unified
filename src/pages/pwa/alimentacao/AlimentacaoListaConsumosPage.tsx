@@ -20,6 +20,7 @@ import {
 import { formatPhone, phoneMask } from "@/lib/phoneUtils";
 import { downloadCsv } from "@/lib/reportExport";
 import { useTodayString } from "@/hooks/useTodayString";
+import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 
 interface MealWindow {
   id: string;
@@ -98,6 +99,7 @@ export default function AlimentacaoListaConsumosPage() {
     setWindows(windowList);
 
     const windowIds = windowList.map(w => w.id);
+    const { startIso, endIsoExclusive } = dayRangeRoraima(today);
 
     // Step 2: consumptions + voucher uses in parallel
     let consQuery = supabase
@@ -112,8 +114,8 @@ export default function AlimentacaoListaConsumosPage() {
         meal_windows!inner(id, label, start_time, end_time, service_date, event_id, event_stage_id, meal_types!inner(name))
       `)
       .eq("meal_windows.event_id", activeEventId)
-      .gte("consumed_at", today + "T00:00:00")
-      .lte("consumed_at", today + "T23:59:59");
+      .gte("consumed_at", startIso)
+      .lt("consumed_at", endIsoExclusive);
     if (stageId) consQuery = consQuery.eq("meal_windows.event_stage_id", stageId);
 
     const [consumptionsRes, voucherUsesRes] = await Promise.all([
@@ -131,8 +133,8 @@ export default function AlimentacaoListaConsumosPage() {
             `)
             .eq("service_kind", "meals")
             .in("context_id", windowIds)
-            .gte("used_at", today + "T00:00:00")
-            .lte("used_at", today + "T23:59:59")
+            .gte("used_at", startIso)
+            .lt("used_at", endIsoExclusive)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 

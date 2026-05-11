@@ -47,6 +47,7 @@ import { addToVoucherQueue } from "@/lib/voucherOffline";
 import { enqueueIncident } from "@/lib/incidentOffline";
 import { readMealWindowsCache, writeMealWindowsCache } from "@/lib/mealWindowsCache";
 import { useTodayString } from "@/hooks/useTodayString";
+import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 import { JanelaSheet, type JanelaStatus } from "@/components/pwa/alimentacao/JanelaSheet";
 import { cn } from "@/lib/utils";
@@ -280,6 +281,7 @@ export default function AlimentacaoScanPage() {
     if (!activeEventId) return;
     let cancelled = false;
     (async () => {
+      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
       let consumoQ = supabase
         .from("meal_consumptions")
         .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
@@ -287,7 +289,8 @@ export default function AlimentacaoScanPage() {
           head: true,
         })
         .eq("meal_windows.event_id", activeEventId)
-        .gte("consumed_at", today + "T00:00:00");
+        .gte("consumed_at", startIso)
+        .lt("consumed_at", endIsoExclusive);
       if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
       const { count } = await consumoQ;
       if (!cancelled) setTotalToday(count || 0);
