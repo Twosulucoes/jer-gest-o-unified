@@ -2,8 +2,8 @@
   "appVersion": "0.4.0",
   "environment": "teste",
   "branch": "claude/automatic-alerts-system-sYEDQ",
-  "commit": "62bcaefe",
-  "commitFull": "62bcaefe95dd0e8d7320068f24dc98a4bb1d47ed",
-  "buildDate": "2026-05-11T03:54:42.515Z",
+  "commit": "606e428a",
+  "commitFull": "606e428ac624f072694eb59b3f7f3147b4eada9d",
+  "buildDate": "2026-05-11T04:06:30.902Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
