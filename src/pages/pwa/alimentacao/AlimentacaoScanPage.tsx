@@ -1,18 +1,33 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ScanLine, CheckCircle, XCircle, AlertTriangle, Search, Loader2, User, UserPlus } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  ScanLine,
+  CheckCircle,
+  XCircle,
+  Search,
+  Loader2,
+  User,
+  UserPlus,
+  ChevronsUpDown,
+  Lock,
+  ListChecks,
+  Settings2,
+} from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
-import { searchParticipantsByNameOrCpf, type ParticipantManualSearchRow } from "@/lib/participantManualSearch";
+import {
+  searchParticipantsByNameOrCpf,
+  type ParticipantManualSearchRow,
+} from "@/lib/participantManualSearch";
 import { useEventContext } from "@/contexts/EventContext";
-import { useActiveStageId } from "@/contexts/StageContext";
+import { useActiveStageId, useStageContext } from "@/contexts/StageContext";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
@@ -22,20 +37,19 @@ import {
   saveScanPreferences,
   loadScanTelemetry,
   bumpScanTelemetry,
-  resetScanTelemetry,
   type ScanPreferences,
   type ScanTelemetry,
 } from "@/lib/pwaScan";
-import ScanPreferencesPanel from "@/components/pwa/ScanPreferencesPanel";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
-import { OfflineSyncStatus } from "@/components/pwa/OfflineSyncStatus";
 import { addToVoucherQueue } from "@/lib/voucherOffline";
 import { enqueueIncident } from "@/lib/incidentOffline";
 import { readMealWindowsCache, writeMealWindowsCache } from "@/lib/mealWindowsCache";
 import { useTodayString } from "@/hooks/useTodayString";
 import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
+import { JanelaSheet, type JanelaStatus } from "@/components/pwa/alimentacao/JanelaSheet";
+import { cn } from "@/lib/utils";
 
 interface MealWindow {
   id: string;
@@ -54,6 +68,38 @@ function leftEventBlocksWindow(
   return serviceDate >= leftDate;
 }
 
+function statusForWindow(w: MealWindow, now: Date): JanelaStatus {
+  const start = new Date(`${w.service_date}T${w.start_time}`);
+  const end = new Date(`${w.service_date}T${w.end_time}`);
+  if (now < start) return "futura";
+  if (now > end) return "encerrada";
+  return "ativa";
+}
+
+const STATUS_HEADER: Record<
+  JanelaStatus,
+  { label: string; dot: string; ring: string; text: string }
+> = {
+  ativa: {
+    label: "ATIVA · JANELA SELECIONADA",
+    dot: "bg-green-500",
+    ring: "ring-green-500/40 border-green-600/60",
+    text: "text-green-400",
+  },
+  encerrada: {
+    label: "ENCERRADA · JANELA SELECIONADA",
+    dot: "bg-zinc-500",
+    ring: "ring-zinc-500/40 border-zinc-600/60",
+    text: "text-zinc-400",
+  },
+  futura: {
+    label: "AGUARDANDO · JANELA SELECIONADA",
+    dot: "bg-blue-500",
+    ring: "ring-blue-500/40 border-blue-600/60",
+    text: "text-blue-400",
+  },
+};
+
 const MODULE = "alimentacao" as const;
 
 export default function AlimentacaoScanPage() {
@@ -64,6 +110,7 @@ export default function AlimentacaoScanPage() {
 
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
+  const { activeStage } = useStageContext();
 
   usePwaAudit("alimentacao/escanear", activeEventId);
 
@@ -75,7 +122,10 @@ export default function AlimentacaoScanPage() {
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState(preselectedWindowId ?? "");
   const [consumptionCount, setConsumptionCount] = useState(0);
+  const [totalToday, setTotalToday] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [janelaSheetOpen, setJanelaSheetOpen] = useState(false);
+  const [online, setOnline] = useState(isOnline());
 
   const [prefs, setPrefs] = useState<ScanPreferences>(() =>
     loadScanPreferences(MODULE, userId),
@@ -100,10 +150,29 @@ export default function AlimentacaoScanPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notFoundQr, setNotFoundQr] = useState<string | null>(null);
 
+  const [now, setNow] = useState(() => new Date());
+
+  // Refresh "now" every minute so window status (ativa/encerrada/futura) updates.
+  useEffect(() => {
+    const tick = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(tick);
+  }, []);
+
   useEffect(() => {
     setPrefs(loadScanPreferences(MODULE, userId));
     setTelemetry(loadScanTelemetry(MODULE, userId));
   }, [userId]);
+
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const updatePrefs = (next: ScanPreferences) => {
     setPrefs(next);
@@ -135,7 +204,6 @@ export default function AlimentacaoScanPage() {
 
         if (todaysWindows.length > 0) {
           setWindows(todaysWindows as MealWindow[]);
-          if (todaysWindows.length === 1) setWindowId(todaysWindows[0].id);
         }
       }
 
@@ -152,11 +220,22 @@ export default function AlimentacaoScanPage() {
       const list = (data ?? []) as unknown as MealWindow[];
 
       setWindows(list);
-
-      if (list.length === 1) setWindowId(list[0].id);
       if (list.length > 0) writeMealWindowsCache(activeEventId, stageId, list);
     })();
   }, [activeEventId, stageId, today]);
+
+  // Auto-select active window (first ativa) when list loads or time changes
+  useEffect(() => {
+    if (windowId) {
+      const stillExists = windows.some((w) => w.id === windowId);
+      if (stillExists) return;
+    }
+    if (windows.length === 0) return;
+    const ativa = windows.find((w) => statusForWindow(w, now) === "ativa");
+    setWindowId((ativa ?? windows[0]).id);
+    // We intentionally only auto-select once windows arrive; do not depend on `now`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windows]);
 
   useEffect(() => {
     if (!windowId) {
@@ -195,6 +274,28 @@ export default function AlimentacaoScanPage() {
       void supabase.removeChannel(channel);
     };
   }, [windowId]);
+
+  // Total do dia (todas as janelas do evento/etapa)
+  useEffect(() => {
+    if (!activeEventId) return;
+    let cancelled = false;
+    (async () => {
+      let consumoQ = supabase
+        .from("meal_consumptions")
+        .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("meal_windows.event_id", activeEventId)
+        .gte("consumed_at", today + "T00:00:00");
+      if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
+      const { count } = await consumoQ;
+      if (!cancelled) setTotalToday(count || 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeEventId, stageId, today, consumptionCount]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
@@ -722,83 +823,172 @@ export default function AlimentacaoScanPage() {
     }
   };
 
+  const currentWindow = useMemo(
+    () => windows.find((w) => w.id === windowId) ?? null,
+    [windows, windowId],
+  );
+
+  const currentStatus: JanelaStatus | null = currentWindow
+    ? statusForWindow(currentWindow, now)
+    : null;
+
+  const isJanelaAtiva = currentStatus === "ativa";
+
+  const janelaSheetItems = useMemo(
+    () =>
+      windows.map((w) => ({
+        id: w.id,
+        nome: w.meal_type?.name || "Refeição",
+        inicio: w.start_time.slice(0, 5),
+        fim: w.end_time.slice(0, 5),
+        status: statusForWindow(w, now),
+      })),
+    [windows, now],
+  );
+
   return (
-    <PwaLayout backTo="/pwa/alimentacao" moduleTitle={getSystemMessage("SCAN_QR", lang)}>
+    <PwaLayout
+      backTo="/pwa/alimentacao/scan"
+      moduleTitle={getSystemMessage("SCAN_QR", lang)}
+    >
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
 
-      <main className="relative mx-auto max-w-md space-y-4 p-4">
-        <OfflineSyncStatus />
+      <main className="relative mx-auto max-w-md space-y-3 p-3">
         <VoucherConflictCentral />
 
-        <ScanPreferencesPanel
-          prefs={prefs}
-          telemetry={telemetry}
-          onChangeContinuous={(v) => updatePrefs({ ...prefs, continuousMode: v })}
-          onChangeDelay={(v) => updatePrefs({ ...prefs, reopenDelayMs: v })}
-          onResetTelemetry={() => setTelemetry(resetScanTelemetry(MODULE, userId))}
-          switchId="continuous-food-scan"
-        />
-
+        {/* === BLOCO JANELA ATIVA === */}
         {windows.length === 0 ? (
-          <Card className="border-warning/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-warning shrink-0" />
-              <span className="text-sm">Nenhuma janela de refeição aberta no momento</span>
-            </CardContent>
-          </Card>
-        ) : (
-          <Select value={windowId} onValueChange={setWindowId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a janela" />
-            </SelectTrigger>
-
-            <SelectContent>
-              {windows.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.meal_type?.name || "Refeição"} — {w.start_time.slice(0, 5)}–
-                  {w.end_time.slice(0, 5)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {windowId && (
-          <div className="rounded-lg border border-border/50 bg-card/50 px-3 py-2 text-xs text-muted-foreground">
-            <span className="font-medium uppercase tracking-wider">
-              Consumos nesta janela:
-            </span>{" "}
-            <span className="text-sm font-bold text-foreground">{consumptionCount}</span>
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Sem janela de refeição hoje
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {activeStage
+                ? "Cadastre janelas para esta etapa no painel administrativo."
+                : "Selecione uma etapa para listar as janelas."}
+            </p>
           </div>
+        ) : currentWindow && currentStatus ? (
+          <button
+            type="button"
+            onClick={() => setJanelaSheetOpen(true)}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-2xl border-2 bg-card/60 px-4 py-3 text-left transition-all active:scale-[0.99] ring-1",
+              STATUS_HEADER[currentStatus].ring,
+            )}
+          >
+            <span
+              className={cn(
+                "relative inline-flex h-3 w-3 shrink-0 rounded-full",
+                STATUS_HEADER[currentStatus].dot,
+              )}
+            >
+              {currentStatus === "ativa" && (
+                <span className="absolute inset-0 inline-flex animate-ping rounded-full bg-green-500/60" />
+              )}
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "text-[10px] font-black uppercase tracking-[0.18em]",
+                  STATUS_HEADER[currentStatus].text,
+                )}
+              >
+                {STATUS_HEADER[currentStatus].label}
+              </p>
+              <p className="mt-0.5 truncate text-base font-extrabold text-foreground">
+                {currentWindow.meal_type?.name || "Refeição"}
+                <span className="ml-2 text-xs font-mono font-semibold text-muted-foreground">
+                  {currentWindow.start_time.slice(0, 5)}–
+                  {currentWindow.end_time.slice(0, 5)}
+                </span>
+              </p>
+            </div>
+
+            <span className="shrink-0 inline-flex items-center gap-1 rounded-md border border-border/70 bg-background/40 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Trocar
+              <ChevronsUpDown className="h-3 w-3" />
+            </span>
+          </button>
+        ) : null}
+
+        {/* === CONTADORES (4 KPIs) === */}
+        <div className="grid grid-cols-4 gap-2">
+          <KpiCard label="Janela" value={consumptionCount} tone="blue" />
+          <KpiCard label="Hoje" value={totalToday} tone="default" />
+          <KpiCard label="OK" value={telemetry.ok} tone="green" />
+          <KpiCard
+            label="Erro"
+            value={telemetry.error}
+            tone={telemetry.error > 0 ? "red" : "muted"}
+          />
+        </div>
+
+        {/* === BOTÃO SCAN DINÂMICO === */}
+        {!scannerOpen && (
+          <button
+            type="button"
+            onClick={() => isJanelaAtiva && setScannerOpen(true)}
+            disabled={!isJanelaAtiva || isSubmitting}
+            className={cn(
+              "w-full rounded-2xl px-4 py-4 text-left transition-all flex items-center gap-3 shadow-app-md",
+              isJanelaAtiva
+                ? "bg-module text-white hover:brightness-110 active:scale-[0.98]"
+                : "bg-zinc-800/60 text-zinc-400 cursor-not-allowed opacity-70",
+            )}
+          >
+            <div
+              className={cn(
+                "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
+                isJanelaAtiva ? "bg-white/20" : "bg-zinc-700/50",
+              )}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : isJanelaAtiva ? (
+                <ScanLine className="h-6 w-6" />
+              ) : (
+                <Lock className="h-6 w-6" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-extrabold leading-tight">
+                {isSubmitting
+                  ? "Processando…"
+                  : isJanelaAtiva
+                    ? "Escanear QR Code"
+                    : "Janela não disponível"}
+              </p>
+              <p className="text-[11px] font-medium opacity-80 truncate">
+                {isJanelaAtiva
+                  ? `Janela ${currentWindow?.meal_type?.name || ""} está aberta`
+                  : currentStatus === "futura"
+                    ? "Aguardando início da janela"
+                    : currentStatus === "encerrada"
+                      ? "Janela encerrada"
+                      : "Selecione uma janela"}
+              </p>
+            </div>
+          </button>
         )}
 
-        <Button
-          variant="module"
-          className="h-12 w-full rounded-xl text-base font-semibold shadow-app-md"
-          onClick={() => setScannerOpen(true)}
-          disabled={isSubmitting || !windowId}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Processando…
-            </>
-          ) : (
-            <>
-              <ScanLine className="mr-2 h-5 w-5" />
-              Escanear QR Code
-            </>
-          )}
-        </Button>
+        {/* === CÂMERA INLINE === */}
+        {scannerOpen && (
+          <QrCodeScanner
+            isOpen={scannerOpen}
+            onClose={() => setScannerOpen(false)}
+            onScan={handleScan}
+            continuous={prefs.continuousMode}
+            title="Escanear QR"
+            variant="inline"
+          />
+        )}
 
+        {/* === BUSCA SEMPRE VISÍVEL === */}
         <div className="space-y-2">
-          <p className="text-center text-xs text-muted-foreground">
-            ou buscar manualmente
-          </p>
-
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
             <Input
               placeholder="Nome, CPF ou código do voucher…"
               value={manualQuery}
@@ -819,17 +1009,17 @@ export default function AlimentacaoScanPage() {
           )}
 
           {activeEventId && debouncedManual.length >= 2 && (
-            <Card className="max-h-52 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
+            <Card className="max-h-44 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
               <CardContent className="p-0">
                 {manualSearching && (
-                  <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                  <div className="flex items-center justify-center gap-2 py-5 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span className="text-sm">Buscando…</span>
                   </div>
                 )}
 
                 {!manualSearching && manualHits.length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                  <p className="px-4 py-5 text-center text-sm text-muted-foreground">
                     Nenhum participante encontrado neste evento.
                   </p>
                 )}
@@ -857,8 +1047,8 @@ export default function AlimentacaoScanPage() {
                         disabled={isSubmitting}
                         className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
-                          <User className="h-5 w-5" />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
+                          <User className="h-4 w-4" />
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -883,72 +1073,173 @@ export default function AlimentacaoScanPage() {
           )}
         </div>
 
+        {/* === RESULT FEEDBACK (compacto) === */}
         {result && (
-          <Card
-            className={
+          <div
+            className={cn(
+              "flex items-start gap-2 rounded-2xl border px-3 py-2",
               result.ok
-                ? "border-blue-500/50 bg-card/95 shadow-app-lg ring-1 ring-blue-500/20"
-                : "border-destructive/50 bg-card/95"
-            }
+                ? "border-blue-500/40 bg-blue-500/5"
+                : "border-destructive/40 bg-destructive/5",
+            )}
           >
-            <CardContent className="flex items-start gap-3 p-4">
-              {result.ok ? (
-                <CheckCircle className="h-6 w-6 shrink-0 text-blue-500" />
-              ) : (
-                <XCircle className="h-6 w-6 shrink-0 text-destructive" />
+            {result.ok ? (
+              <CheckCircle className="h-5 w-5 shrink-0 text-blue-500" />
+            ) : (
+              <XCircle className="h-5 w-5 shrink-0 text-destructive" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium leading-snug">{result.message}</p>
+              {result.restrictions && (
+                <p className="mt-0.5 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
+                  Restrição: {result.restrictions}
+                </p>
               )}
-
-              <div className="min-w-0 w-full">
-                {result.ok && (
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                    {result.source === "manual"
-                      ? getSystemMessage("MANUAL_SEARCH", lang)
-                      : getSystemMessage("QR_VALID", lang)}
-                  </p>
-                )}
-
-                <span className="text-sm font-medium leading-snug">
-                  {result.message}
-                </span>
-
-                {result.restrictions && (
-                  <p className="mt-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase">
-                    Restrição: {result.restrictions}
-                  </p>
-                )}
-
-                {!result.ok && notFoundQr && (
-                  <Button
-                    type="button"
-                    className="mt-3 w-full gap-2"
-                    variant="module"
-                    onClick={() =>
-                      navigate("/pwa/credenciamento/vincular", {
-                        state: {
-                          qrCode: notFoundQr,
-                          origem: "alimentacao",
-                          motivo: "QR não encontrado na leitura da alimentação",
-                        },
-                      })
-                    }
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Cadastrar / vincular substituto
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              {!result.ok && notFoundQr && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-2 h-8 w-full gap-2 text-xs"
+                  variant="module"
+                  onClick={() =>
+                    navigate("/pwa/credenciamento/vincular", {
+                      state: {
+                        qrCode: notFoundQr,
+                        origem: "alimentacao",
+                        motivo: "QR não encontrado na leitura da alimentação",
+                      },
+                    })
+                  }
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Cadastrar / vincular substituto
+                </Button>
+              )}
+            </div>
+          </div>
         )}
+
+        {/* === AÇÕES RÁPIDAS === */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/pwa/alimentacao/consumos")}
+            className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-left active:scale-[0.98] transition-transform"
+          >
+            <ListChecks className="h-4 w-4 text-module shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold leading-tight truncate">Lista consumos</p>
+              <p className="text-[10px] text-muted-foreground">Histórico do dia</p>
+            </div>
+          </button>
+
+          <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 cursor-pointer">
+            <Settings2 className="h-4 w-4 text-module shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold leading-tight truncate">Modo contínuo</p>
+              <p className="text-[10px] text-muted-foreground">
+                {prefs.continuousMode ? "Reabre câmera após scan" : "Desligado"}
+              </p>
+            </div>
+            <Switch
+              checked={prefs.continuousMode}
+              onCheckedChange={(v) => updatePrefs({ ...prefs, continuousMode: v })}
+              aria-label="Modo contínuo"
+            />
+          </label>
+        </div>
+
+        {/* === STATUS SYNC === */}
+        <SyncStatusLine online={online} />
       </main>
 
-      <QrCodeScanner
-  isOpen={scannerOpen}
-  onClose={() => setScannerOpen(false)}
-  onScan={handleScan}
-  continuous={prefs.continuousMode}
-  title="Escanear QR"
-/>
+      <JanelaSheet
+        open={janelaSheetOpen}
+        onOpenChange={setJanelaSheetOpen}
+        janelas={janelaSheetItems}
+        selectedId={windowId}
+        onSelect={setWindowId}
+      />
     </PwaLayout>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "default" | "blue" | "green" | "red" | "muted";
+}) {
+  const valueClass = {
+    default: "text-foreground",
+    blue: "text-blue-400",
+    green: "text-green-400",
+    red: "text-red-400",
+    muted: "text-zinc-500",
+  }[tone];
+
+  return (
+    <div className="rounded-xl border border-border/70 bg-card/60 px-2 py-2 text-center">
+      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <p className={cn("mt-0.5 text-2xl font-extrabold tabular-nums leading-none", valueClass)}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SyncStatusLine({ online }: { online: boolean }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-xl border px-3 py-1.5",
+        online
+          ? "bg-green-950/30 border-green-900/40"
+          : "bg-amber-950/30 border-amber-900/40",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "w-1.5 h-1.5 rounded-full animate-pulse",
+            online ? "bg-green-400" : "bg-amber-400",
+          )}
+        />
+        <span
+          className={cn(
+            "text-[11px] font-semibold",
+            online ? "text-green-400" : "text-amber-400",
+          )}
+        >
+          {online ? "Sistema online · Sync ativo" : "Offline · dados em fila"}
+        </span>
+      </div>
+      <BuildVersionTag />
+    </div>
+  );
+}
+
+function BuildVersionTag() {
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/version.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.appVersion) setVersion(`v${d.appVersion}`);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (!version) return null;
+  return (
+    <span className="text-[10px] font-mono text-zinc-500">{version}</span>
   );
 }
