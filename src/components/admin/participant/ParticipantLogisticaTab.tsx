@@ -1,12 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bus, UtensilsCrossed, BedDouble, Clock, MapPin, ExternalLink } from "lucide-react";
+import { Bus, UtensilsCrossed, BedDouble, Clock, MapPin, ExternalLink, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { lodgingStatusLabel, toneToBadgeVariant } from "@/lib/alojamento/labels";
+import { ReverseConsumptionDialog } from "@/components/admin/ReverseConsumptionDialog";
 
 interface Props {
   participantId: string;
@@ -22,6 +24,10 @@ const PASSENGER_STATUS: Record<string, { label: string; variant: "default" | "se
 
 export default function ParticipantLogisticaTab({ participantId, eventId }: Props) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
+  const [selectedConsumptionId, setSelectedConsumptionId] = useState<string | null>(null);
+  const [selectedConsumptionLabel, setSelectedConsumptionLabel] = useState<string | null>(null);
 
   // Alojamento
   const { data: lodging = [], isLoading: loadingLodging } = useQuery({
@@ -67,13 +73,28 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
     queryFn: async () => {
       const { data, error } = await supabase
         .from("meal_consumptions")
-        .select("id, consumed_at, meal_window_id")
+        .select("id, consumed_at, meal_window_id, registered_by")
         .eq("participant_id", participantId)
         .order("consumed_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
+
+  const operatorIds = [...new Set(meals.map((m) => m.registered_by).filter(Boolean))];
+  const { data: operators = [] } = useQuery({
+    queryKey: ["meal_operators_for_participant", operatorIds],
+    enabled: operatorIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", operatorIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const operatorMap = new Map(operators.map((o) => [o.id, o.full_name]));
 
   const mealWindowIds = [...new Set(meals.map(m => m.meal_window_id))];
   const { data: mealWindows = [] } = useQuery({
@@ -225,9 +246,14 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
       {/* Alimentação */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <UtensilsCrossed className="h-4 w-4" />Alimentação
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <UtensilsCrossed className="h-4 w-4" />Alimentação
+              {meals.length > 0 && (
+                <Badge variant="secondary" className="text-xs font-normal">{meals.length}</Badge>
+              )}
+            </CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           {loadingMeals ? (
@@ -235,23 +261,43 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
           ) : meals.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-3">Nenhuma refeição consumida registrada até o momento.</p>
           ) : (
-            <div className="space-y-1">
-              <p className="text-2xl font-bold text-foreground">{meals.length}</p>
-              <p className="text-xs text-muted-foreground mb-2">refeições consumidas</p>
-              {mealGroups.length > 0 && (
-                <div className="space-y-1 border-t pt-2">
-                  {mealGroups.slice(0, 6).map((g, i) => (
-                    <div key={i} className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        {g.date !== "?" ? new Date(g.date + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "?"} — {g.typeName}
-                      </span>
-                      <span className="font-medium text-foreground">{g.count}×</span>
+            <div className="space-y-2">
+              {meals.slice(0, 10).map((m, idx) => {
+                const w = mealWindowMap.get(m.meal_window_id);
+                const t = w ? mealTypeMap.get(w.meal_type_id) : null;
+                const date = w?.service_date;
+                const operatorName = operatorMap.get(m.registered_by) ?? null;
+                const label = `${t?.name ?? "?"} — ${date ? new Date(date + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "?"}`;
+                const isLast = idx === 0;
+                return (
+                  <div key={m.id} className="flex items-start justify-between gap-2 text-sm border-b last:border-0 pb-2 last:pb-0">
+                    <div className="min-w-0">
+                      <p className="text-foreground font-medium truncate">{label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(m.consumed_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                        {operatorName && ` · ${operatorName}`}
+                      </p>
                     </div>
-                  ))}
-                  {mealGroups.length > 6 && (
-                    <p className="text-xs text-muted-foreground">+{mealGroups.length - 6} mais</p>
-                  )}
-                </div>
+                    {isLast && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                        onClick={() => {
+                          setSelectedConsumptionId(m.id);
+                          setSelectedConsumptionLabel(label);
+                          setReverseDialogOpen(true);
+                        }}
+                        title="Desfazer este consumo"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 mr-1" />Desfazer
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+              {meals.length > 10 && (
+                <p className="text-xs text-muted-foreground text-center pt-1">+{meals.length - 10} mais registros</p>
               )}
             </div>
           )}
@@ -320,6 +366,16 @@ export default function ParticipantLogisticaTab({ participantId, eventId }: Prop
           )}
         </CardContent>
       </Card>
+
+      <ReverseConsumptionDialog
+        open={reverseDialogOpen}
+        onOpenChange={setReverseDialogOpen}
+        consumptionId={selectedConsumptionId}
+        windowLabel={selectedConsumptionLabel}
+        onSuccess={() => {
+          void qc.invalidateQueries({ queryKey: ["participant_meals_detail", participantId] });
+        }}
+      />
     </div>
   );
 }
