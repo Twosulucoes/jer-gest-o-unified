@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/audit-user-access-wigmO",
-  "commit": "cef7a8c8",
-  "commitFull": "cef7a8c8f67c1fc56af620c1c54a17be8ef16dc9",
-  "buildDate": "2026-05-11T02:48:08.166Z",
+  "branch": "claude/automatic-alerts-system-sYEDQ",
+  "commit": "62bcaefe",
+  "commitFull": "62bcaefe95dd0e8d7320068f24dc98a4bb1d47ed",
+  "buildDate": "2026-05-11T03:54:42.515Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
