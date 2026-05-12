@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/automatic-alerts-system-sYEDQ",
-  "commit": "606e428a",
-  "commitFull": "606e428ac624f072694eb59b3f7f3147b4eada9d",
-  "buildDate": "2026-05-11T04:06:30.902Z",
+  "branch": "claude/qr-registration-linking-Wz518",
+  "commit": "7110284a",
+  "commitFull": "7110284a993eea10572261d8c727292629e996a4",
+  "buildDate": "2026-05-12T00:50:54.467Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
