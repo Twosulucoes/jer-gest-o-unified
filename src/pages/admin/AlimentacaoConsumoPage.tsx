@@ -24,6 +24,7 @@ export default function AlimentacaoConsumoPage() {
   const [selectedWindowId, setSelectedWindowId] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [operatorFilter, setOperatorFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
@@ -38,7 +39,7 @@ export default function AlimentacaoConsumoPage() {
   // H6: qualquer filtro reseta para a primeira página
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedWindowId, statusFilter, searchTerm]);
+  }, [selectedWindowId, statusFilter, searchTerm, operatorFilter]);
 
   // M8: realtime — invalida a lista de consumos quando há insert/update/delete
   useEffect(() => {
@@ -151,22 +152,47 @@ export default function AlimentacaoConsumoPage() {
     return pt ? pplMap.get(pt.person_id) : null;
   };
 
+  // Operadores que registraram consumos (para filtro e coluna)
+  const operatorIds = useMemo(
+    () => [...new Set(consumptions.map((c: any) => c.registered_by).filter(Boolean))],
+    [consumptions],
+  );
+
+  const { data: operatorProfiles = [] } = useQuery({
+    queryKey: ["consumption-operators", operatorIds],
+    queryFn: async () => {
+      if (!operatorIds.length) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", operatorIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: operatorIds.length > 0,
+  });
+
+  const operatorMap = new Map(
+    operatorProfiles.map((p) => [p.id, p.full_name ?? p.id.slice(0, 8)]),
+  );
+
   const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
 
   const allFilteredConsumptions = useMemo(() => {
-    return consumptions.filter((c) => {
+    return consumptions.filter((c: any) => {
       const matchesWindow = selectedWindowId === "all" || c.meal_window_id === selectedWindowId;
       const matchesStatus = statusFilter === "all" || c.method === statusFilter;
-      
+      const matchesOperator = operatorFilter === "all" || c.registered_by === operatorFilter;
+
       const person = getPersonForConsumption(c.participant_id);
-      const matchesSearch = !searchTerm || 
+      const matchesSearch = !searchTerm ||
         person?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         person?.cpf?.includes(searchTerm) ||
         c.participant_id.toLowerCase().includes(searchTerm.toLowerCase());
 
-      return matchesWindow && matchesStatus && matchesSearch;
+      return matchesWindow && matchesStatus && matchesSearch && matchesOperator;
     });
-  }, [consumptions, selectedWindowId, statusFilter, searchTerm, pplMap, partMap]);
+  }, [consumptions, selectedWindowId, statusFilter, searchTerm, operatorFilter, pplMap, partMap]);
 
   const totalPages = Math.ceil(allFilteredConsumptions.length / itemsPerPage);
   const filteredConsumptions = useMemo(() => {
@@ -176,6 +202,12 @@ export default function AlimentacaoConsumoPage() {
 
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;
+
+  // Conta consumos apenas da janela selecionada (sem aplicar filtros de busca/método)
+  const selectedWindowConsumptionCount = useMemo(() => {
+    if (selectedWindowId === "all") return consumptions.length;
+    return consumptions.filter((c) => c.meal_window_id === selectedWindowId).length;
+  }, [consumptions, selectedWindowId]);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -284,19 +316,27 @@ export default function AlimentacaoConsumoPage() {
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Refeição</p>
-              <p className="text-lg font-bold text-foreground">{selectedMealType?.name ?? "—"}</p>
+              <p className="text-lg font-bold text-foreground">
+                {selectedWindowId === "all"
+                  ? `Todas (${windows.length})`
+                  : (selectedMealType?.name ?? "—")}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Consumos registrados</p>
-              <p className="text-2xl font-bold text-foreground">{consumptions.length}</p>
+              <p className="text-2xl font-bold text-foreground">{selectedWindowConsumptionCount}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Local</p>
-              <p className="text-sm font-medium text-foreground">{selectedWindow?.location || "Não definido"}</p>
+              <p className="text-sm font-medium text-foreground">
+                {selectedWindowId === "all"
+                  ? "—"
+                  : (selectedWindow?.location || "Não definido")}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -332,6 +372,22 @@ export default function AlimentacaoConsumoPage() {
                     <SelectItem value="manual">Manual</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {operatorProfiles.length > 0 && (
+                  <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+                    <SelectTrigger className="h-9 w-[160px]">
+                      <SelectValue placeholder="Operador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos operadores</SelectItem>
+                      {operatorProfiles.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.full_name ?? o.id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -359,6 +415,7 @@ export default function AlimentacaoConsumoPage() {
                     <TableHead>Restrições</TableHead>
                     <TableHead>Hora</TableHead>
                     <TableHead>Método</TableHead>
+                    <TableHead>Operador</TableHead>
                     {canReverse && <TableHead className="w-12 text-right">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -392,6 +449,9 @@ export default function AlimentacaoConsumoPage() {
                           {new Date(c.consumed_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </TableCell>
                         <TableCell><Badge variant="outline" className="text-[10px] h-5">{c.method === "qr" ? "QR" : "Manual"}</Badge></TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {(c as any).registered_by ? (operatorMap.get((c as any).registered_by) ?? "—") : "—"}
+                        </TableCell>
                         {canReverse && (
                           <TableCell className="text-right">
                             <Button
