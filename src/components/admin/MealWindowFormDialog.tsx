@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -55,13 +55,13 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
 
   const form = useForm<MealWindowFormValues>({
     resolver: zodResolver(windowSchema),
-    defaultValues: { 
-      meal_type_id: "", 
-      label: "", 
-      service_date: "", 
-      start_time: "", 
-      end_time: "", 
-      location: "", 
+    defaultValues: {
+      meal_type_id: "",
+      label: "",
+      service_date: "",
+      start_time: "",
+      end_time: "",
+      location: "",
       meal_window_location_id: null,
       capacity: null,
       is_active: true,
@@ -70,6 +70,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
   });
 
   const restrictEligibility = form.watch("restrict_eligibility");
+  const watchedMealTypeId = form.watch("meal_type_id");
 
   // Fetch current rules if editing
   const { data: existingRules } = useQuery({
@@ -98,8 +99,11 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
     }
   }, [existingRules, form]);
 
+  const labelUserEdited = useRef(false);
+
   useEffect(() => {
     if (mealWindow) {
+      labelUserEdited.current = true;
       form.reset({
         meal_type_id: mealWindow.meal_type_id,
         label: mealWindow.label ?? "",
@@ -113,13 +117,14 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
         restrict_eligibility: false,
       });
     } else {
-      form.reset({ 
-        meal_type_id: "", 
-        label: "", 
-        service_date: "", 
-        start_time: "", 
-        end_time: "", 
-        location: "", 
+      labelUserEdited.current = false;
+      form.reset({
+        meal_type_id: "",
+        label: "",
+        service_date: "",
+        start_time: "",
+        end_time: "",
+        location: "",
         meal_window_location_id: null,
         capacity: null,
         is_active: true,
@@ -128,6 +133,13 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
       setRules([]);
     }
   }, [mealWindow, form]);
+
+  // Auto-sugere rótulo a partir do tipo de refeição quando ainda não editado
+  useEffect(() => {
+    if (!watchedMealTypeId || labelUserEdited.current) return;
+    const mt = mealTypes.find((m) => m.id === watchedMealTypeId);
+    if (mt) form.setValue("label", mt.name);
+  }, [watchedMealTypeId, mealTypes, form]);
 
   // Fetch locations scoped to the current event and stage
   const resolvedEventId = eventId ?? mealWindow?.event_id ?? null;
@@ -235,38 +247,28 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
               )} />
               <FormField control={form.control} name="label" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Rótulo (opcional)</FormLabel>
-                  <FormControl><Input placeholder="Ex: Almoço - Dia 1" {...field} /></FormControl>
+                  <FormLabel>Rótulo</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: Almoço - Dia 1"
+                      {...field}
+                      onChange={(e) => {
+                        labelUserEdited.current = true;
+                        field.onChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>Sugerido automaticamente pelo tipo; edite se precisar diferenciar</FormDescription>
                   <FormMessage />
                 </FormItem>
               )} />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="service_date" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data</FormLabel>
-                    <FormControl><Input type="date" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="meal_window_location_id" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Local de Refeição</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um local" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {mealLocations.map((l: any) => (
-                          <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
+              <FormField control={form.control} name="service_date" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="start_time" render={({ field }) => (
                   <FormItem>
@@ -283,6 +285,43 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
                   </FormItem>
                 )} />
               </div>
+              <FormField control={form.control} name="meal_window_location_id" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Local de Refeição</FormLabel>
+                  {mealLocations.length > 0 ? (
+                    <Select
+                      onValueChange={(v) => field.onChange(v === "__none__" ? null : v)}
+                      value={field.value || "__none__"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um local" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">Sem local definido</SelectItem>
+                        {mealLocations.map((l: any) => (
+                          <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: Refeitório Central (nenhum local cadastrado no sistema)"
+                        value={form.watch("location") ?? ""}
+                        onChange={(e) => form.setValue("location", e.target.value)}
+                      />
+                    </FormControl>
+                  )}
+                  <FormDescription>
+                    {mealLocations.length === 0
+                      ? "Nenhum local cadastrado. Cadastre locais em Configurações → Locais de Refeição para usar a lista."
+                      : "Local onde a refeição será servida"}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="capacity" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Capacidade da Janela (opcional)</FormLabel>

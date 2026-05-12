@@ -80,7 +80,7 @@ export default function AlimentacaoConsumoPage() {
       if (!selectedEventId) return [];
       const { data, error } = await supabase
         .from("meal_windows")
-        .select("*")
+        .select("*, meal_locations(name)")
         .eq("event_id", selectedEventId)
         .eq("is_active", true)
         .order("service_date")
@@ -345,7 +345,7 @@ export default function AlimentacaoConsumoPage() {
               <p className="text-sm font-medium text-foreground">
                 {selectedWindowId === "all"
                   ? "—"
-                  : (selectedWindow?.location || "Não definido")}
+                  : ((selectedWindow as any)?.meal_locations?.name || selectedWindow?.location || "Não definido")}
               </p>
             </CardContent>
           </Card>
