@@ -177,6 +177,12 @@ export default function AlimentacaoConsumoPage() {
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;
 
+  // Conta consumos apenas da janela selecionada (sem aplicar filtros de busca/método)
+  const selectedWindowConsumptionCount = useMemo(() => {
+    if (selectedWindowId === "all") return consumptions.length;
+    return consumptions.filter((c) => c.meal_window_id === selectedWindowId).length;
+  }, [consumptions, selectedWindowId]);
+
   return (
     <div className="animate-fade-in space-y-6">
       <div>
@@ -284,19 +290,27 @@ export default function AlimentacaoConsumoPage() {
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Refeição</p>
-              <p className="text-lg font-bold text-foreground">{selectedMealType?.name ?? "—"}</p>
+              <p className="text-lg font-bold text-foreground">
+                {selectedWindowId === "all"
+                  ? `Todas (${windows.length})`
+                  : (selectedMealType?.name ?? "—")}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Consumos registrados</p>
-              <p className="text-2xl font-bold text-foreground">{consumptions.length}</p>
+              <p className="text-2xl font-bold text-foreground">{selectedWindowConsumptionCount}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Local</p>
-              <p className="text-sm font-medium text-foreground">{selectedWindow?.location || "Não definido"}</p>
+              <p className="text-sm font-medium text-foreground">
+                {selectedWindowId === "all"
+                  ? "—"
+                  : (selectedWindow?.location || "Não definido")}
+              </p>
             </CardContent>
           </Card>
         </div>
