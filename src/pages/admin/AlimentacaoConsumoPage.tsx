@@ -51,6 +51,7 @@ export default function AlimentacaoConsumoPage() {
         { event: "*", schema: "public", table: "meal_consumptions" },
         () => {
           void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
+          void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
         },
       )
       .subscribe();
@@ -77,8 +78,6 @@ export default function AlimentacaoConsumoPage() {
     queryKey: ["meal_windows", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      // Carrega TODAS as janelas ativas do evento; filtramos por etapa em memória
-      // para conseguir tolerar janelas legadas sem event_stage_id (fallback).
       const { data, error } = await supabase
         .from("meal_windows")
         .select("*")
@@ -89,15 +88,13 @@ export default function AlimentacaoConsumoPage() {
       if (error) throw error;
       const all = data ?? [];
       if (!isStageScoped || !stageId) return all;
-      // Retorna apenas as janelas vinculadas explicitamente a esta etapa.
-      // Removemos o fallback de janelas legadas (sem event_stage_id) para garantir isolamento.
       return all.filter((w: any) => w.event_stage_id === stageId);
     },
     enabled: !!selectedEventId,
   });
 
   const stageWindowsCount = windows.length;
-  const showingFallbackWindows = false; // Removido fallback no queryFn
+  const showingFallbackWindows = false;
 
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
@@ -203,11 +200,24 @@ export default function AlimentacaoConsumoPage() {
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;
 
-  // Conta consumos apenas da janela selecionada (sem aplicar filtros de busca/método)
-  const selectedWindowConsumptionCount = useMemo(() => {
-    if (selectedWindowId === "all") return consumptions.length;
-    return consumptions.filter((c) => c.meal_window_id === selectedWindowId).length;
-  }, [consumptions, selectedWindowId]);
+  // Contagem real via query HEAD — evita o limite de 1000 linhas da query de dados
+  const { data: kpiCount = 0 } = useQuery({
+    queryKey: ["meal_consumption_kpi_count", selectedEventId, stageId, windows.length, selectedWindowId],
+    queryFn: async () => {
+      if (!selectedEventId || windows.length === 0) return 0;
+      let q = supabase
+        .from("meal_consumptions")
+        .select("id", { count: "exact", head: true });
+      if (selectedWindowId === "all") {
+        q = (q as any).in("meal_window_id", windows.map((w) => w.id));
+      } else {
+        q = (q as any).eq("meal_window_id", selectedWindowId);
+      }
+      const { count } = await q;
+      return count ?? 0;
+    },
+    enabled: !!selectedEventId && windows.length > 0,
+  });
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -326,7 +336,7 @@ export default function AlimentacaoConsumoPage() {
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Consumos registrados</p>
-              <p className="text-2xl font-bold text-foreground">{selectedWindowConsumptionCount}</p>
+              <p className="text-2xl font-bold text-foreground">{kpiCount}</p>
             </CardContent>
           </Card>
           <Card>
@@ -341,8 +351,6 @@ export default function AlimentacaoConsumoPage() {
           </Card>
         </div>
       )}
-
-      {/* Registrar consumo - Removido card redundante pois já tem botão no topo */}
 
       {/* Consumption history */}
       {(selectedWindowId !== "all" || consumptions.length > 0) && (
@@ -496,7 +504,6 @@ export default function AlimentacaoConsumoPage() {
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                    // Logic to show pages around current page
                     let pageNum = i + 1;
                     if (totalPages > 5) {
                       if (currentPage > 3) pageNum = currentPage - 3 + i;
