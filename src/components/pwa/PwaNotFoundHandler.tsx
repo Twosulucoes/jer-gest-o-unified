@@ -31,10 +31,13 @@ export default function PwaNotFoundHandler() {
     console.warn("[PwaNotFoundHandler] rota PWA inexistente:", location.pathname);
 
     // Defensive recovery: if path is /pwa/<known-module>/<garbage>, fall back
-    // to the module home rather than the global PWA landing.
+    // to the module home. /pwa/configuracao/<extra> recovers to /pwa/configuracao.
     const segments = location.pathname.split("/").filter(Boolean);
     let target = "/pwa";
-    if (segments[0] === "pwa" && segments[1] && KNOWN_PWA_MODULES.includes(segments[1])) {
+    if (segments[0] === "pwa" && segments[1] === "configuracao") {
+      target = "/pwa/configuracao";
+      console.warn(`[PwaNotFoundHandler] recuperando para configuracao: ${target}`);
+    } else if (segments[0] === "pwa" && segments[1] && KNOWN_PWA_MODULES.includes(segments[1])) {
       target = `/pwa/${segments[1]}`;
       console.warn(`[PwaNotFoundHandler] recuperando para a home do módulo: ${target}`);
     }
