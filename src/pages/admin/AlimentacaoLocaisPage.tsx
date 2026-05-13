@@ -53,6 +53,7 @@ export default function AlimentacaoLocaisPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["meal_locations"] });
+      qc.invalidateQueries({ queryKey: ["meal_locations_simple"] });
       toast.success("Local de refeição criado");
       setDialogOpen(false);
     },
@@ -73,6 +74,7 @@ export default function AlimentacaoLocaisPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["meal_locations"] });
+      qc.invalidateQueries({ queryKey: ["meal_locations_simple"] });
       toast.success("Local de refeição atualizado");
       setDialogOpen(false);
       setEditing(null);

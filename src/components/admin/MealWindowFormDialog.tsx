@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -148,7 +149,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
   // Fetch locations scoped to the current event and stage
   const resolvedEventId = eventId ?? mealWindow?.event_id ?? null;
   const resolvedStageId = stageId ?? mealWindow?.event_stage_id ?? null;
-  const { data: mealLocations = [] } = useQuery({
+  const { data: mealLocations = [], isFetching: isLocationsFetching } = useQuery({
     queryKey: ["meal_locations_simple", resolvedEventId, resolvedStageId],
     queryFn: async () => {
       if (!resolvedEventId) return [];
@@ -157,7 +158,8 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
         .eq("is_active", true)
         .eq("event_id", resolvedEventId);
       if (resolvedStageId) q = q.eq("event_stage_id", resolvedStageId);
-      const { data } = await q.order("name");
+      const { data, error } = await q.order("name");
+      if (error) throw error;
       return data || [];
     },
     enabled: open && !!resolvedEventId,
@@ -292,7 +294,9 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
               <FormField control={form.control} name="meal_window_location_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Local de Refeição</FormLabel>
-                  {mealLocations.length > 0 ? (
+                  {isLocationsFetching ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : mealLocations.length > 0 ? (
                     <Select
                       onValueChange={(v) => field.onChange(v === "__none__" ? null : v)}
                       value={field.value || "__none__"}
@@ -319,7 +323,9 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
                     </FormControl>
                   )}
                   <FormDescription>
-                    {mealLocations.length === 0
+                    {isLocationsFetching
+                      ? "Carregando locais..."
+                      : mealLocations.length === 0
                       ? "Nenhum local cadastrado. Cadastre locais em Configurações → Locais de Refeição para usar a lista."
                       : "Local onde a refeição será servida"}
                   </FormDescription>
