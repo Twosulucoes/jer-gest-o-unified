@@ -181,21 +181,35 @@ export const syncOfflineQueue = async () => {
 
     try {
       if (item.module === "alimentacao") {
-        const { error } = await supabase.from("meal_consumptions").insert(item.data as any);
-        if (error) {
-          if (error.code === "23505") {
-            // Etapa 6: ao bater no UNIQUE durante o sync (outro operador
-            // já registrou o consumo, possivelmente em outro device),
-            // gravamos meal_incidents.DUPLICATE marcado como offline e
-            // descartamos o item da fila. O consumo "vencedor" continua
-            // íntegro no banco; a tentativa offline ganha trilha de
-            // auditoria em vez de sumir silenciosamente.
+        const mealData = item.data as { participant_id: string; meal_window_id: string; method: string; registered_by: string };
+        const { data: rpcResult, error: rpcError } = await supabase.rpc("record_meal_consumption", {
+          p_participant_id: mealData.participant_id,
+          p_meal_window_id: mealData.meal_window_id,
+          p_method: mealData.method,
+          p_registered_by: mealData.registered_by,
+        });
+
+        if (rpcError) {
+          // 23505 pode ocorrer por race no próprio RPC — tratar como duplicata
+          if (rpcError.code === "23505") {
+            const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
+            saveOfflineQueue(finalQueueDup);
+            errorCount++;
+            continue;
+          }
+          throw rpcError;
+        }
+
+        const mealRes = rpcResult as { ok: boolean; reason?: string };
+
+        if (!mealRes.ok) {
+          if (mealRes.reason === "ALREADY_REGISTERED") {
+            // Registra incidente de duplicata para trilha de auditoria
             try {
-              const data = item.data as any;
               await (supabase as any).rpc("record_meal_incident", {
-                p_meal_window_id: data?.meal_window_id,
+                p_meal_window_id: mealData.meal_window_id,
                 p_incident_type: "DUPLICATE",
-                p_participant_id: data?.participant_id ?? null,
+                p_participant_id: mealData.participant_id ?? null,
                 p_is_offline: true,
                 p_incident_at: item.timestamp,
                 p_device_info: {
@@ -206,26 +220,30 @@ export const syncOfflineQueue = async () => {
                 },
               });
             } catch (incidentErr) {
-              // Se o registro do incidente também falhar, mantemos o
-              // item como conflict para revisão manual em vez de perdê-lo.
+              // Se o registro do incidente falhar, mantém como conflict para revisão manual.
               const cur = getOfflineQueue();
               const cIdx = cur.findIndex((i) => i.id === item.id);
               if (cIdx !== -1) {
                 cur[cIdx].status = "conflict";
-                cur[cIdx].lastError =
-                  "Consumo já registrado para este período (falha ao gravar incidente).";
+                cur[cIdx].lastError = "Consumo já registrado (falha ao gravar incidente).";
                 saveOfflineQueue(cur);
               }
               errorCount++;
               continue;
             }
-            // Sucesso na "resolução": remove da fila local.
             const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
             saveOfflineQueue(finalQueueDup);
             errorCount++;
             continue;
           }
-          throw error;
+
+          // Falhas permanentes: participante não inscrito na etapa, janela inválida,
+          // data errada, fora do horário, sem elegibilidade — nunca vão sincronizar.
+          console.warn("[offlineQueue] Consumo offline descartado:", mealRes.reason);
+          const finalQueueBlocked = getOfflineQueue().filter((i) => i.id !== item.id);
+          saveOfflineQueue(finalQueueBlocked);
+          errorCount++;
+          continue;
         }
       } else if (item.module === "transporte") {
         const transportData = item.data as { trip_id: string; participant_id: string; status: string; boarded_at: string; boarded_by: string; is_manual?: boolean };
@@ -250,7 +268,7 @@ export const syncOfflineQueue = async () => {
         const boardingRes = rpcResult as { ok: boolean; reason?: string };
         if (!boardingRes.ok) {
           // Participante não inscrito na etapa: remove da fila (não vai sincronizar nunca).
-          console.warn(`[offlineQueue] Embarque bloqueado para participante ${transportData.participant_id}: ${boardingRes.reason}`);
+          console.warn("[offlineQueue] Embarque offline descartado:", boardingRes.reason);
           const finalQueueBlocked = getOfflineQueue().filter((i) => i.id !== item.id);
           saveOfflineQueue(finalQueueBlocked);
           errorCount++;
