@@ -122,6 +122,7 @@ interface BatchRow {
   service_type: string;
   quantity: number;
   created_at: string;
+  created_by: string | null;
   target_meal_window_id: string | null;
   target_trip_id: string | null;
   target_facility_id: string | null;
@@ -376,6 +377,29 @@ export default function VouchersPage() {
     },
     enabled: !!eventId,
   });
+
+  // Perfis dos criadores de lote (para exibir "Emitido por" no card)
+  const batchCreatorIds = useMemo(
+    () => [...new Set(batches.map(b => b.created_by).filter(Boolean))] as string[],
+    [batches],
+  );
+  const { data: batchCreatorProfiles = [] } = useQuery({
+    queryKey: ["batch-creator-profiles", batchCreatorIds],
+    queryFn: async () => {
+      if (batchCreatorIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", batchCreatorIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: batchCreatorIds.length > 0,
+  });
+  const batchCreatorMap = useMemo(
+    () => new Map((batchCreatorProfiles as any[]).map((p: any) => [p.id, p.full_name])),
+    [batchCreatorProfiles],
+  );
 
   // Conta vouchers ativos por lote (para exibir no card do lote)
   const { data: batchActiveCounts = {} } = useQuery({
@@ -872,7 +896,7 @@ export default function VouchersPage() {
                         <p className="text-xs text-muted-foreground">
                           {getServiceInstanceLabel(b, instances)}
                         </p>
-                        <div className="flex items-center gap-3 mt-1">
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
                           <span className="text-[10px] text-muted-foreground">
                             {format(new Date(b.created_at), "dd/MM/yy HH:mm")}
                           </span>
@@ -882,6 +906,12 @@ export default function VouchersPage() {
                             </span>
                             <span className="text-muted-foreground"> / {counts.total} total</span>
                           </span>
+                          {b.created_by && batchCreatorMap.get(b.created_by) && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                              <UserPlus className="h-2.5 w-2.5" />
+                              {batchCreatorMap.get(b.created_by)}
+                            </span>
+                          )}
                         </div>
                       </div>
 

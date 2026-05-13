@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/verify-credential-screen-HqOX8",
-  "commit": "148faee7",
-  "commitFull": "148faee71658c13ef606d624f9b17c7c725ee92f",
-  "buildDate": "2026-05-13T04:51:11.982Z",
+  "branch": "claude/review-voucher-emission-IXS66",
+  "commit": "23d4f21d",
+  "commitFull": "23d4f21d964e1c437e634d7e368f08da31fd20ee",
+  "buildDate": "2026-05-13T05:14:31.653Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
