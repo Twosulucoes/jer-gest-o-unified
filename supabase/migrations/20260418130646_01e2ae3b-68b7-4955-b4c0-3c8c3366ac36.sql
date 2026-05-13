@@ -183,7 +183,7 @@ BEGIN
     AND (se.slug LIKE '75m-%' OR se.slug LIKE '100m-%' OR se.slug LIKE '150m-%'
          OR se.slug LIKE '200m-%' OR se.slug LIKE '400m-%' OR se.slug LIKE '800m-%'
          OR se.slug LIKE '2000m-%' OR se.slug LIKE '3000m-%')
-  ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
+  ON CONFLICT (sport_event_id) DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
   -- â”€â”€ ATLETISMO: SALTO EM DISTÃ‚NCIA â†’ family=mark (cm)
@@ -206,7 +206,7 @@ BEGIN
   FROM sport_events se
   WHERE se.sport_id = v_atletismo_id AND se.event_id = v_event_id
     AND se.slug LIKE 'salto-distancia-%'
-  ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
+  ON CONFLICT (sport_event_id) DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
   -- â”€â”€ ATLETISMO: ARREMESSO/LANÃ‡AMENTOS â†’ family=mark
@@ -262,7 +262,7 @@ BEGIN
   WHERE se.sport_id = v_atletismo_id AND se.event_id = v_event_id
     AND (se.slug LIKE 'arremesso-peso-%' OR se.slug LIKE 'lancamento-dardo-%'
          OR se.slug LIKE 'lancamento-disco-%' OR se.slug LIKE 'lancamento-club-%')
-  ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
+  ON CONFLICT (sport_event_id) DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
   -- â”€â”€ BOCHA PARALÃMPICA â†’ family=score (combat-like individual), format=knockout
@@ -311,7 +311,7 @@ BEGIN
     )
   FROM sport_events se
   WHERE se.sport_id = v_bocha_id AND se.event_id = v_event_id
-  ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
+  ON CONFLICT (sport_event_id) DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
 END $$;
