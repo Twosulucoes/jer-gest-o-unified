@@ -75,7 +75,9 @@ export default function AlimentacaoConsumoPage() {
   });
 
   const { data: windows = [], isLoading: windowsLoading } = useQuery({
-    queryKey: ["meal_windows", selectedEventId, stageId],
+    // Chave própria para evitar colisão com JanelasPage/HubPage que buscam
+    // todas as janelas (incluindo inativas) com o mesmo [eventId, stageId].
+    queryKey: ["meal_windows_consumo", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
       const { data, error } = await supabase
@@ -109,7 +111,8 @@ export default function AlimentacaoConsumoPage() {
         .from("meal_consumptions")
         .select("*")
         .in("meal_window_id", windowIds)
-        .order("consumed_at", { ascending: false });
+        .order("consumed_at", { ascending: false })
+        .limit(2000);
 
       if (error) throw error;
       return data;

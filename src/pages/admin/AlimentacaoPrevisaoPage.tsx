@@ -44,7 +44,9 @@ export default function AlimentacaoPrevisaoPage() {
 
   // 1. Fetch Meal Types
   const { data: mealTypes = [] } = useQuery({
-    queryKey: ["meal_types", eventId],
+    // Sufixo "active" distingue do cache de outras páginas que buscam todos
+    // os tipos (incluindo inativos) com a mesma chave base.
+    queryKey: ["meal_types", eventId, "active"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("meal_types")
@@ -60,7 +62,8 @@ export default function AlimentacaoPrevisaoPage() {
 
   // 2. Fetch Meal Locations
   const { data: mealLocations = [] } = useQuery({
-    queryKey: ["meal_locations", eventId],
+    // Sufixo "active" distingue do cache de LocaisPage que busca todos os locais.
+    queryKey: ["meal_locations", eventId, "active"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("meal_locations")
