@@ -2,8 +2,8 @@
   "appVersion": "0.4.0",
   "environment": "teste",
   "branch": "claude/qr-registration-linking-Wz518",
-  "commit": "beb84991",
-  "commitFull": "beb849914189c385a020175ef6ee44e5c3fc16f5",
-  "buildDate": "2026-05-13T02:53:54.965Z",
+  "commit": "3401a8c7",
+  "commitFull": "3401a8c7acfd448ad2952c1068b5d811393345bd",
+  "buildDate": "2026-05-13T03:23:52.978Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
