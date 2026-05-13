@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/analyze-concurrent-steps-AEHJO",
-  "commit": "e0a44d53",
-  "commitFull": "e0a44d53cb839873ac5a716efb11e54a803d29bf",
-  "buildDate": "2026-05-13T11:39:13.437Z",
+  "branch": "claude/simplify-evidence-system-544Ly",
+  "commit": "12d5bb3d",
+  "commitFull": "12d5bb3d86d1443f867fc9acd6129d97ca5d5379",
+  "buildDate": "2026-05-13T12:16:08.580Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
