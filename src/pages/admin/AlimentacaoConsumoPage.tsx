@@ -100,57 +100,23 @@ export default function AlimentacaoConsumoPage() {
 
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
-  // Load consumptions for all windows of the event/stage to allow "All Windows" filter
+  // Carrega consumos com dados de participante/pessoa embutidos (nested select = 1 RTT)
   const { data: consumptions = [], isLoading: consumptionsLoading, isError: consumptionsError, error: consumptionsErrorObj, refetch: refetchConsumptions } = useQuery({
     queryKey: ["meal_consumptions", selectedEventId, stageId, windows.length],
     queryFn: async () => {
       if (!selectedEventId || windows.length === 0) return [];
-      
       const windowIds = windows.map(w => w.id);
       const { data, error } = await supabase
         .from("meal_consumptions")
-        .select("*")
+        .select("*, participant:participants!participant_id(person:people!person_id(full_name, cpf, food_restrictions))")
         .in("meal_window_id", windowIds)
         .order("consumed_at", { ascending: false })
         .limit(2000);
-
       if (error) throw error;
       return data;
     },
     enabled: !!selectedEventId && windows.length > 0,
   });
-
-  // Load participant details for consumptions
-  const consumptionParticipantIds = consumptions.map((c) => c.participant_id);
-  const { data: consumptionParticipants = [] } = useQuery({
-    queryKey: ["consumption-participants", consumptionParticipantIds],
-    queryFn: async () => {
-      if (!consumptionParticipantIds.length) return [];
-      const { data, error } = await supabase.from("participants").select("id, person_id").in("id", consumptionParticipantIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: consumptionParticipantIds.length > 0,
-  });
-
-  const consumptionPersonIds = consumptionParticipants.map((p) => p.person_id);
-  const { data: consumptionPeople = [] } = useQuery({
-    queryKey: ["consumption-people", consumptionPersonIds],
-    queryFn: async () => {
-      if (!consumptionPersonIds.length) return [];
-      const { data, error } = await supabase.from("people").select("id, full_name, cpf, food_restrictions").in("id", consumptionPersonIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: consumptionPersonIds.length > 0,
-  });
-
-  const partMap = new Map(consumptionParticipants.map((p) => [p.id, p]));
-  const pplMap = new Map(consumptionPeople.map((p) => [p.id, p]));
-  const getPersonForConsumption = (participantId: string) => {
-    const pt = partMap.get(participantId);
-    return pt ? pplMap.get(pt.person_id) : null;
-  };
 
   // Operadores que registraram consumos (para filtro e coluna)
   const operatorIds = useMemo(
@@ -176,15 +142,13 @@ export default function AlimentacaoConsumoPage() {
     operatorProfiles.map((p) => [p.id, p.full_name ?? p.id.slice(0, 8)]),
   );
 
-  const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
-
   const allFilteredConsumptions = useMemo(() => {
     return consumptions.filter((c: any) => {
       const matchesWindow = selectedWindowId === "all" || c.meal_window_id === selectedWindowId;
       const matchesStatus = statusFilter === "all" || c.method === statusFilter;
       const matchesOperator = operatorFilter === "all" || c.registered_by === operatorFilter;
 
-      const person = getPersonForConsumption(c.participant_id);
+      const person = c.participant?.person;
       const matchesSearch = !searchTerm ||
         person?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         person?.cpf?.includes(searchTerm) ||
@@ -192,7 +156,7 @@ export default function AlimentacaoConsumoPage() {
 
       return matchesWindow && matchesStatus && matchesSearch && matchesOperator;
     });
-  }, [consumptions, selectedWindowId, statusFilter, searchTerm, operatorFilter, pplMap, partMap]);
+  }, [consumptions, selectedWindowId, statusFilter, searchTerm, operatorFilter]);
 
   const totalPages = Math.ceil(allFilteredConsumptions.length / itemsPerPage);
   const filteredConsumptions = useMemo(() => {
@@ -432,7 +396,7 @@ export default function AlimentacaoConsumoPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredConsumptions.map((c) => {
-                    const person = getPersonForConsumption(c.participant_id);
+                    const person = (c as any).participant?.person;
                     const win = windows.find(w => w.id === c.meal_window_id);
                     const mt = win ? mealTypesMap.get(win.meal_type_id) : null;
                     return (

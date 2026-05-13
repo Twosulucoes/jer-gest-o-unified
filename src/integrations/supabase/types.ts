@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_logs: {
+        Row: {
+          action: string
+          created_at: string
+          error_code: string | null
+          error_msg: string | null
+          id: string
+          metadata: Json | null
+          resource: string | null
+          status: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error_code?: string | null
+          error_msg?: string | null
+          id?: string
+          metadata?: Json | null
+          resource?: string | null
+          status: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error_code?: string | null
+          error_msg?: string | null
+          id?: string
+          metadata?: Json | null
+          resource?: string | null
+          status?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_manual_progress: {
         Row: {
           completed: boolean
@@ -3960,34 +3999,58 @@ export type Database = {
       }
       meal_consumptions: {
         Row: {
+          cancelado_at: string | null
+          cancelado_por: string | null
+          cancelamento_motivo: string | null
           consumed_at: string
           created_at: string
+          device_info: Json | null
+          duplicidade_detectada: boolean
           id: string
+          is_offline: boolean
           meal_window_id: string
           method: string
           notes: string | null
           participant_id: string
           registered_by: string
+          status: string
+          sync_at: string | null
         }
         Insert: {
+          cancelado_at?: string | null
+          cancelado_por?: string | null
+          cancelamento_motivo?: string | null
           consumed_at?: string
           created_at?: string
+          device_info?: Json | null
+          duplicidade_detectada?: boolean
           id?: string
+          is_offline?: boolean
           meal_window_id: string
           method?: string
           notes?: string | null
           participant_id: string
           registered_by: string
+          status?: string
+          sync_at?: string | null
         }
         Update: {
+          cancelado_at?: string | null
+          cancelado_por?: string | null
+          cancelamento_motivo?: string | null
           consumed_at?: string
           created_at?: string
+          device_info?: Json | null
+          duplicidade_detectada?: boolean
           id?: string
+          is_offline?: boolean
           meal_window_id?: string
           method?: string
           notes?: string | null
           participant_id?: string
           registered_by?: string
+          status?: string
+          sync_at?: string | null
         }
         Relationships: [
           {
@@ -6677,6 +6740,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referee_indisponibilities: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          event_stage_id: string | null
+          id: string
+          reason: string | null
+          referee_id: string | null
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          event_stage_id?: string | null
+          id?: string
+          reason?: string | null
+          referee_id?: string | null
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          event_stage_id?: string | null
+          id?: string
+          reason?: string | null
+          referee_id?: string | null
+          start_date?: string | null
+        }
+        Relationships: []
       }
       referee_profiles: {
         Row: {
