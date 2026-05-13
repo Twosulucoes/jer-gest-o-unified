@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate, useSearchParams, Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, UserX } from "lucide-react";
+import { Search, Users, XCircle, User, Layers, X, Plus, Edit, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, UserX, QrCode, FileSpreadsheet, GitMerge, Wand2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ import PdfFieldsPicker, { type PdfFieldOption } from "@/components/admin/PdfFiel
 import type { ExportColumn } from "@/lib/exportData";
 import { useEventBranding } from "@/hooks/useEventBranding";
 import { exportListPdf, downloadBlob, type PdfListColumn, type PdfListGroup } from "@/lib/listReportPdf";
+import BulkQrDialog from "@/components/admin/BulkQrDialog";
 
 const TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta", coach: "Técnico", head_of_delegation: "Chefe Delegação", staff: "Staff",
@@ -74,9 +75,13 @@ export default function ParticipantesPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">((searchParams.get("dir") as any) || "asc");
   const [page, setPage] = useState(Number(searchParams.get("page")) || 0);
   const [pageSize, setPageSize] = useState(50);
+  const [qrFilter, setQrFilter] = useState<"all" | "com_qr" | "sem_qr">(
+    (searchParams.get("qr") as "all" | "com_qr" | "sem_qr") || "all"
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [initialFormCategory, setInitialFormCategory] = useState<"delegation" | "organization" | undefined>();
+  const [bulkQrOpen, setBulkQrOpen] = useState(false);
   const stageFilterId = urlStageId || searchParams.get("stage");
 
 
@@ -156,6 +161,35 @@ export default function ParticipantesPage() {
     },
   });
 
+  // Participant IDs with active credential (for "com_qr" filter)
+  const { data: credentialedParticipantIds } = useQuery({
+    queryKey: ["credentialed-participant-ids", selectedEventId, qrFilter !== "all"],
+    enabled: !!selectedEventId && qrFilter === "com_qr",
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("participant_credentials")
+        .select("participant_id")
+        .eq("event_id", selectedEventId!)
+        .eq("status", "active")
+        .limit(5000);
+      if (error) throw error;
+      return (data ?? []).map((c) => c.participant_id as string);
+    },
+  });
+
+  // Participant IDs WITHOUT active credential (for "sem_qr" filter)
+  const { data: semQrParticipantIds } = useQuery({
+    queryKey: ["sem-qr-participant-ids", selectedEventId, qrFilter],
+    enabled: !!selectedEventId && qrFilter === "sem_qr",
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_get_participants_sem_qr" as any, {
+        p_event_id: selectedEventId!,
+      });
+      if (error) throw error;
+      return ((data ?? []) as Array<{ participant_id: string }>).map((r) => r.participant_id);
+    },
+  });
+
   // Persist filters to URL
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
@@ -163,6 +197,7 @@ export default function ParticipantesPage() {
     if (categoryFilter !== "all") next.set("category", categoryFilter); else next.delete("category");
     if (typeFilter !== "all") next.set("type", typeFilter); else next.delete("type");
     if (statusFilter !== "all") next.set("status", statusFilter); else next.delete("status");
+    if (qrFilter !== "all") next.set("qr", qrFilter); else next.delete("qr");
     if (sortBy !== "name") next.set("sort", sortBy); else next.delete("sort");
     if (sortDir !== "asc") next.set("dir", sortDir); else next.delete("dir");
     if (page > 0) next.set("page", String(page)); else next.delete("page");
@@ -174,9 +209,9 @@ export default function ParticipantesPage() {
   }, [debouncedSearch, typeFilter, statusFilter, sortBy, sortDir, page, searchParams, setSearchParams]);
 
   // Reset page when filters change
-  useEffect(() => { 
-    setPage(0); 
-  }, [debouncedSearch, typeFilter, statusFilter, stageFilterId, selectedEventId]);
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch, typeFilter, statusFilter, qrFilter, stageFilterId, selectedEventId]);
 
   const isSearching = debouncedSearch.trim().length >= 2;
 
@@ -194,6 +229,18 @@ export default function ParticipantesPage() {
     return null;
   }, [stageFilterId, stageParticipantIds, isSearching]);
 
+  // Resolve effective ID constraint for QR filter
+  const qrFilterIds = useMemo<string[] | null>(() => {
+    if (qrFilter === "com_qr") return credentialedParticipantIds ?? null;
+    if (qrFilter === "sem_qr") return semQrParticipantIds ?? null;
+    return null;
+  }, [qrFilter, credentialedParticipantIds, semQrParticipantIds]);
+
+  const qrFilterReady =
+    qrFilter === "all" ||
+    (qrFilter === "com_qr" && credentialedParticipantIds !== undefined) ||
+    (qrFilter === "sem_qr" && semQrParticipantIds !== undefined);
+
   const { data: pageData, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: [
       "participants-page",
@@ -203,6 +250,8 @@ export default function ParticipantesPage() {
       categoryFilter,
       typeFilter,
       statusFilter,
+      qrFilter,
+      (qrFilterIds ?? []).length,
       isSearching ? (matchingPersonIds ?? []).join(",") : "",
       stageFilterId,
       (constrainedIds ?? []).length,
@@ -210,10 +259,15 @@ export default function ParticipantesPage() {
     enabled:
       !!selectedEventId &&
       (!stageFilterId || !!stageParticipantIds) &&
-      (!isSearching || !!matchingPersonIds),
+      (!isSearching || !!matchingPersonIds) &&
+      qrFilterReady,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       if (noSearchMatches) return { rows: [] as any[], total: 0 };
+      // QR filter with empty set → no results
+      if (qrFilter !== "all" && qrFilterIds !== null && qrFilterIds.length === 0) {
+        return { rows: [] as any[], total: 0 };
+      }
 
       const baseFields =
         "id, status, participant_type, person_id, delegation_id, created_at, " +
@@ -225,9 +279,8 @@ export default function ParticipantesPage() {
 
       // Constrói a query base
       let q: any;
-      
+
       if (stageFilterId) {
-        // Se houver filtro por etapa, precisamos do join !inner
         q = supabase
           .from("participants")
           .select(`${baseFields}, participant_event_stages!inner(event_stage_id)`, { count: "exact" })
@@ -240,11 +293,14 @@ export default function ParticipantesPage() {
 
       q = q.eq("event_id", selectedEventId!);
 
-      // if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
       if (typeFilter !== "all") q = q.eq("participant_type", typeFilter);
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
       if (isSearching && matchingPersonIds && matchingPersonIds.length > 0) {
         q = q.in("person_id", matchingPersonIds);
+      }
+      // QR filter: constrain by pre-fetched ID set
+      if (qrFilterIds !== null && qrFilterIds.length > 0) {
+        q = q.in("id", qrFilterIds);
       }
 
       const { data, error, count } = await q
@@ -283,6 +339,26 @@ export default function ParticipantesPage() {
 
   // Enrollments only for the visible page
   const partIds = rows.map((p: any) => p.id);
+
+  // Active credentials for visible rows (drives "SEM QR" badge)
+  const { data: rowActiveCreds = [] } = useQuery({
+    queryKey: ["participants-active-creds-page", partIds.join(",")],
+    enabled: partIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("participant_credentials")
+        .select("participant_id")
+        .in("participant_id", partIds)
+        .eq("status", "active");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const credentialedSet = useMemo(
+    () => new Set(rowActiveCreds.map((c) => c.participant_id)),
+    [rowActiveCreds]
+  );
   const { data: enrollments = [] } = useQuery({
     queryKey: ["participants-enrollments-page", partIds.join(",")],
     enabled: partIds.length > 0,
@@ -582,6 +658,23 @@ export default function ParticipantesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {canManage && selectedEventId && (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/importacao">
+                  <FileSpreadsheet className="h-4 w-4 mr-1" />Importar CSV
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/pessoas/duplicidades">
+                  <GitMerge className="h-4 w-4 mr-1" />Duplicatas
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setBulkQrOpen(true)}>
+                <Wand2 className="h-4 w-4 mr-1" />Gerar QR em lote
+              </Button>
+            </>
+          )}
           <PdfFieldsPicker
             options={pdfFieldOptions}
             value={pdfFields}
@@ -753,6 +846,18 @@ export default function ParticipantesPage() {
             )}
 
             <span className="text-xs text-muted-foreground sm:ml-2 inline-flex items-center gap-1">
+              <QrCode className="h-3.5 w-3.5" /> QR:
+            </span>
+            <Select value={qrFilter} onValueChange={(v) => setQrFilter(v as "all" | "com_qr" | "sem_qr")}>
+              <SelectTrigger className="h-8 w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="com_qr">Com QR ativo</SelectItem>
+                <SelectItem value="sem_qr">Sem QR</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <span className="text-xs text-muted-foreground sm:ml-2 inline-flex items-center gap-1">
               <ArrowUpDown className="h-3.5 w-3.5" /> Ordenar:
             </span>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
@@ -887,7 +992,7 @@ export default function ParticipantesPage() {
                   <TableHead>CPF</TableHead>
                   <TableHead>Instituição</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Status / QR</TableHead>
                   <TableHead>Modalidade / Prova</TableHead>
                   <TableHead>Etapa(s)</TableHead>
                   <TableHead></TableHead>
@@ -898,19 +1003,24 @@ export default function ParticipantesPage() {
                   const person = p.person;
                   const statusInfo = STATUS_LABELS[p.status] ?? { label: p.status, variant: "outline" as const };
                   const institutionName = p.delegation?.institution?.name ?? "—";
+                  const hasQr = credentialedSet.has(p.id);
                   return (
                     <TableRow key={p.id} className={isFetching ? "opacity-70" : ""}>
                       <TableCell className="font-medium">{person?.full_name ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground font-mono text-xs">{person?.cpf ?? "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{institutionName}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {/* <Badge variant="outline" className="w-fit">{CATEGORY_LABELS[p.category] ?? p.category}</Badge> */}
-                          <Badge variant="secondary" className="w-fit text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
-                        </div>
+                        <Badge variant="secondary" className="w-fit text-[10px]">{TYPE_LABELS[p.participant_type] ?? p.participant_type}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                          {!hasQr && (
+                            <Badge variant="destructive" className="text-[10px] w-fit">
+                              <QrCode className="h-2.5 w-2.5 mr-1" />SEM QR
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-[250px] truncate">
                         {getEnrollmentSummary(p.id)}
@@ -950,6 +1060,14 @@ export default function ParticipantesPage() {
         initialCategory={initialFormCategory}
         defaultStageId={stageFilterId}
       />
+
+      {selectedEventId && (
+        <BulkQrDialog
+          open={bulkQrOpen}
+          onOpenChange={setBulkQrOpen}
+          eventId={selectedEventId}
+        />
+      )}
     </div>
   );
 }

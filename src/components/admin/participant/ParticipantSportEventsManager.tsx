@@ -27,7 +27,6 @@ interface SportEventRow {
     id: string;
     name: string;
     sport: { name: string } | null;
-    category_rule_code: string | null;
   } | null;
 }
 
@@ -52,9 +51,9 @@ export default function ParticipantSportEventsManager({ participantId, eventId, 
         .from("participant_sport_events")
         .select(`
           id, status, registration_status,
-          sport_event:sport_events!sport_event_id(
-            id, name, category_rule_code,
-            sport:sports!sport_id(name)
+          sport_event:sport_events!participant_sport_events_sport_event_id_fkey(
+            id, name,
+            sport:sports!sport_events_sport_id_fkey(name)
           )
         `)
         .eq("participant_id", participantId)

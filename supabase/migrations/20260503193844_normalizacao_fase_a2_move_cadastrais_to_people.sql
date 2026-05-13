@@ -42,41 +42,60 @@ COMMENT ON COLUMN public.people.national_ban_until IS
 -- ============================================================
 -- 2. Backfill: copia o valor mais recente de participants para people
 --    (se houver). DISTINCT ON garante uma linha por person_id.
+--
+--    Wrapped in DO/EXECUTE so the SQL is parsed at runtime: in a
+--    clean preview rebuild these columns may not exist on participants
+--    (they pre-dated migration tracking), and a planning-time parse
+--    error would abort the migration. When the columns are absent
+--    there is no data to backfill anyway.
 -- ============================================================
-WITH last_per_person AS (
-  SELECT DISTINCT ON (p.person_id)
-    p.person_id,
-    p.coach_name,
-    p.coach_phone,
-    p.guardian_name,
-    p.guardian_phone,
-    p.eja_flag,
-    p.wheelchair_user_flag,
-    p.national_ban_until,
-    p.school_role_label
-  FROM public.participants p
-  WHERE
-    p.coach_name IS NOT NULL
-    OR p.coach_phone IS NOT NULL
-    OR p.guardian_name IS NOT NULL
-    OR p.guardian_phone IS NOT NULL
-    OR p.eja_flag IS NOT NULL
-    OR p.wheelchair_user_flag IS NOT NULL
-    OR p.national_ban_until IS NOT NULL
-    OR p.school_role_label IS NOT NULL
-  ORDER BY p.person_id, p.updated_at DESC NULLS LAST, p.created_at DESC
-)
-UPDATE public.people pe
-SET coach_name           = COALESCE(pe.coach_name,           lp.coach_name),
-    coach_phone          = COALESCE(pe.coach_phone,          lp.coach_phone),
-    guardian_name        = COALESCE(pe.guardian_name,        lp.guardian_name),
-    guardian_phone       = COALESCE(pe.guardian_phone,       lp.guardian_phone),
-    eja_flag             = COALESCE(pe.eja_flag,             lp.eja_flag),
-    wheelchair_user_flag = COALESCE(pe.wheelchair_user_flag, lp.wheelchair_user_flag),
-    national_ban_until   = COALESCE(pe.national_ban_until,   lp.national_ban_until),
-    school_role_label    = COALESCE(pe.school_role_label,    lp.school_role_label)
-FROM last_per_person lp
-WHERE pe.id = lp.person_id;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'participants'
+      AND column_name  = 'eja_flag'
+  ) THEN
+    EXECUTE $sql$
+      WITH last_per_person AS (
+        SELECT DISTINCT ON (p.person_id)
+          p.person_id,
+          p.coach_name,
+          p.coach_phone,
+          p.guardian_name,
+          p.guardian_phone,
+          p.eja_flag,
+          p.wheelchair_user_flag,
+          p.national_ban_until,
+          p.school_role_label
+        FROM public.participants p
+        WHERE
+          p.coach_name IS NOT NULL
+          OR p.coach_phone IS NOT NULL
+          OR p.guardian_name IS NOT NULL
+          OR p.guardian_phone IS NOT NULL
+          OR p.eja_flag IS NOT NULL
+          OR p.wheelchair_user_flag IS NOT NULL
+          OR p.national_ban_until IS NOT NULL
+          OR p.school_role_label IS NOT NULL
+        ORDER BY p.person_id, p.updated_at DESC NULLS LAST, p.created_at DESC
+      )
+      UPDATE public.people pe
+      SET coach_name           = COALESCE(pe.coach_name,           lp.coach_name),
+          coach_phone          = COALESCE(pe.coach_phone,          lp.coach_phone),
+          guardian_name        = COALESCE(pe.guardian_name,        lp.guardian_name),
+          guardian_phone       = COALESCE(pe.guardian_phone,       lp.guardian_phone),
+          eja_flag             = COALESCE(pe.eja_flag,             lp.eja_flag),
+          wheelchair_user_flag = COALESCE(pe.wheelchair_user_flag, lp.wheelchair_user_flag),
+          national_ban_until   = COALESCE(pe.national_ban_until,   lp.national_ban_until),
+          school_role_label    = COALESCE(pe.school_role_label,    lp.school_role_label)
+      FROM last_per_person lp
+      WHERE pe.id = lp.person_id
+    $sql$;
+  END IF;
+END
+$$;
 
 -- ============================================================
 -- 3. DROP COLUMN em participants (8 cadastrais migrados + enrollment_date)

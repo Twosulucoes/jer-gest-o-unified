@@ -47,6 +47,7 @@ import { addToVoucherQueue } from "@/lib/voucherOffline";
 import { enqueueIncident } from "@/lib/incidentOffline";
 import { readMealWindowsCache, writeMealWindowsCache } from "@/lib/mealWindowsCache";
 import { useTodayString } from "@/hooks/useTodayString";
+import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 import { JanelaSheet, type JanelaStatus } from "@/components/pwa/alimentacao/JanelaSheet";
 import { cn } from "@/lib/utils";
@@ -280,6 +281,7 @@ export default function AlimentacaoScanPage() {
     if (!activeEventId) return;
     let cancelled = false;
     (async () => {
+      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
       let consumoQ = supabase
         .from("meal_consumptions")
         .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
@@ -287,7 +289,8 @@ export default function AlimentacaoScanPage() {
           head: true,
         })
         .eq("meal_windows.event_id", activeEventId)
-        .gte("consumed_at", today + "T00:00:00");
+        .gte("consumed_at", startIso)
+        .lt("consumed_at", endIsoExclusive);
       if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
       const { count } = await consumoQ;
       if (!cancelled) setTotalToday(count || 0);
@@ -386,27 +389,6 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
-    if (isOnline()) {
-      const { count } = await supabase
-        .from("meal_consumptions")
-        .select("id", { count: "exact", head: true })
-        .eq("participant_id", participantId)
-        .eq("meal_window_id", windowId);
-
-      if ((count || 0) > 0) {
-        const errorMsg = getSystemMessage("ERR_ALREADY_REGISTERED", lang);
-
-        setResult({ ok: false, message: errorMsg, source: resultSource });
-        setNotFoundQr(null);
-
-        toast.error(errorMsg);
-        recordOutcome("error");
-        void recordIncident("DUPLICATE", participantId);
-        reopenIfContinuous();
-        return;
-      }
-    }
-
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -474,24 +456,53 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
-    const { error } = await supabase.from("meal_consumptions").insert(consumptionData);
+    // RPC idempotente: valida janela, horário, eligibility e insere atomicamente
+    const { data: rpcResult, error: rpcError } = await supabase.rpc("record_meal_consumption", {
+      p_participant_id: participantId,
+      p_meal_window_id: windowId,
+      p_method: method,
+      p_registered_by: session.user.id,
+    });
 
-    if (error) {
-      if ((error as { code?: string }).code === "23505") {
-        const dupMsg = getSystemMessage("ERR_ALREADY_REGISTERED", lang);
+    if (rpcError) {
+      void recordIncident("OTHER", participantId);
+      throw rpcError;
+    }
 
-        setResult({ ok: false, message: dupMsg, source: resultSource });
-        setNotFoundQr(null);
+    const res = rpcResult as { ok: boolean; reason?: string };
 
-        toast.error(dupMsg);
-        recordOutcome("error");
-        void recordIncident("DUPLICATE", participantId);
-        reopenIfContinuous();
-        return;
+    if (!res.ok) {
+      let msg: string;
+      let incidentType: "DUPLICATE" | "OTHER" = "OTHER";
+
+      switch (res.reason) {
+        case "ALREADY_REGISTERED":
+          msg = getSystemMessage("ERR_ALREADY_REGISTERED", lang);
+          incidentType = "DUPLICATE";
+          break;
+        case "WINDOW_NOT_FOUND":
+          msg = "Janela de refeição não encontrada ou inativa.";
+          break;
+        case "WINDOW_WRONG_DATE":
+          msg = "Esta janela não pertence ao dia de hoje.";
+          break;
+        case "WINDOW_CLOSED":
+          msg = "Fora do horário desta janela de refeição.";
+          break;
+        case "NOT_ELIGIBLE":
+          msg = "Participante sem direito a esta refeição (restrição de elegibilidade).";
+          break;
+        default:
+          msg = "Não foi possível registrar o consumo. Tente novamente.";
       }
 
-      void recordIncident("OTHER", participantId);
-      throw error;
+      setResult({ ok: false, message: msg, source: resultSource });
+      setNotFoundQr(null);
+      toast.error(msg);
+      recordOutcome("error");
+      void recordIncident(incidentType, participantId);
+      reopenIfContinuous();
+      return;
     }
 
     const prefix =
@@ -525,10 +536,12 @@ export default function AlimentacaoScanPage() {
   const handleScan = async (rawValue: string) => {
     if (isSubmitting) return;
 
+    // Bloquear re-entrância imediatamente, antes de qualquer await
+    setIsSubmitting(true);
     setScannerOpen(false);
 
     let val = rawValue.trim();
-    if (!val) return;
+    if (!val) { setIsSubmitting(false); return; }
 
     if (
       !val.toLowerCase().startsWith("voucher:") &&
@@ -540,10 +553,9 @@ export default function AlimentacaoScanPage() {
 
     if (!windowId) {
       toast.error(getSystemMessage("ERR_WINDOW_REQUIRED", lang));
+      setIsSubmitting(false);
       return;
     }
-
-    setIsSubmitting(true);
 
     try {
       let participantId: string | null = null;

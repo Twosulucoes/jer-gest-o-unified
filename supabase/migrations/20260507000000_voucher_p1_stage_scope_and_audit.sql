@@ -22,10 +22,9 @@ ALTER TABLE public.service_voucher_batches
 UPDATE public.service_voucher_batches b
 SET event_stage_id = sub.event_stage_id
 FROM (
-  SELECT batch_id, MIN(event_stage_id) AS event_stage_id
+  SELECT DISTINCT ON (batch_id) batch_id, event_stage_id
   FROM public.service_vouchers
   WHERE batch_id IS NOT NULL
-  GROUP BY batch_id
 ) sub
 WHERE b.id = sub.batch_id
   AND b.event_stage_id IS NULL;

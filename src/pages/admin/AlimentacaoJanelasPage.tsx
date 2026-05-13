@@ -135,11 +135,19 @@ export default function AlimentacaoJanelasPage() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
+      // Bloquear exclusão se há consumos registrados nesta janela
+      const { count } = await supabase
+        .from("meal_consumptions")
+        .select("id", { count: "exact", head: true })
+        .eq("meal_window_id", id);
+      if ((count ?? 0) > 0) {
+        throw new Error(`Esta janela possui ${count} consumo(s) registrado(s) e não pode ser excluída. Desative-a em vez de excluir.`);
+      }
       const { error } = await supabase.from("meal_windows").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela excluída"); },
-    onError: (e: Error) => toast.error("Erro ao excluir: " + e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const toggleStatusMut = useMutation({
@@ -244,7 +252,8 @@ export default function AlimentacaoJanelasPage() {
       setReportOpen(true);
       qc.invalidateQueries({ queryKey: ["meal_windows"] });
       
-      await supabase.from("db_operation_logs").insert({
+      // Fire-and-forget: falha no log não deve mascarar o sucesso da operação
+      void supabase.from("db_operation_logs").insert({
         user_id: (user as any)?.id,
         module_name: "alimentacao",
         table_name: "meal_windows",
@@ -252,7 +261,7 @@ export default function AlimentacaoJanelasPage() {
         event_id: selectedEventId,
         is_success: true,
         metadata: { date: filterDate, stageId, count: toInsert.length }
-      });
+      }).catch(() => null);
 
     } catch (e: any) {
       toast.error("Erro: " + e.message);

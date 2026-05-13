@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Clock, MapPin, Bus } from "lucide-react";
 import { format } from "date-fns";
 import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
+import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 
 interface Trip {
   id: string;
@@ -27,12 +28,14 @@ export default function TransporteViagensPage() {
 
   useEffect(() => {
     (async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = new Date().toLocaleDateString("fr-CA");
+      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
       let query = supabase
         .from("transport_trips")
         .select("id, scheduled_at, status, transport_vehicles(plate, label), transport_routes(name)")
         .eq("event_id", eventId)
-        .gte("scheduled_at", today + "T00:00:00");
+        .gte("scheduled_at", startIso)
+        .lt("scheduled_at", endIsoExclusive);
 
       if (stageId) {
         query = query.eq("event_stage_id", stageId);

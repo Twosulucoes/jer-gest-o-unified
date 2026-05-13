@@ -14,6 +14,10 @@ import {
   RefreshCcw,
   UserPlus,
   Save,
+  UtensilsCrossed,
+  Bus,
+  BedDouble,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -45,6 +49,18 @@ import {
 type SchoolOption = {
   id: string;
   name: string;
+};
+
+type SportEventOption = {
+  id: string;
+  name: string;
+  sport_name: string;
+};
+
+type ConsumptionData = {
+  meals: number;
+  transport: number;
+  lodging: number;
 };
 
 type QuickCreateForm = {
@@ -82,6 +98,16 @@ export default function VincularCredencialPage() {
   const [schoolQuery, setSchoolQuery] = useState("");
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [loadingSchools, setLoadingSchools] = useState(false);
+
+  // Cenário 1: dados de consumo do participante já vinculado
+  const [consumptionData, setConsumptionData] = useState<ConsumptionData | null>(null);
+  const [loadingConsumption, setLoadingConsumption] = useState(false);
+
+  // Cenário 3: modalidades para inscrição de emergência
+  const [sportEventOptions, setSportEventOptions] = useState<SportEventOption[]>([]);
+  const [selectedSportEventIds, setSelectedSportEventIds] = useState<string[]>([]);
+  const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
+  const [loadingSportEvents, setLoadingSportEvents] = useState(false);
 
   const [quickForm, setQuickForm] = useState<QuickCreateForm>({
     full_name: "",
@@ -179,6 +205,75 @@ export default function VincularCredencialPage() {
     };
   }, [schoolQuery]);
 
+  const fetchConsumption = async (participantId: string) => {
+    setLoadingConsumption(true);
+    try {
+      const [mealsRes, transportRes, lodgingRes] = await Promise.all([
+        supabase
+          .from("meal_consumptions")
+          .select("id", { count: "exact", head: true })
+          .eq("participant_id", participantId),
+        supabase
+          .from("transport_passengers")
+          .select("id", { count: "exact", head: true })
+          .eq("participant_id", participantId),
+        supabase
+          .from("lodging_occupancies")
+          .select("id", { count: "exact", head: true })
+          .eq("participant_id", participantId),
+      ]);
+      setConsumptionData({
+        meals: mealsRes.count ?? 0,
+        transport: transportRes.count ?? 0,
+        lodging: lodgingRes.count ?? 0,
+      });
+    } catch (err) {
+      console.error("fetchConsumption:", err);
+    } finally {
+      setLoadingConsumption(false);
+    }
+  };
+
+  const loadSportEventsAndStage = async () => {
+    if (!activeEventId) return;
+    setLoadingSportEvents(true);
+    try {
+      const [eventsRes, stageRes] = await Promise.all([
+        supabase
+          .from("sport_events")
+          .select("id, name, sport:sports!sport_events_sport_id_fkey(name)")
+          .eq("event_id", activeEventId)
+          .eq("is_active", true)
+          .order("name"),
+        supabase
+          .from("event_stages")
+          .select("id")
+          .eq("event_id", activeEventId)
+          .order("sort_order", { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (eventsRes.data) {
+        setSportEventOptions(
+          eventsRes.data.map((se: any) => ({
+            id: se.id,
+            name: se.name,
+            sport_name: (se.sport as any)?.name ?? "",
+          })),
+        );
+      }
+
+      if (stageRes.data) {
+        setDefaultStageId(stageRes.data.id);
+      }
+    } catch (err) {
+      console.error("loadSportEventsAndStage:", err);
+    } finally {
+      setLoadingSportEvents(false);
+    }
+  };
+
   const handleScan = async (rawValue: string) => {
     setScannerOpen(false);
     if (!rawValue.trim()) return;
@@ -223,6 +318,7 @@ export default function VincularCredencialPage() {
           toast.success(`CPF de ${res.full_name} identificado!`);
         } else {
           toast.info(`Este código já pertence a: ${res.full_name}`);
+          void fetchConsumption(res.participant_id);
         }
       } else {
         setCurrentOwner(null);
@@ -280,6 +376,10 @@ export default function VincularCredencialPage() {
     setCurrentOwner(null);
     setManualQuery("");
     setShowQuickCreate(false);
+    setConsumptionData(null);
+    setSelectedSportEventIds([]);
+    setSportEventOptions([]);
+    setDefaultStageId(null);
   };
 
   const handleLink = async (participant: ParticipantManualSearchRow) => {
@@ -498,6 +598,38 @@ export default function VincularCredencialPage() {
       const personId = await createPerson();
       const participantId = await createParticipant(personId);
 
+      if (selectedSportEventIds.length > 0 && defaultStageId) {
+        // Garante que o participante está vinculado à etapa
+        await supabase
+          .from("participant_event_stages")
+          .insert({
+            participant_id: participantId,
+            event_stage_id: defaultStageId,
+            event_id: activeEventId!,
+            status: "active",
+          })
+          .select("id")
+          .maybeSingle();
+
+        // Inscreve nas modalidades selecionadas
+        const enrollments = selectedSportEventIds.map((sport_event_id) => ({
+          participant_id: participantId,
+          sport_event_id,
+          event_stage_id: defaultStageId,
+          status: "confirmed",
+          registration_source: "emergency",
+        }));
+
+        const { error: pseError } = await supabase
+          .from("participant_sport_events")
+          .insert(enrollments);
+
+        if (pseError) {
+          console.error("Erro ao inscrever modalidades:", pseError);
+          toast.warning("Participante criado, mas houve erro nas inscrições de modalidade.");
+        }
+      }
+
       await handleLink({
         participant_id: participantId,
         person_id: personId,
@@ -606,14 +738,50 @@ export default function VincularCredencialPage() {
                 </Button>
               </div>
             ) : currentOwner ? (
-              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-2 text-center">
+              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-3 text-center">
                 <p className="text-sm font-medium text-orange-800 dark:text-orange-300 flex items-center justify-center gap-2">
-                  <User className="h-4 w-4" /> Código já vinculado a:
+                  <User className="h-4 w-4" /> Credencial já vinculada a:
                 </p>
 
-                <p className="font-bold text-orange-900 dark:text-orange-100">
+                <p className="text-lg font-bold text-orange-900 dark:text-orange-100">
                   {currentOwner.name}
                 </p>
+
+                {loadingConsumption ? (
+                  <div className="flex justify-center pt-1">
+                    <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+                  </div>
+                ) : consumptionData ? (
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <div className="rounded-lg bg-orange-50 dark:bg-orange-900/50 p-2 text-center">
+                      <UtensilsCrossed className="h-4 w-4 mx-auto text-orange-500 mb-1" />
+                      <p className="text-lg font-black text-orange-900 dark:text-orange-100">
+                        {consumptionData.meals}
+                      </p>
+                      <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                        Refeições
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-orange-50 dark:bg-orange-900/50 p-2 text-center">
+                      <Bus className="h-4 w-4 mx-auto text-orange-500 mb-1" />
+                      <p className="text-lg font-black text-orange-900 dark:text-orange-100">
+                        {consumptionData.transport}
+                      </p>
+                      <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                        Transportes
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-orange-50 dark:bg-orange-900/50 p-2 text-center">
+                      <BedDouble className="h-4 w-4 mx-auto text-orange-500 mb-1" />
+                      <p className="text-lg font-black text-orange-900 dark:text-orange-100">
+                        {consumptionData.lodging}
+                      </p>
+                      <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                        Alojamentos
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
@@ -716,7 +884,10 @@ export default function VincularCredencialPage() {
                       type="button"
                       variant="module"
                       className="w-full gap-2"
-                      onClick={() => setShowQuickCreate(true)}
+                      onClick={() => {
+                        setShowQuickCreate(true);
+                        void loadSportEventsAndStage();
+                      }}
                     >
                       <UserPlus className="h-4 w-4" />
                       Cadastrar novo participante
@@ -873,6 +1044,62 @@ export default function VincularCredencialPage() {
                         }
                         placeholder="Ex: Fisioterapeuta, Fotógrafo, Credenciamento..."
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5">
+                        <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                        Inscrição de emergência — Modalidades
+                      </label>
+
+                      {loadingSportEvents ? (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Carregando modalidades...
+                        </div>
+                      ) : sportEventOptions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-2">
+                          Nenhuma modalidade ativa disponível.
+                        </p>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto rounded-xl border bg-background divide-y">
+                          {sportEventOptions.map((se) => (
+                            <label
+                              key={se.id}
+                              className="flex items-center gap-3 px-3 py-2 hover:bg-muted cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-border accent-primary"
+                                checked={selectedSportEventIds.includes(se.id)}
+                                onChange={(e) => {
+                                  setSelectedSportEventIds((prev) =>
+                                    e.target.checked
+                                      ? [...prev, se.id]
+                                      : prev.filter((id) => id !== se.id),
+                                  );
+                                }}
+                              />
+                              <span className="flex-1 min-w-0">
+                                <span className="text-sm font-medium">{se.name}</span>
+                                {se.sport_name && (
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    — {se.sport_name}
+                                  </span>
+                                )}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+
+                      {selectedSportEventIds.length > 0 && (
+                        <p className="text-xs text-primary font-medium">
+                          {selectedSportEventIds.length} modalidade
+                          {selectedSportEventIds.length !== 1 ? "s" : ""} selecionada
+                          {selectedSportEventIds.length !== 1 ? "s" : ""}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">

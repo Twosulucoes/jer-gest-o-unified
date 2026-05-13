@@ -115,6 +115,7 @@ const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
 const VoucherValidarPage = lazy(() => import("../pages/admin/VoucherValidarPage"));
 const VoucherAuditoriaPage = lazy(() => import("../pages/admin/VoucherAuditoriaPage"));
 const ProtestosFilaPage = lazy(() => import("../pages/admin/ProtestosFilaPage"));
+const AlertasPage = lazy(() => import("../pages/admin/AlertasPage"));
 
 // Transporte Subpages (Admin)
 const AdminTransporteViagensPage = lazy(() => import("../pages/admin/TransporteViagensPage"));
@@ -134,6 +135,7 @@ const AdminAlimentacaoLocaisPage = lazy(() => import("../pages/admin/Alimentacao
 const AdminAlimentacaoPadroesPage = lazy(() => import("../pages/admin/AlimentacaoPadroesPage"));
 const AdminAlimentacaoDivergenciasPage = lazy(() => import("../pages/admin/AlimentacaoDivergenciasPage"));
 const AdminAlimentacaoAuditoriaPage = lazy(() => import("../pages/admin/AlimentacaoAuditoriaPage"));
+const AdminAlimentacaoRelatoriosConsumoPage = lazy(() => import("../pages/admin/AlimentacaoRelatoriosConsumoPage"));
 
 // Alojamento Subpages (Admin)
 const AdminAlojamentoOcupacaoPage = lazy(() => import("../pages/admin/AlojamentoOcupacaoPage"));
@@ -317,6 +319,7 @@ export const AppRoutes = () => (
              <Route path="alimentacao/padroes" element={<AdminAlimentacaoPadroesPage />} />
              <Route path="alimentacao/divergencias" element={<AdminAlimentacaoDivergenciasPage />} />
              <Route path="alimentacao/auditoria" element={<AdminAlimentacaoAuditoriaPage />} />
+             <Route path="alimentacao/relatorios/consumo" element={<AdminAlimentacaoRelatoriosConsumoPage />} />
             <Route path="transporte" element={<TransporteHubPage />} />
             <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
             <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
@@ -373,6 +376,7 @@ export const AppRoutes = () => (
         <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>}>
         </Route>
         <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
+        <Route path="alertas" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "secretaria", "coordenacao_tecnica"]}><AlertasPage /></ProtectedRoute>} />
         <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
         <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
         <Route path="dados" element={<Navigate to="/super/dados" replace />} />

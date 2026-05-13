@@ -24,6 +24,7 @@ export default function AlimentacaoConsumoPage() {
   const [selectedWindowId, setSelectedWindowId] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [operatorFilter, setOperatorFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const canOperate = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
@@ -38,7 +39,7 @@ export default function AlimentacaoConsumoPage() {
   // H6: qualquer filtro reseta para a primeira página
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedWindowId, statusFilter, searchTerm]);
+  }, [selectedWindowId, statusFilter, searchTerm, operatorFilter]);
 
   // M8: realtime — invalida a lista de consumos quando há insert/update/delete
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function AlimentacaoConsumoPage() {
         { event: "*", schema: "public", table: "meal_consumptions" },
         () => {
           void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
+          void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
         },
       )
       .subscribe();
@@ -73,14 +75,14 @@ export default function AlimentacaoConsumoPage() {
   });
 
   const { data: windows = [], isLoading: windowsLoading } = useQuery({
-    queryKey: ["meal_windows", selectedEventId, stageId],
+    // Chave própria para evitar colisão com JanelasPage/HubPage que buscam
+    // todas as janelas (incluindo inativas) com o mesmo [eventId, stageId].
+    queryKey: ["meal_windows_consumo", selectedEventId, stageId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      // Carrega TODAS as janelas ativas do evento; filtramos por etapa em memória
-      // para conseguir tolerar janelas legadas sem event_stage_id (fallback).
       const { data, error } = await supabase
         .from("meal_windows")
-        .select("*")
+        .select("*, meal_locations(name)")
         .eq("event_id", selectedEventId)
         .eq("is_active", true)
         .order("service_date")
@@ -88,85 +90,73 @@ export default function AlimentacaoConsumoPage() {
       if (error) throw error;
       const all = data ?? [];
       if (!isStageScoped || !stageId) return all;
-      // Retorna apenas as janelas vinculadas explicitamente a esta etapa.
-      // Removemos o fallback de janelas legadas (sem event_stage_id) para garantir isolamento.
       return all.filter((w: any) => w.event_stage_id === stageId);
     },
     enabled: !!selectedEventId,
   });
 
   const stageWindowsCount = windows.length;
-  const showingFallbackWindows = false; // Removido fallback no queryFn
+  const showingFallbackWindows = false;
 
   const mealTypesMap = new Map(mealTypes.map((m) => [m.id, m]));
 
-  // Load consumptions for all windows of the event/stage to allow "All Windows" filter
+  // Carrega consumos com dados de participante/pessoa embutidos (nested select = 1 RTT)
   const { data: consumptions = [], isLoading: consumptionsLoading, isError: consumptionsError, error: consumptionsErrorObj, refetch: refetchConsumptions } = useQuery({
     queryKey: ["meal_consumptions", selectedEventId, stageId, windows.length],
     queryFn: async () => {
       if (!selectedEventId || windows.length === 0) return [];
-      
       const windowIds = windows.map(w => w.id);
       const { data, error } = await supabase
         .from("meal_consumptions")
-        .select("*")
+        .select("*, participant:participants!participant_id(person:people!person_id(full_name, cpf, food_restrictions))")
         .in("meal_window_id", windowIds)
-        .order("consumed_at", { ascending: false });
-
+        .order("consumed_at", { ascending: false })
+        .limit(2000);
       if (error) throw error;
       return data;
     },
     enabled: !!selectedEventId && windows.length > 0,
   });
 
-  // Load participant details for consumptions
-  const consumptionParticipantIds = consumptions.map((c) => c.participant_id);
-  const { data: consumptionParticipants = [] } = useQuery({
-    queryKey: ["consumption-participants", consumptionParticipantIds],
+  // Operadores que registraram consumos (para filtro e coluna)
+  const operatorIds = useMemo(
+    () => [...new Set(consumptions.map((c: any) => c.registered_by).filter(Boolean))],
+    [consumptions],
+  );
+
+  const { data: operatorProfiles = [] } = useQuery({
+    queryKey: ["consumption-operators", operatorIds],
     queryFn: async () => {
-      if (!consumptionParticipantIds.length) return [];
-      const { data, error } = await supabase.from("participants").select("id, person_id").in("id", consumptionParticipantIds);
+      if (!operatorIds.length) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", operatorIds);
       if (error) throw error;
       return data;
     },
-    enabled: consumptionParticipantIds.length > 0,
+    enabled: operatorIds.length > 0,
   });
 
-  const consumptionPersonIds = consumptionParticipants.map((p) => p.person_id);
-  const { data: consumptionPeople = [] } = useQuery({
-    queryKey: ["consumption-people", consumptionPersonIds],
-    queryFn: async () => {
-      if (!consumptionPersonIds.length) return [];
-      const { data, error } = await supabase.from("people").select("id, full_name, cpf, food_restrictions").in("id", consumptionPersonIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: consumptionPersonIds.length > 0,
-  });
-
-  const partMap = new Map(consumptionParticipants.map((p) => [p.id, p]));
-  const pplMap = new Map(consumptionPeople.map((p) => [p.id, p]));
-  const getPersonForConsumption = (participantId: string) => {
-    const pt = partMap.get(participantId);
-    return pt ? pplMap.get(pt.person_id) : null;
-  };
-
-  const consumedParticipantIds = new Set(consumptions.map((c) => c.participant_id));
+  const operatorMap = new Map(
+    operatorProfiles.map((p) => [p.id, p.full_name ?? p.id.slice(0, 8)]),
+  );
 
   const allFilteredConsumptions = useMemo(() => {
-    return consumptions.filter((c) => {
+    return consumptions.filter((c: any) => {
       const matchesWindow = selectedWindowId === "all" || c.meal_window_id === selectedWindowId;
       const matchesStatus = statusFilter === "all" || c.method === statusFilter;
-      
-      const person = getPersonForConsumption(c.participant_id);
-      const matchesSearch = !searchTerm || 
+      const matchesOperator = operatorFilter === "all" || c.registered_by === operatorFilter;
+
+      const person = c.participant?.person;
+      const matchesSearch = !searchTerm ||
         person?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         person?.cpf?.includes(searchTerm) ||
         c.participant_id.toLowerCase().includes(searchTerm.toLowerCase());
 
-      return matchesWindow && matchesStatus && matchesSearch;
+      return matchesWindow && matchesStatus && matchesSearch && matchesOperator;
     });
-  }, [consumptions, selectedWindowId, statusFilter, searchTerm, pplMap, partMap]);
+  }, [consumptions, selectedWindowId, statusFilter, searchTerm, operatorFilter]);
 
   const totalPages = Math.ceil(allFilteredConsumptions.length / itemsPerPage);
   const filteredConsumptions = useMemo(() => {
@@ -176,6 +166,25 @@ export default function AlimentacaoConsumoPage() {
 
   const selectedWindow = windows.find((w) => w.id === selectedWindowId);
   const selectedMealType = selectedWindow ? mealTypesMap.get(selectedWindow.meal_type_id) : null;
+
+  // Contagem real via query HEAD — evita o limite de 1000 linhas da query de dados
+  const { data: kpiCount = 0 } = useQuery({
+    queryKey: ["meal_consumption_kpi_count", selectedEventId, stageId, windows.length, selectedWindowId],
+    queryFn: async () => {
+      if (!selectedEventId || windows.length === 0) return 0;
+      let q = supabase
+        .from("meal_consumptions")
+        .select("id", { count: "exact", head: true });
+      if (selectedWindowId === "all") {
+        q = (q as any).in("meal_window_id", windows.map((w) => w.id));
+      } else {
+        q = (q as any).eq("meal_window_id", selectedWindowId);
+      }
+      const { count } = await q;
+      return count ?? 0;
+    },
+    enabled: !!selectedEventId && windows.length > 0,
+  });
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -284,25 +293,31 @@ export default function AlimentacaoConsumoPage() {
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Refeição</p>
-              <p className="text-lg font-bold text-foreground">{selectedMealType?.name ?? "—"}</p>
+              <p className="text-lg font-bold text-foreground">
+                {selectedWindowId === "all"
+                  ? `Todas (${windows.length})`
+                  : (selectedMealType?.name ?? "—")}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Consumos registrados</p>
-              <p className="text-2xl font-bold text-foreground">{consumptions.length}</p>
+              <p className="text-2xl font-bold text-foreground">{kpiCount}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4">
               <p className="text-xs text-muted-foreground">Local</p>
-              <p className="text-sm font-medium text-foreground">{selectedWindow?.location || "Não definido"}</p>
+              <p className="text-sm font-medium text-foreground">
+                {selectedWindowId === "all"
+                  ? "—"
+                  : ((selectedWindow as any)?.meal_locations?.name || selectedWindow?.location || "Não definido")}
+              </p>
             </CardContent>
           </Card>
         </div>
       )}
-
-      {/* Registrar consumo - Removido card redundante pois já tem botão no topo */}
 
       {/* Consumption history */}
       {(selectedWindowId !== "all" || consumptions.length > 0) && (
@@ -332,6 +347,22 @@ export default function AlimentacaoConsumoPage() {
                     <SelectItem value="manual">Manual</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {operatorProfiles.length > 0 && (
+                  <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+                    <SelectTrigger className="h-9 w-[160px]">
+                      <SelectValue placeholder="Operador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos operadores</SelectItem>
+                      {operatorProfiles.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.full_name ?? o.id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -359,12 +390,13 @@ export default function AlimentacaoConsumoPage() {
                     <TableHead>Restrições</TableHead>
                     <TableHead>Hora</TableHead>
                     <TableHead>Método</TableHead>
+                    <TableHead>Operador</TableHead>
                     {canReverse && <TableHead className="w-12 text-right">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredConsumptions.map((c) => {
-                    const person = getPersonForConsumption(c.participant_id);
+                    const person = (c as any).participant?.person;
                     const win = windows.find(w => w.id === c.meal_window_id);
                     const mt = win ? mealTypesMap.get(win.meal_type_id) : null;
                     return (
@@ -392,6 +424,9 @@ export default function AlimentacaoConsumoPage() {
                           {new Date(c.consumed_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </TableCell>
                         <TableCell><Badge variant="outline" className="text-[10px] h-5">{c.method === "qr" ? "QR" : "Manual"}</Badge></TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {(c as any).registered_by ? (operatorMap.get((c as any).registered_by) ?? "—") : "—"}
+                        </TableCell>
                         {canReverse && (
                           <TableCell className="text-right">
                             <Button
@@ -436,7 +471,6 @@ export default function AlimentacaoConsumoPage() {
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                    // Logic to show pages around current page
                     let pageNum = i + 1;
                     if (totalPages > 5) {
                       if (currentPage > 3) pageNum = currentPage - 3 + i;

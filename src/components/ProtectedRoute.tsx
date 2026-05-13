@@ -1,8 +1,10 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import AuthLoadingScreen from "@/components/auth/AuthLoadingScreen";
 import { getOperationalRedirect, type AppRole } from "@/config/accessControl";
 import { OfflineSessionBanner } from "@/components/auth/OfflineSessionBanner";
+import { useEffect, useRef } from "react";
+import { logAccessError } from "@/lib/accessLogger";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,6 +14,30 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, roles, loading, hasRole, isOfflineFallback } = useAuth();
+  const location = useLocation();
+  const loggedRef = useRef(false);
+
+  const isDenied =
+    !loading &&
+    !!user &&
+    roles.length > 0 &&
+    !hasRole("super_admin") &&
+    !getOperationalRedirect(roles) &&
+    !!allowedRoles &&
+    allowedRoles.length > 0 &&
+    !allowedRoles.some((r) => hasRole(r));
+
+  useEffect(() => {
+    if (isDenied && !loggedRef.current) {
+      loggedRef.current = true;
+      void logAccessError({
+        action: "route_access",
+        resource: location.pathname,
+        status: "denied",
+        metadata: { userRoles: roles, allowedRoles },
+      });
+    }
+  }, [isDenied, location.pathname, roles, allowedRoles]);
 
   if (loading) {
     return <AuthLoadingScreen />;
