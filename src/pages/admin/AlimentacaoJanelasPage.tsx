@@ -252,7 +252,8 @@ export default function AlimentacaoJanelasPage() {
       setReportOpen(true);
       qc.invalidateQueries({ queryKey: ["meal_windows"] });
       
-      await supabase.from("db_operation_logs").insert({
+      // Fire-and-forget: falha no log não deve mascarar o sucesso da operação
+      void supabase.from("db_operation_logs").insert({
         user_id: (user as any)?.id,
         module_name: "alimentacao",
         table_name: "meal_windows",
@@ -260,7 +261,7 @@ export default function AlimentacaoJanelasPage() {
         event_id: selectedEventId,
         is_success: true,
         metadata: { date: filterDate, stageId, count: toInsert.length }
-      });
+      }).catch(() => null);
 
     } catch (e: any) {
       toast.error("Erro: " + e.message);
