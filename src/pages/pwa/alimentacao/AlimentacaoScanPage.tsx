@@ -124,6 +124,7 @@ export default function AlimentacaoScanPage() {
   const [windowId, setWindowId] = useState(preselectedWindowId ?? "");
   const [consumptionCount, setConsumptionCount] = useState(0);
   const [totalToday, setTotalToday] = useState(0);
+  const [myConsumptionCount, setMyConsumptionCount] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [janelaSheetOpen, setJanelaSheetOpen] = useState(false);
   const [online, setOnline] = useState(isOnline());
@@ -299,6 +300,35 @@ export default function AlimentacaoScanPage() {
       cancelled = true;
     };
   }, [activeEventId, stageId, today, consumptionCount]);
+
+  // Meus consumos do dia — refetch sempre que janela ou total mudar (via subscriptions existentes)
+  useEffect(() => {
+    if (!userId || !activeEventId) {
+      setMyConsumptionCount(0);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+      let q = supabase
+        .from("meal_consumptions")
+        .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("registered_by", userId)
+        .eq("meal_windows.event_id", activeEventId)
+        .gte("consumed_at", startIso)
+        .lt("consumed_at", endIsoExclusive);
+      if (stageId) q = q.eq("meal_windows.event_stage_id", stageId);
+      const { count } = await q;
+      if (!cancelled) setMyConsumptionCount(count || 0);
+    })();
+    return () => { cancelled = true; };
+  // consumptionCount e totalToday como trigger: quando qualquer consumo novo é registrado
+  // as subscriptions existentes os atualizam, e aí este effect recarrega o meu total
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, activeEventId, stageId, today, consumptionCount, totalToday]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
@@ -932,7 +962,13 @@ export default function AlimentacaoScanPage() {
           </button>
         ) : null}
 
-        {/* === CONTADORES (4 KPIs) === */}
+        {/* === CONTADORES === */}
+        {/* KPIs principais: meu total e total geral do dia */}
+        <div className="grid grid-cols-2 gap-2">
+          <KpiCard label="Meus Registros" value={myConsumptionCount} tone="blue" large />
+          <KpiCard label="Total Geral" value={totalToday} tone="default" large />
+        </div>
+        {/* KPIs secundários: janela atual, sessão OK e Erro */}
         <div className="grid grid-cols-4 gap-2">
           <KpiCard label="Janela" value={consumptionCount} tone="blue" />
           <KpiCard label="Hoje" value={totalToday} tone="default" />
@@ -1187,10 +1223,12 @@ function KpiCard({
   label,
   value,
   tone,
+  large,
 }: {
   label: string;
   value: number;
   tone: "default" | "blue" | "green" | "red" | "muted";
+  large?: boolean;
 }) {
   const valueClass = {
     default: "text-foreground",
@@ -1201,11 +1239,21 @@ function KpiCard({
   }[tone];
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card/60 px-2 py-2 text-center">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+    <div className={cn(
+      "rounded-xl border border-border/70 bg-card/60 text-center",
+      large ? "px-3 py-3" : "px-2 py-2",
+    )}>
+      <p className={cn(
+        "font-bold uppercase tracking-wider text-muted-foreground",
+        large ? "text-[10px]" : "text-[9px]",
+      )}>
         {label}
       </p>
-      <p className={cn("mt-0.5 text-2xl font-extrabold tabular-nums leading-none", valueClass)}>
+      <p className={cn(
+        "mt-0.5 font-extrabold tabular-nums leading-none",
+        large ? "text-3xl" : "text-2xl",
+        valueClass,
+      )}>
         {value}
       </p>
     </div>
