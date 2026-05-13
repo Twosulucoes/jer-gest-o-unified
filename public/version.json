@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/fix-pwa-windows-display-Byocb",
-  "commit": "ca9c6437",
-  "commitFull": "ca9c64374bb96a084096460d4338cfd8d29e01ca",
-  "buildDate": "2026-05-13T04:29:08.953Z",
+  "branch": "claude/verify-credential-screen-HqOX8",
+  "commit": "148faee7",
+  "commitFull": "148faee71658c13ef606d624f9b17c7c725ee92f",
+  "buildDate": "2026-05-13T04:51:11.982Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
