@@ -102,7 +102,7 @@ export default function AlimentacaoJanelasPage() {
 
   const updateMut = useMutation({
     mutationFn: async ({ id, ...v }: MealWindowFormValues & { id: string }) => {
-      const { error } = await (supabase as any).from("meal_windows").update({
+      const { data: updated, error } = await (supabase as any).from("meal_windows").update({
         meal_type_id: v.meal_type_id,
         label: v.label || null,
         service_date: v.service_date,
@@ -112,8 +112,9 @@ export default function AlimentacaoJanelasPage() {
         meal_window_location_id: v.meal_window_location_id || null,
         capacity: v.capacity || null,
         is_active: v.is_active,
-      }).eq("id", id);
+      }).eq("id", id).select("id").single();
       if (error) throw error;
+      if (!updated) throw new Error("Falha ao atualizar: nenhuma linha afetada — verifique suas permissões.");
 
       // Sync rules
       await (supabase as any).from("meal_window_eligibility").delete().eq("meal_window_id", id);
