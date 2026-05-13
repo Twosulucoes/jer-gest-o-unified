@@ -29,7 +29,6 @@ interface SportEventOpt {
   id: string;
   name: string;
   isCollective: boolean;
-  resultType: string | null;
 }
 
 interface DelegationOpt {
@@ -244,7 +243,7 @@ export default function LancamentoEventoPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sport_events")
-        .select("id, name, result_type, sport:sports(is_collective)")
+        .select("id, name, sport:sports(is_collective)")
         .eq("event_id", eventId!)
         .eq("is_active", true)
         .order("name");
@@ -253,7 +252,6 @@ export default function LancamentoEventoPage() {
         id: se.id,
         name: se.name,
         isCollective: se.sport?.is_collective ?? false,
-        resultType: se.result_type ?? null,
       }));
     },
   });
