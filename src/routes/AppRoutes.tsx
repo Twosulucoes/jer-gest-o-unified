@@ -92,6 +92,8 @@ const DebugPublicadosPage = lazy(() => import("../pages/admin/DebugPublicadosPag
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 
+const LancamentoEventoPage = lazy(() => import("../pages/admin/LancamentoEventoPage"));
+
 // Referee specific pages
 const RefereeRemunerationConfigPage = lazy(() => import("../pages/admin/referees/RefereeRemunerationConfigPage"));
 const RefereeReportingPage = lazy(() => import("../pages/admin/referees/RefereeReportingPage"));
@@ -389,6 +391,7 @@ export const AppRoutes = () => (
         <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
         <Route path="debug-publicados" element={<Navigate to="/super/debug-publicados" replace />} />
         <Route path="auth/email-templates" element={<Navigate to="/admin" replace />} />
+        <Route path="lancamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "mesario"]}><LancamentoEventoPage /></ProtectedRoute>} />
         <Route path="competicao/publicacao" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><CompeticaoPublicacaoPage /></ProtectedRoute>} />
         <Route path="competicao/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "delegacao"]}><CompeticaoBoletinsPage /></ProtectedRoute>} />
         <Route path="competicao/partida/:matchId" element={<ProtectedRoute allowedRoles={[...COMPETITION_ROLES, "mesario"]}><CompeticaoPartidaDetalhePage /></ProtectedRoute>} />

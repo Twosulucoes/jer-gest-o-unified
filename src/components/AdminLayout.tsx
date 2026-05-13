@@ -82,6 +82,7 @@ const navGroups: NavGroup[] = [
     icon: <Layers className="h-4 w-4" />,
     items: [
       { label: "Ir para Etapas", to: "/admin/etapas", icon: <Layers className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Registrar Competição", to: "/admin/lancamento", icon: <ClipboardList className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "mesario"] as AppRole[] },
     ],
   },
   {
