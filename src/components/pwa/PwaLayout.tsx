@@ -198,17 +198,24 @@ export default function PwaLayout({
       )}
       <PwaLayoutCtx.Provider value={ownCtxValue}>
         {/* Banner de Etapa Ativa para segurança operacional (Alojamento/Alimentação).
-            Polish UX: removido o badge ID hex (operador não usa esse valor; ocupava espaço).
-            O nome da etapa só aparece aqui — header não duplica mais. */}
+            Clicável para trocar etapa — fundamental quando há múltiplas etapas abertas
+            simultaneamente (ex: Bom Fim e Normandia). */}
         {(currentModule === "alojamento" || currentModule === "alimentacao") && activeStage && (
-          <div className="sticky top-14 z-10 bg-amber-500/20 dark:bg-amber-500/10 border-b border-amber-500/40 px-4 py-2.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-400 backdrop-blur-md shadow-sm">
+          <button
+            type="button"
+            onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
+            className="sticky top-14 z-10 w-full bg-amber-500/20 dark:bg-amber-500/10 border-b border-amber-500/40 px-4 py-2.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-400 backdrop-blur-md shadow-sm active:bg-amber-500/30 transition-colors"
+          >
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-500 shrink-0">
               <Layers className="h-3 w-3" />
             </div>
-            <span className="truncate">
+            <span className="truncate flex-1 text-left">
               ETAPA: <span className="font-black text-amber-900 dark:text-amber-300">{activeStage.name}</span>
             </span>
-          </div>
+            <span className="shrink-0 text-[9px] text-amber-600/60 dark:text-amber-500/60 normal-case font-semibold tracking-normal">
+              Trocar →
+            </span>
+          </button>
         )}
         <main className={cn("flex-1 overflow-auto", !hideFooter && "pb-24")}>
           {children || <Outlet />}
