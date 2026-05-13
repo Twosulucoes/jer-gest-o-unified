@@ -93,11 +93,19 @@ function quoteList(values: string[]) {
   return values.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(",");
 }
 
+function matchedByToSource(matched: string | null | undefined): ResolvedCredential["source"] {
+  if (matched === "external_credential") return "external_credentials";
+  if (matched === "cpf") return "cpf";
+  return "participant_credentials";
+}
+
 /**
  * Resolver centralizado de credenciais por QR. Ordem:
- *  1. participant_credentials por qr_code_value OU credential_code (status active)
- *  2. external_credentials.credential_code (status active) → busca a credencial real
- *  3. CPF (11 dígitos) → people → participants → credencial mais recente
+ *  1. Edge function validate-qr (1 RTT) quando event_id disponível
+ *  2. Fallback — queries diretas:
+ *     a. participant_credentials por qr_code_value OU credential_code
+ *     b. external_credentials.credential_code → credencial real
+ *     c. CPF (11 dígitos) → people → participants → credencial mais recente
  *
  * Quando possível, escopa por `event_id` ativo para evitar ambiguidade entre eventos.
  */
@@ -108,6 +116,28 @@ export async function resolveQrCredential(
   const eventId = options?.eventId ?? getActiveEventId();
   const { values: candidates, cpfDigits } = extractCandidates(rawValue);
   if (candidates.length === 0) return null;
+
+  // Tenta via edge function (1 RTT para todos os caminhos) quando event_id disponível
+  if (eventId) {
+    try {
+      const { data: json, error } = await supabase.functions.invoke("validate-qr", {
+        body: { qr_code_value: rawValue, event_id: eventId, scan_point: "qr_lookup" },
+      });
+      if (!error && json != null) {
+        if (!json.participant?.participant_id) return null;
+        const p = json.participant;
+        return {
+          participant_id: p.participant_id,
+          full_name: p.full_name ?? null,
+          source: matchedByToSource(json.matched_by),
+          matched_by: json.matched_by ?? undefined,
+          credential_code: p.credential_code ?? null,
+        };
+      }
+    } catch {
+      // Edge function indisponível — continua com queries diretas
+    }
+  }
 
   const list = quoteList(candidates);
 
