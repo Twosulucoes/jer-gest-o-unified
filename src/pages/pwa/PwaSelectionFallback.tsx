@@ -17,7 +17,14 @@ import { toast } from "sonner";
 const PwaSelectionFallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/pwa";
+  // Ensure `from` is always an absolute path to avoid relative navigation bugs.
+  // Paths without a leading "/" or that point back to configuracao itself are
+  // reset to the PWA landing — otherwise navigate(from) would produce
+  // /pwa/configuracao/<relative-segment> or create a redirect loop.
+  const rawFrom = location.state?.from?.pathname || "/pwa";
+  const from = rawFrom.startsWith("/") && !rawFrom.startsWith("/pwa/configuracao")
+    ? rawFrom
+    : "/pwa";
   const { activeEventId, events, setActiveEventId } = useEventContext();
   const { activeStageId, stages, setActiveStageId } = useStageContext();
   
