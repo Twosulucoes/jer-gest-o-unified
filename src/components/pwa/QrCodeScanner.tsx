@@ -312,8 +312,7 @@ export default function QrCodeScanner({
   if (variant === "inline") {
     return (
       <div
-        className="tactical-cockpit relative w-full overflow-hidden rounded-2xl border-2 border-module bg-black text-white"
-        style={{ height: "12rem" }}
+        className="tactical-cockpit relative w-full overflow-hidden rounded-2xl border-2 border-module bg-black text-white aspect-square"
       >
         {showSuccess && (
           <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[hsl(var(--tac-accent)/0.95)] text-black">
@@ -348,26 +347,10 @@ export default function QrCodeScanner({
         {/* Camera surface — html5-qrcode mounts inside this container */}
         <div id={containerId} className="absolute inset-0" />
 
-        {(state === "active" || state === "requesting") && (
-          <>
-            {[
-              "top-2 left-2 border-t-2 border-l-2 rounded-tl-md",
-              "top-2 right-2 border-t-2 border-r-2 rounded-tr-md",
-              "bottom-2 left-2 border-b-2 border-l-2 rounded-bl-md",
-              "bottom-2 right-2 border-b-2 border-r-2 rounded-br-md",
-            ].map((cls, i) => (
-              <div
-                key={i}
-                className={`absolute w-5 h-5 ${cls}`}
-                style={{ borderColor: accent }}
-              />
-            ))}
-            {state === "active" && (
-              <div className="absolute inset-2 overflow-hidden rounded-md pointer-events-none">
-                <div className="tac-scan-line" />
-              </div>
-            )}
-          </>
+        {state === "active" && (
+          <div className="absolute inset-2 overflow-hidden rounded-md pointer-events-none">
+            <div className="tac-scan-line" />
+          </div>
         )}
 
         {/* Top-right close */}
