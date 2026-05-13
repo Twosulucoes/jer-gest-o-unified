@@ -4,7 +4,8 @@
       "Bash(git branch *)",
       "Bash(git add *)",
       "mcp__03560881-4b32-402c-b729-5081f55809ec__list_teams",
-      "mcp__03560881-4b32-402c-b729-5081f55809ec__web_fetch_vercel_url"
+      "mcp__03560881-4b32-402c-b729-5081f55809ec__web_fetch_vercel_url",
+      "mcp__playwright__browser_navigate"
     ]
   }
 }
