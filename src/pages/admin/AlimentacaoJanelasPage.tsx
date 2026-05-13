@@ -135,11 +135,19 @@ export default function AlimentacaoJanelasPage() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
+      // Bloquear exclusão se há consumos registrados nesta janela
+      const { count } = await supabase
+        .from("meal_consumptions")
+        .select("id", { count: "exact", head: true })
+        .eq("meal_window_id", id);
+      if ((count ?? 0) > 0) {
+        throw new Error(`Esta janela possui ${count} consumo(s) registrado(s) e não pode ser excluída. Desative-a em vez de excluir.`);
+      }
       const { error } = await supabase.from("meal_windows").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela excluída"); },
-    onError: (e: Error) => toast.error("Erro ao excluir: " + e.message),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const toggleStatusMut = useMutation({
