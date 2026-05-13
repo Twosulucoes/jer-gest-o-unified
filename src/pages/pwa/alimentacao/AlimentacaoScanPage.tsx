@@ -17,6 +17,7 @@ import {
   Lock,
   ListChecks,
   Settings2,
+  Layers,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ import {
 } from "@/lib/participantManualSearch";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId, useStageContext } from "@/contexts/StageContext";
+import { isStageOpenToday } from "@/lib/stageDateUtils";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
@@ -111,7 +113,7 @@ export default function AlimentacaoScanPage() {
 
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
-  const { activeStage } = useStageContext();
+  const { activeStage, stages, setActiveStageId } = useStageContext();
 
   usePwaAudit("alimentacao/escanear", activeEventId);
 
@@ -891,6 +893,11 @@ export default function AlimentacaoScanPage() {
     }
   };
 
+  const stagesOpenToday = useMemo(
+    () => stages.filter((s) => isStageOpenToday(s)),
+    [stages],
+  );
+
   const currentWindow = useMemo(
     () => windows.find((w) => w.id === windowId) ?? null,
     [windows, windowId],
@@ -923,6 +930,42 @@ export default function AlimentacaoScanPage() {
 
       <main className="relative mx-auto max-w-md space-y-3 p-3">
         <VoucherConflictCentral />
+
+        {/* === SELEÇÃO DE ETAPA (quando há múltiplas etapas abertas e nenhuma selecionada) === */}
+        {!activeStage && stagesOpenToday.length > 0 && (
+          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Layers className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-extrabold uppercase tracking-tight text-amber-800 dark:text-amber-400">
+                  Selecione sua Etapa
+                </p>
+                <p className="text-[11px] text-amber-700/80 dark:text-amber-500/80">
+                  {stagesOpenToday.length > 1
+                    ? `${stagesOpenToday.length} etapas abertas hoje — qual é o seu local?`
+                    : "Confirme a etapa de trabalho para começar."}
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              {stagesOpenToday.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setActiveStageId(s.id)}
+                  className="w-full rounded-xl border border-amber-500/40 bg-white/70 dark:bg-amber-900/20 px-4 py-3 text-left flex items-center justify-between active:scale-[0.98] transition-all"
+                >
+                  <span className="font-bold text-sm text-foreground">{s.name}</span>
+                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                    Trabalhar aqui →
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* === BLOCO JANELA ATIVA === */}
         {windows.length === 0 ? (

@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/simplify-evidence-system-544Ly",
-  "commit": "12d5bb3d",
-  "commitFull": "12d5bb3d86d1443f867fc9acd6129d97ca5d5379",
-  "buildDate": "2026-05-13T12:16:08.580Z",
+  "branch": "claude/dynamic-stage-selection-l3VJ0",
+  "commit": "39904903",
+  "commitFull": "39904903de41f08d0d19d72942ab9814f759efc4",
+  "buildDate": "2026-05-13T22:39:28.523Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
