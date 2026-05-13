@@ -870,15 +870,22 @@ export default function AlimentacaoScanPage() {
 
         {/* === BLOCO JANELA ATIVA === */}
         {windows.length === 0 ? (
-          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-center">
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-center space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-              Sem janela de refeição hoje
+              Sem janela de refeição para {today}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-1">
+            <p className="text-[11px] text-muted-foreground">
               {activeStage
                 ? "Cadastre janelas para esta etapa no painel administrativo."
                 : "Selecione uma etapa para listar as janelas."}
             </p>
+            <button
+              type="button"
+              onClick={() => navigate("/pwa/alimentacao/janelas")}
+              className="mt-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 underline underline-offset-2"
+            >
+              Ver todas as janelas da etapa →
+            </button>
           </div>
         ) : currentWindow && currentStatus ? (
           <button
