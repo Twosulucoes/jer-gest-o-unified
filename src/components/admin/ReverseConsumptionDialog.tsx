@@ -61,6 +61,7 @@ export function ReverseConsumptionDialog({
       });
       void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
       void qc.invalidateQueries({ queryKey: ["meal_audit_logs"] });
+      void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
       onSuccess?.();
       onOpenChange(false);
       setReason("");

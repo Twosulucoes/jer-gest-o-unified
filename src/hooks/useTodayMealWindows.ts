@@ -37,7 +37,8 @@ export function useTodayMealWindows(enabled = true, options: UseTodayMealWindows
     setLoading(true);
     setError(null);
 
-    const today = new Date().toISOString().slice(0, 10);
+    // Usar fuso de Roraima (UTC-4); toISOString() retorna UTC e pode dar "amanhã" às 21h local
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Boa_Vista" });
     let q = supabase
       .from("meal_windows")
       .select("id, service_date, start_time, end_time, event_id, event_stage_id, meal_type:meal_types(name)")
