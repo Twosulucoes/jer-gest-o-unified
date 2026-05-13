@@ -486,6 +486,29 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
+    // Pré-verificação online: participante precisa estar inscrito na etapa ativa.
+    // O RPC também verifica, mas checar antes evita chamar o banco desnecessariamente
+    // e dá feedback imediato ao operador.
+    if (stageId) {
+      const { data: enrolled } = await supabase
+        .from("participant_event_stages")
+        .select("id")
+        .eq("participant_id", participantId)
+        .eq("event_stage_id", stageId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!enrolled) {
+        const msg = "Participante não está inscrito nesta etapa.";
+        setResult({ ok: false, message: msg, source: resultSource });
+        setNotFoundQr(null);
+        toast.error(msg);
+        recordOutcome("error");
+        reopenIfContinuous();
+        return;
+      }
+    }
+
     // RPC idempotente: valida janela, horário, eligibility e insere atomicamente
     const { data: rpcResult, error: rpcError } = await supabase.rpc("record_meal_consumption", {
       p_participant_id: participantId,
@@ -521,6 +544,9 @@ export default function AlimentacaoScanPage() {
           break;
         case "NOT_ELIGIBLE":
           msg = "Participante sem direito a esta refeição (restrição de elegibilidade).";
+          break;
+        case "NOT_ENROLLED_IN_STAGE":
+          msg = "Participante não está inscrito nesta etapa.";
           break;
         default:
           msg = "Não foi possível registrar o consumo. Tente novamente.";

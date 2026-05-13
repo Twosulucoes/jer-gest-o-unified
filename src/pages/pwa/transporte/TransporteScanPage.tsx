@@ -116,61 +116,73 @@ export default function TransporteScanPage() {
   async function applyBoarding(participantId: string, displayName: string, source: "qr" | "manual") {
     const name = displayName || "Participante identificado";
 
-    if (tripId) {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    if (!tripId) {
+      toast.error("Selecione uma viagem antes de registrar embarque.");
+      return;
+    }
 
-      const boardingData = {
-        trip_id: tripId,
-        participant_id: participantId,
-        status: "boarded",
-        boarded_at: new Date().toISOString(),
-        boarded_by: session?.user.id ?? null,
-        is_manual: source === "manual",
-      };
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-      if (!isOnline()) {
-        addToOfflineQueue("transporte", boardingData, name);
-        const successMsg = `Embarque registrado (Offline): ${name}`;
-        setResult({ ok: true, source, message: successMsg });
-        toast.info("Registrado offline. Sincronize quando houver internet.");
-        recordOutcome("ok");
-        if (navigator.vibrate) navigator.vibrate(200);
-        reopenIfContinuous();
-        return;
+    const boardingData = {
+      trip_id: tripId,
+      participant_id: participantId,
+      status: "boarded",
+      boarded_at: new Date().toISOString(),
+      boarded_by: session?.user.id ?? null,
+      is_manual: source === "manual",
+    };
+
+    if (!isOnline()) {
+      addToOfflineQueue("transporte", boardingData, name);
+      const successMsg = `Embarque registrado (Offline): ${name}`;
+      setResult({ ok: true, source, message: successMsg });
+      toast.info("Registrado offline. Sincronize quando houver internet.");
+      recordOutcome("ok");
+      if (navigator.vibrate) navigator.vibrate(200);
+      reopenIfContinuous();
+      return;
+    }
+
+    const { data: rpcResult, error: rpcError } = await supabase.rpc("record_transport_boarding", {
+      p_trip_id: tripId,
+      p_participant_id: participantId,
+      p_boarded_by: session?.user.id ?? null,
+      p_is_manual: source === "manual",
+      p_boarded_at: boardingData.boarded_at,
+    });
+
+    if (rpcError) throw rpcError;
+
+    const res = rpcResult as { ok: boolean; reason?: string };
+
+    if (!res.ok) {
+      let msg: string;
+      switch (res.reason) {
+        case "NOT_ENROLLED_IN_STAGE":
+          msg = "Participante não está inscrito nesta etapa.";
+          break;
+        case "TRIP_NOT_FOUND":
+          msg = "Viagem não encontrada. Volte e selecione a viagem novamente.";
+          break;
+        default:
+          msg = "Não foi possível registrar o embarque. Tente novamente.";
       }
+      setResult({ ok: false, source, message: msg });
+      toast.error(msg);
+      recordOutcome("error");
+      reopenIfContinuous();
+      return;
+    }
 
-      const { data: existing } = await supabase
-        .from("transport_passengers")
-        .select("id, status")
-        .eq("trip_id", tripId)
-        .eq("participant_id", participantId)
-        .maybeSingle();
-
-      if (existing) {
-        if (existing.status === "boarded") {
-          const msg = `${name} já embarcou anteriormente`;
-          setResult({ ok: true, source, message: msg });
-          toast.info(msg);
-          recordOutcome("ok");
-          reopenIfContinuous();
-          return;
-        }
-        const { error } = await supabase
-          .from("transport_passengers")
-          .update({ 
-            status: "boarded", 
-            boarded_at: boardingData.boarded_at, 
-            boarded_by: boardingData.boarded_by 
-          })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("transport_passengers").insert(boardingData);
-        if (error) throw error;
-      }
-
+    if (res.reason === "ALREADY_BOARDED") {
+      const msg = `${name} já embarcou anteriormente`;
+      setResult({ ok: true, source, message: msg });
+      toast.info(msg);
+      recordOutcome("ok");
+      reopenIfContinuous();
+      return;
     }
 
     const successMsg = `Embarque registrado: ${name}`;

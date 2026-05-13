@@ -228,35 +228,33 @@ export const syncOfflineQueue = async () => {
           throw error;
         }
       } else if (item.module === "transporte") {
-        const transportData = item.data as { trip_id: string; participant_id: string; status: string; boarded_at: string; boarded_by: string };
-        const { data: existing } = await supabase
-          .from("transport_passengers")
-          .select("id")
-          .eq("trip_id", transportData.trip_id)
-          .eq("participant_id", transportData.participant_id)
-          .maybeSingle();
+        const transportData = item.data as { trip_id: string; participant_id: string; status: string; boarded_at: string; boarded_by: string; is_manual?: boolean };
+        const { data: rpcResult, error: rpcError } = await supabase.rpc("record_transport_boarding", {
+          p_trip_id: transportData.trip_id,
+          p_participant_id: transportData.participant_id,
+          p_boarded_by: transportData.boarded_by,
+          p_is_manual: transportData.is_manual ?? false,
+          p_boarded_at: transportData.boarded_at,
+        });
 
-        if (existing) {
-          const { error } = await supabase
-            .from("transport_passengers")
-            .update({
-              status: transportData.status,
-              boarded_at: transportData.boarded_at,
-              boarded_by: transportData.boarded_by
-            })
-            .eq("id", existing.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("transport_passengers").insert(transportData as any);
-          if (error) {
-            if (error.code === "23505") {
-              const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
-              saveOfflineQueue(finalQueueDup);
-              errorCount++;
-              continue;
-            }
-            throw error;
+        if (rpcError) {
+          if (rpcError.code === "23505") {
+            const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
+            saveOfflineQueue(finalQueueDup);
+            errorCount++;
+            continue;
           }
+          throw rpcError;
+        }
+
+        const boardingRes = rpcResult as { ok: boolean; reason?: string };
+        if (!boardingRes.ok) {
+          // Participante não inscrito na etapa: remove da fila (não vai sincronizar nunca).
+          console.warn(`[offlineQueue] Embarque bloqueado para participante ${transportData.participant_id}: ${boardingRes.reason}`);
+          const finalQueueBlocked = getOfflineQueue().filter((i) => i.id !== item.id);
+          saveOfflineQueue(finalQueueBlocked);
+          errorCount++;
+          continue;
         }
       }
       
