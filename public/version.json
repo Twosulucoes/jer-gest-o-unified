@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/qr-registration-linking-Wz518",
-  "commit": "3401a8c7",
-  "commitFull": "3401a8c7acfd448ad2952c1068b5d811393345bd",
-  "buildDate": "2026-05-13T03:23:52.978Z",
+  "branch": "claude/fix-pwa-windows-display-Byocb",
+  "commit": "ca9c6437",
+  "commitFull": "ca9c64374bb96a084096460d4338cfd8d29e01ca",
+  "buildDate": "2026-05-13T04:29:08.953Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
