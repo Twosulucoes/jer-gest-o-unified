@@ -187,7 +187,7 @@ BEGIN
     )
   FROM sport_events se
   WHERE se.sport_id = v_natacao_id AND se.event_id = v_event_id
-  ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
+  ON CONFLICT (sport_event_id) DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
   -- PARABADMINTON: family=sets, knockout precedido de grupos
@@ -234,7 +234,7 @@ BEGIN
     )
   FROM sport_events se
   WHERE se.sport_id = v_parabadminton_id AND se.event_id = v_event_id
-  ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
+  ON CONFLICT (sport_event_id) DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
   -- TÃŠNIS DE MESA PARALÃMPICO: family=sets, group_stage + knockout (3 sets / 5 sets)
@@ -281,7 +281,7 @@ BEGIN
     )
   FROM sport_events se
   WHERE se.sport_id = v_tmesa_id AND se.event_id = v_event_id
-  ON CONFLICT (sport_event_id) WHERE is_active DO UPDATE
+  ON CONFLICT (sport_event_id) DO UPDATE
     SET rules = EXCLUDED.rules, rules_version = sport_event_rules.rules_version + 1, updated_at = now();
 
 END $$;
