@@ -5,7 +5,7 @@ import { useActiveStageId } from "@/contexts/StageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock } from "lucide-react";
+import { Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
@@ -29,6 +29,7 @@ export default function AlimentacaoJanelasPage() {
   const stageId = useActiveStageId();
   const [windows, setWindows] = useState<WindowItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [queryError, setQueryError] = useState<string | null>(null);
   const today = useTodayString();
 
   // Cache chaveado por evento+etapa (auditoria L bloqueador 4): leitura
@@ -47,6 +48,7 @@ export default function AlimentacaoJanelasPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setQueryError(null);
       let query = supabase
         .from("meal_windows")
         .select(`
@@ -56,7 +58,7 @@ export default function AlimentacaoJanelasPage() {
           service_date,
           capacity,
           location,
-          meal_locations!meal_window_location_id(name),
+          meal_locations(name),
           meal_type:meal_types(name)
         `)
         .eq("event_id", eventId);
@@ -65,7 +67,12 @@ export default function AlimentacaoJanelasPage() {
         query = query.eq("event_stage_id", stageId);
       }
 
-      const { data } = await query.order("start_time");
+      const { data, error } = await query.order("service_date").order("start_time");
+      if (error) {
+        setQueryError(error.message);
+        setLoading(false);
+        return;
+      }
       const list = (data as WindowItem[]) || [];
       setWindows(list);
       setLoading(false);
@@ -97,8 +104,15 @@ export default function AlimentacaoJanelasPage() {
         })()}
         {loading && [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)}
 
-        {!loading && windows.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">Nenhuma janela para hoje</div>
+        {!loading && queryError && (
+          <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
+            <p className="text-xs text-destructive">Erro ao carregar janelas: {queryError}</p>
+          </div>
+        )}
+
+        {!loading && !queryError && windows.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">Nenhuma janela cadastrada para esta etapa</div>
         )}
 
         {windows.map((w) => {

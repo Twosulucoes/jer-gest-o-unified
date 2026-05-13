@@ -45,6 +45,10 @@ interface Props {
   stageId?: string | null;
 }
 
+function todayRoraima(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Boa_Vista" });
+}
+
 export default function MealWindowFormDialog({ open, onOpenChange, window: mealWindow, mealTypes, onSubmit, isPending, eventId, stageId }: Props) {
   const isEditing = !!mealWindow;
   // No query client needed here as we are just setting state
@@ -58,7 +62,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
     defaultValues: {
       meal_type_id: "",
       label: "",
-      service_date: "",
+      service_date: todayRoraima(),
       start_time: "",
       end_time: "",
       location: "",
@@ -121,7 +125,7 @@ export default function MealWindowFormDialog({ open, onOpenChange, window: mealW
       form.reset({
         meal_type_id: "",
         label: "",
-        service_date: "",
+        service_date: todayRoraima(),
         start_time: "",
         end_time: "",
         location: "",
