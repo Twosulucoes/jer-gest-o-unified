@@ -12,7 +12,7 @@ const RESTORED_FLAG = "jer_pwa_path_restored";
 export function useNavigationSync() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { activeStageId, stages, setContextLocked } = useStageContext();
+  const { setContextLocked } = useStageContext();
 
   // 1. Persist current path
   useEffect(() => {
@@ -25,24 +25,10 @@ export function useNavigationSync() {
     }
   }, [location]);
 
-  // 2. Synchronize stage ID into URL for PWA routes
-  useEffect(() => {
-    const isPwaModule = location.pathname.startsWith("/pwa/");
-    const hasStageIdInPath = /\/pwa\/[^/]+\/([^/]+)/.test(location.pathname);
-    
-    if (isPwaModule && !hasStageIdInPath && activeStageId && stages.length > 0) {
-      const stage = stages.find(s => s.id === activeStageId);
-      if (stage) {
-        const pathParts = location.pathname.split("/").filter(Boolean);
-        if (pathParts.length === 2) { // e.g., ["pwa", "alojamento"]
-          const newPath = `/${pathParts[0]}/${pathParts[1]}/${activeStageId}${location.search}${location.hash}`;
-          setContextLocked(true);
-          navigate(newPath, { replace: true });
-          setTimeout(() => setContextLocked(false), 300);
-        }
-      }
-    }
-  }, [location.pathname, activeStageId, stages, navigate, location.search, location.hash, setContextLocked]);
+  // NOTE: O bloco de "Synchronize stage ID into URL" foi removido porque as rotas do PWA
+  // não usam :stageId como segmento de URL — a etapa ativa é gerenciada pelo StageContext
+  // via localStorage. Injetar o UUID na URL produzia /pwa/configuracao/<uuid> e criava
+  // um loop infinito entre o PwaNotFoundHandler e o efeito.
 
   // 3. Restore last path on entry points
   useEffect(() => {
