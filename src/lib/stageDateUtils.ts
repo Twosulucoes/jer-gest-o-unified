@@ -76,3 +76,25 @@ export function stageWindowBadge(stage: StageDates): string | null {
       return null;
   }
 }
+
+/**
+ * Verifica se uma janela de serviço está dentro da janela operacional ±graceMinutes.
+ *
+ * Regra: o operador pode registrar até `graceMinutes` antes do início e até
+ * `graceMinutes` após o encerramento — evita bloqueio por chegadas antecipadas
+ * ou atrasos de poucos minutos.
+ *
+ * Padrão: ±60 min (1 hora).
+ */
+export function isWindowNearNow(
+  startTime: string,
+  endTime: string,
+  serviceDate: string,
+  graceMinutes = 60,
+): boolean {
+  const now = new Date();
+  const start = new Date(`${serviceDate}T${startTime}`);
+  const end = new Date(`${serviceDate}T${endTime}`);
+  const graceMs = graceMinutes * 60 * 1000;
+  return now.getTime() >= start.getTime() - graceMs && now.getTime() <= end.getTime() + graceMs;
+}

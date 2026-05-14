@@ -18,6 +18,8 @@ interface JanelaSheetProps {
   janelas: JanelaSheetItem[];
   selectedId: string;
   onSelect: (id: string) => void;
+  /** Número de janelas ocultas por estarem fora da janela operacional ±1h. */
+  hiddenCount?: number;
 }
 
 const STATUS_STYLE: Record<
@@ -50,6 +52,7 @@ export function JanelaSheet({
   janelas,
   selectedId,
   onSelect,
+  hiddenCount = 0,
 }: JanelaSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -64,7 +67,7 @@ export function JanelaSheet({
           </p>
         </SheetHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto px-3 pb-6 space-y-2">
+        <div className="max-h-[60vh] overflow-y-auto px-3 pb-4 space-y-2">
           {janelas.length === 0 && (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">
               Nenhuma janela cadastrada para hoje.
@@ -123,6 +126,13 @@ export function JanelaSheet({
             );
           })}
         </div>
+        {hiddenCount > 0 && (
+          <p className="py-2 text-center text-[10px] text-muted-foreground">
+            + {hiddenCount} janela{hiddenCount > 1 ? "s" : ""} fora do período de ±1h ocultada{hiddenCount > 1 ? "s" : ""}
+            {" · "}
+            <span>Ver em "Janelas da Etapa"</span>
+          </p>
+        )}
       </SheetContent>
     </Sheet>
   );

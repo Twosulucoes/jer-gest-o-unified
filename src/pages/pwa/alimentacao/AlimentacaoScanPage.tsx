@@ -29,7 +29,7 @@ import {
 } from "@/lib/participantManualSearch";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId, useStageContext } from "@/contexts/StageContext";
-import { isStageOpenToday } from "@/lib/stageDateUtils";
+import { isStageOpenToday, isWindowNearNow } from "@/lib/stageDateUtils";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
@@ -228,15 +228,17 @@ export default function AlimentacaoScanPage() {
     })();
   }, [activeEventId, stageId, today]);
 
-  // Auto-select active window (first ativa) when list loads or time changes
+  // Auto-select active window (first ativa) when list loads or time changes.
+  // Prioriza as janelas visíveis (±1h); se não houver, usa a lista completa.
   useEffect(() => {
     if (windowId) {
       const stillExists = windows.some((w) => w.id === windowId);
       if (stillExists) return;
     }
-    if (windows.length === 0) return;
-    const ativa = windows.find((w) => statusForWindow(w, now) === "ativa");
-    setWindowId((ativa ?? windows[0]).id);
+    const source = visibleWindows.length > 0 ? visibleWindows : windows;
+    if (source.length === 0) return;
+    const ativa = source.find((w) => statusForWindow(w, now) === "ativa");
+    setWindowId((ativa ?? source[0]).id);
     // We intentionally only auto-select once windows arrive; do not depend on `now`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [windows]);
@@ -898,6 +900,19 @@ export default function AlimentacaoScanPage() {
     [stages],
   );
 
+  // Janelas dentro da janela operacional ±1h do horário atual.
+  // Reduz a lista exibida ao operador para apenas o que é relevante agora.
+  // Se nenhuma janela estiver no alcance (antes das primeiras ou após as últimas),
+  // exibe todas para não bloquear o operador.
+  const visibleWindows = useMemo(() => {
+    const near = windows.filter((w) =>
+      isWindowNearNow(w.start_time, w.end_time, w.service_date),
+    );
+    return near.length > 0 ? near : windows;
+  // Recomputa apenas quando a lista de janelas muda, não a cada tick de `now`
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windows]);
+
   const currentWindow = useMemo(
     () => windows.find((w) => w.id === windowId) ?? null,
     [windows, windowId],
@@ -911,15 +926,17 @@ export default function AlimentacaoScanPage() {
 
   const janelaSheetItems = useMemo(
     () =>
-      windows.map((w) => ({
+      visibleWindows.map((w) => ({
         id: w.id,
         nome: w.meal_type?.name || "Refeição",
         inicio: w.start_time.slice(0, 5),
         fim: w.end_time.slice(0, 5),
         status: statusForWindow(w, now),
       })),
-    [windows, now],
+    [visibleWindows, now],
   );
+
+  const hiddenWindowCount = windows.length - visibleWindows.length;
 
   return (
     <PwaLayout
@@ -1283,6 +1300,7 @@ export default function AlimentacaoScanPage() {
         janelas={janelaSheetItems}
         selectedId={windowId}
         onSelect={setWindowId}
+        hiddenCount={hiddenWindowCount}
       />
     </PwaLayout>
   );

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Calendar, MapPin, CheckCircle2, AlertTriangle, RefreshCcw, Lock } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
-import { isStageOpenToday, stageWindowLabel, stageWindowBadge } from "@/lib/stageDateUtils";
+import { isStageOpenToday, stageWindowLabel, stageWindowBadge, isWindowNearNow } from "@/lib/stageDateUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOfflineQueue } from "@/lib/offlineQueue";
 import { getVoucherQueue } from "@/lib/voucherOffline";
@@ -36,6 +36,13 @@ const PwaSelectionFallback = () => {
   );
   const [isVoluntary] = useState(!!activeStageId);
   const [pendingItems, setPendingItems] = useState(0);
+  // Auto-detecção de etapa por janelas de refeição ativas (±1h):
+  // Quando o operador tem múltiplas etapas atribuídas e acessa pela primeira vez
+  // (redirect forçado), verificamos qual etapa tem janela ativa/próxima agora
+  // e pré-selecionamos automaticamente se for unívoca.
+  const [autoDetecting, setAutoDetecting] = useState(
+    !activeStageId && hasStageRestrictions && stages.length > 1 && !!activeEventId,
+  );
   const [pendingBreakdown, setPendingBreakdown] = useState<{label: string, count: number}[]>([]);
 
   useEffect(() => {
@@ -52,6 +59,45 @@ const PwaSelectionFallback = () => {
     if (alojamentoCount > 0) breakdown.push({ label: "Alojamento", count: alojamentoCount });
     setPendingBreakdown(breakdown);
   }, []);
+
+  useEffect(() => {
+    if (!autoDetecting) return;
+
+    (async () => {
+      try {
+        const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Boa_Vista" });
+        const stageIds = stages.map((s) => s.id);
+
+        const { data } = await supabase
+          .from("meal_windows")
+          .select("event_stage_id, start_time, end_time, service_date")
+          .eq("service_date", today)
+          .eq("event_id", activeEventId)
+          .in("event_stage_id", stageIds);
+
+        const nearNowRows = (data ?? []).filter((w) =>
+          isWindowNearNow(w.start_time, w.end_time, w.service_date ?? today),
+        );
+
+        const nearStageIds = [...new Set(nearNowRows.map((w) => w.event_stage_id).filter(Boolean))];
+
+        if (nearStageIds.length === 1) {
+          const autoStageId = nearStageIds[0] as string;
+          setActiveStageId(autoStageId);
+          toast.success("Etapa identificada automaticamente", {
+            description: "Local detectado com base no horário das janelas de refeição.",
+          });
+          navigate(from);
+        } else {
+          setAutoDetecting(false);
+        }
+      } catch {
+        setAutoDetecting(false);
+      }
+    })();
+  // activeEventId, stages e from são estáveis após o mount; executar só uma vez.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoDetecting]);
 
   const handleConfirm = async () => {
     if (!selectedEventId || !selectedStageId) return;
@@ -102,6 +148,16 @@ const PwaSelectionFallback = () => {
   };
 
   const isMissingStageOnly = activeEventId && !activeStageId;
+
+  // Enquanto detecta automaticamente a etapa, exibe tela de carregamento
+  if (autoDetecting) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-4">
+        <div className="w-10 h-10 rounded-full border-4 border-orange-500/30 border-t-orange-500 animate-spin" />
+        <p className="text-sm font-semibold text-muted-foreground">Identificando local de trabalho…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-in fade-in duration-500">
