@@ -57,9 +57,23 @@ import { cn } from "@/lib/utils";
 interface MealWindow {
   id: string;
   meal_type: { name: string } | null;
+  meal_locations?: { name: string } | null;
   service_date: string;
   start_time: string;
   end_time: string;
+  location?: string | null;
+  label?: string | null;
+}
+
+function getWindowLocal(w: MealWindow | null | undefined) {
+  if (!w) return "Local não informado";
+
+  return (
+    w.meal_locations?.name ||
+    w.location ||
+    w.label ||
+    "Local não informado"
+  );
 }
 
 function leftEventBlocksWindow(
@@ -156,7 +170,6 @@ export default function AlimentacaoScanPage() {
 
   const [now, setNow] = useState(() => new Date());
 
-  // Refresh "now" every minute so window status (ativa/encerrada/futura) updates.
   useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(tick);
@@ -213,7 +226,16 @@ export default function AlimentacaoScanPage() {
 
       let q = supabase
         .from("meal_windows")
-        .select("id, meal_type:meal_types(name), service_date, start_time, end_time")
+        .select(`
+          id,
+          label,
+          location,
+          meal_type:meal_types(name),
+          meal_locations(name),
+          service_date,
+          start_time,
+          end_time
+        `)
         .eq("service_date", today)
         .eq("event_id", activeEventId)
         .order("start_time");
@@ -228,18 +250,17 @@ export default function AlimentacaoScanPage() {
     })();
   }, [activeEventId, stageId, today]);
 
-  // Auto-select active window (first ativa) when list loads or time changes.
-  // Prioriza as janelas visíveis (±1h); se não houver, usa a lista completa.
   useEffect(() => {
     if (windowId) {
       const stillExists = windows.some((w) => w.id === windowId);
       if (stillExists) return;
     }
+
     const source = visibleWindows.length > 0 ? visibleWindows : windows;
     if (source.length === 0) return;
+
     const ativa = source.find((w) => statusForWindow(w, now) === "ativa");
     setWindowId((ativa ?? source[0]).id);
-    // We intentionally only auto-select once windows arrive; do not depend on `now`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [windows]);
 
@@ -281,12 +302,14 @@ export default function AlimentacaoScanPage() {
     };
   }, [windowId]);
 
-  // Total do dia (todas as janelas do evento/etapa)
   useEffect(() => {
     if (!activeEventId) return;
+
     let cancelled = false;
+
     (async () => {
       const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+
       let consumoQ = supabase
         .from("meal_consumptions")
         .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
@@ -296,24 +319,29 @@ export default function AlimentacaoScanPage() {
         .eq("meal_windows.event_id", activeEventId)
         .gte("consumed_at", startIso)
         .lt("consumed_at", endIsoExclusive);
+
       if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
+
       const { count } = await consumoQ;
       if (!cancelled) setTotalToday(count || 0);
     })();
+
     return () => {
       cancelled = true;
     };
   }, [activeEventId, stageId, today, consumptionCount]);
 
-  // Meus consumos do dia — refetch sempre que janela ou total mudar (via subscriptions existentes)
   useEffect(() => {
     if (!userId || !activeEventId) {
       setMyConsumptionCount(0);
       return;
     }
+
     let cancelled = false;
+
     (async () => {
       const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+
       let q = supabase
         .from("meal_consumptions")
         .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
@@ -324,14 +352,17 @@ export default function AlimentacaoScanPage() {
         .eq("meal_windows.event_id", activeEventId)
         .gte("consumed_at", startIso)
         .lt("consumed_at", endIsoExclusive);
+
       if (stageId) q = q.eq("meal_windows.event_stage_id", stageId);
+
       const { count } = await q;
       if (!cancelled) setMyConsumptionCount(count || 0);
     })();
-    return () => { cancelled = true; };
-  // consumptionCount e totalToday como trigger: quando qualquer consumo novo é registrado
-  // as subscriptions existentes os atualizam, e aí este effect recarrega o meu total
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, activeEventId, stageId, today, consumptionCount, totalToday]);
 
   useEffect(() => {
@@ -490,9 +521,6 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
-    // Pré-verificação online: participante precisa estar inscrito na etapa ativa.
-    // O RPC também verifica, mas checar antes evita chamar o banco desnecessariamente
-    // e dá feedback imediato ao operador.
     if (stageId) {
       const { data: enrolled } = await supabase
         .from("participant_event_stages")
@@ -513,7 +541,6 @@ export default function AlimentacaoScanPage() {
       }
     }
 
-    // RPC idempotente: valida janela, horário, eligibility e insere atomicamente
     const { data: rpcResult, error: rpcError } = await supabase.rpc("record_meal_consumption", {
       p_participant_id: participantId,
       p_meal_window_id: windowId,
@@ -596,12 +623,14 @@ export default function AlimentacaoScanPage() {
   const handleScan = async (rawValue: string) => {
     if (isSubmitting) return;
 
-    // Bloquear re-entrância imediatamente, antes de qualquer await
     setIsSubmitting(true);
     setScannerOpen(false);
 
     let val = rawValue.trim();
-    if (!val) { setIsSubmitting(false); return; }
+    if (!val) {
+      setIsSubmitting(false);
+      return;
+    }
 
     if (
       !val.toLowerCase().startsWith("voucher:") &&
@@ -900,17 +929,12 @@ export default function AlimentacaoScanPage() {
     [stages],
   );
 
-  // Janelas dentro da janela operacional ±1h do horário atual.
-  // Reduz a lista exibida ao operador para apenas o que é relevante agora.
-  // Se nenhuma janela estiver no alcance (antes das primeiras ou após as últimas),
-  // exibe todas para não bloquear o operador.
   const visibleWindows = useMemo(() => {
     const near = windows.filter((w) =>
       isWindowNearNow(w.start_time, w.end_time, w.service_date),
     );
     return near.length > 0 ? near : windows;
-  // Recomputa apenas quando a lista de janelas muda, não a cada tick de `now`
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [windows]);
 
   const currentWindow = useMemo(
@@ -929,6 +953,7 @@ export default function AlimentacaoScanPage() {
       visibleWindows.map((w) => ({
         id: w.id,
         nome: w.meal_type?.name || "Refeição",
+        local: getWindowLocal(w),
         inicio: w.start_time.slice(0, 5),
         fim: w.end_time.slice(0, 5),
         status: statusForWindow(w, now),
@@ -948,7 +973,6 @@ export default function AlimentacaoScanPage() {
       <main className="relative mx-auto max-w-md space-y-3 p-3">
         <VoucherConflictCentral />
 
-        {/* === SELEÇÃO DE ETAPA (quando há múltiplas etapas abertas e nenhuma selecionada) === */}
         {!activeStage && stagesOpenToday.length > 0 && (
           <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4 space-y-3">
             <div className="flex items-center gap-2.5">
@@ -984,7 +1008,6 @@ export default function AlimentacaoScanPage() {
           </div>
         )}
 
-        {/* === BLOCO JANELA ATIVA === */}
         {windows.length === 0 ? (
           <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-center space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
@@ -1033,11 +1056,11 @@ export default function AlimentacaoScanPage() {
                 {STATUS_HEADER[currentStatus].label}
               </p>
               <p className="mt-0.5 truncate text-base font-extrabold text-foreground">
-                {currentWindow.meal_type?.name || "Refeição"}
-                <span className="ml-2 text-xs font-mono font-semibold text-muted-foreground">
-                  {currentWindow.start_time.slice(0, 5)}–
-                  {currentWindow.end_time.slice(0, 5)}
-                </span>
+                {currentWindow.meal_type?.name || "Refeição"} — {getWindowLocal(currentWindow)}
+              </p>
+              <p className="mt-0.5 text-xs font-mono font-semibold text-muted-foreground">
+                {currentWindow.start_time.slice(0, 5)}–
+                {currentWindow.end_time.slice(0, 5)}
               </p>
             </div>
 
@@ -1048,13 +1071,11 @@ export default function AlimentacaoScanPage() {
           </button>
         ) : null}
 
-        {/* === CONTADORES === */}
-        {/* KPIs principais: meu total e total geral do dia */}
         <div className="grid grid-cols-2 gap-2">
           <KpiCard label="Meus Registros" value={myConsumptionCount} tone="blue" large />
           <KpiCard label="Total Geral" value={totalToday} tone="default" large />
         </div>
-        {/* KPIs secundários: janela atual, sessão OK e Erro */}
+
         <div className="grid grid-cols-4 gap-2">
           <KpiCard label="Janela" value={consumptionCount} tone="blue" />
           <KpiCard label="Hoje" value={totalToday} tone="default" />
@@ -1066,7 +1087,6 @@ export default function AlimentacaoScanPage() {
           />
         </div>
 
-        {/* === BOTÃO SCAN DINÂMICO === */}
         {!scannerOpen && (
           <button
             type="button"
@@ -1103,7 +1123,9 @@ export default function AlimentacaoScanPage() {
               </p>
               <p className="text-[11px] font-medium opacity-80 truncate">
                 {isJanelaAtiva
-                  ? `Janela ${currentWindow?.meal_type?.name || ""} está aberta`
+                  ? `${currentWindow?.meal_type?.name || "Refeição"} · ${getWindowLocal(
+                      currentWindow,
+                    )}`
                   : currentStatus === "futura"
                     ? "Aguardando início da janela"
                     : currentStatus === "encerrada"
@@ -1114,7 +1136,6 @@ export default function AlimentacaoScanPage() {
           </button>
         )}
 
-        {/* === CÂMERA INLINE === */}
         {scannerOpen && (
           <QrCodeScanner
             isOpen={scannerOpen}
@@ -1126,7 +1147,6 @@ export default function AlimentacaoScanPage() {
           />
         )}
 
-        {/* === BUSCA SEMPRE VISÍVEL === */}
         <div className="space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1214,7 +1234,6 @@ export default function AlimentacaoScanPage() {
           )}
         </div>
 
-        {/* === RESULT FEEDBACK (compacto) === */}
         {result && (
           <div
             className={cn(
@@ -1260,7 +1279,6 @@ export default function AlimentacaoScanPage() {
           </div>
         )}
 
-        {/* === AÇÕES RÁPIDAS === */}
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -1290,7 +1308,6 @@ export default function AlimentacaoScanPage() {
           </label>
         </div>
 
-        {/* === STATUS SYNC === */}
         <SyncStatusLine online={online} />
       </main>
 
@@ -1326,21 +1343,27 @@ function KpiCard({
   }[tone];
 
   return (
-    <div className={cn(
-      "rounded-xl border border-border/70 bg-card/60 text-center",
-      large ? "px-3 py-3" : "px-2 py-2",
-    )}>
-      <p className={cn(
-        "font-bold uppercase tracking-wider text-muted-foreground",
-        large ? "text-[10px]" : "text-[9px]",
-      )}>
+    <div
+      className={cn(
+        "rounded-xl border border-border/70 bg-card/60 text-center",
+        large ? "px-3 py-3" : "px-2 py-2",
+      )}
+    >
+      <p
+        className={cn(
+          "font-bold uppercase tracking-wider text-muted-foreground",
+          large ? "text-[10px]" : "text-[9px]",
+        )}
+      >
         {label}
       </p>
-      <p className={cn(
-        "mt-0.5 font-extrabold tabular-nums leading-none",
-        large ? "text-3xl" : "text-2xl",
-        valueClass,
-      )}>
+      <p
+        className={cn(
+          "mt-0.5 font-extrabold tabular-nums leading-none",
+          large ? "text-3xl" : "text-2xl",
+          valueClass,
+        )}
+      >
         {value}
       </p>
     </div>
@@ -1380,20 +1403,23 @@ function SyncStatusLine({ online }: { online: boolean }) {
 
 function BuildVersionTag() {
   const [version, setVersion] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
+
     fetch("/version.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!cancelled && d?.appVersion) setVersion(`v${d.appVersion}`);
       })
       .catch(() => {});
+
     return () => {
       cancelled = true;
     };
   }, []);
+
   if (!version) return null;
-  return (
-    <span className="text-[10px] font-mono text-zinc-500">{version}</span>
-  );
+
+  return <span className="text-[10px] font-mono text-zinc-500">{version}</span>;
 }
