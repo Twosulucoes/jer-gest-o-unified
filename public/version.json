@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/filter-stages-by-location-FH8I1",
-  "commit": "c8503b86",
-  "commitFull": "c8503b8662e55ba759aeb06cfddbc5d68ff28718",
-  "buildDate": "2026-05-14T10:25:45.338Z",
+  "branch": "claude/fix-meal-location-issues-Uokac",
+  "commit": "f5d50520",
+  "commitFull": "f5d505202be0e7195995b4814deb381ccf6604b5",
+  "buildDate": "2026-05-14T10:38:17.901Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }

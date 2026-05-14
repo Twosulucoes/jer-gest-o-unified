@@ -100,7 +100,7 @@ export default function AlimentacaoHubPage() {
     queryKey: ["meal_windows", selectedEventId, selectedStageId],
     queryFn: async () => {
       if (!selectedStageId) return [];
-      const { data, error } = await (supabase.from("meal_windows") as any).select("*")
+      const { data, error } = await (supabase.from("meal_windows") as any).select("*, meal_locations(name)")
         .eq("event_id", selectedEventId)
         .eq("event_stage_id", selectedStageId)
         .order("service_date").order("start_time");
@@ -141,7 +141,9 @@ export default function AlimentacaoHubPage() {
         event_id: selectedStage!.event_id, event_stage_id: selectedStageId,
         meal_type_id: v.meal_type_id, label: v.label || null,
         service_date: v.service_date, start_time: v.start_time, end_time: v.end_time,
-        location: v.location || null, is_active: v.is_active,
+        location: v.meal_window_location_id ? null : (v.location || null),
+        meal_window_location_id: v.meal_window_location_id || null,
+        is_active: v.is_active,
       });
       if (error) throw error;
     },
@@ -154,7 +156,9 @@ export default function AlimentacaoHubPage() {
       const { error } = await supabase.from("meal_windows").update({
         meal_type_id: v.meal_type_id, label: v.label || null,
         service_date: v.service_date, start_time: v.start_time, end_time: v.end_time,
-        location: v.location || null, is_active: v.is_active,
+        location: v.meal_window_location_id ? null : (v.location || null),
+        meal_window_location_id: v.meal_window_location_id || null,
+        is_active: v.is_active,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -343,7 +347,7 @@ export default function AlimentacaoHubPage() {
                         <TableCell>{w.label || "—"}</TableCell>
                         <TableCell>{formatDate(w.service_date)}</TableCell>
                         <TableCell className="font-mono text-xs">{w.start_time?.slice(0, 5)} – {w.end_time?.slice(0, 5)}</TableCell>
-                        <TableCell>{w.location || "—"}</TableCell>
+                        <TableCell>{w.meal_locations?.name || w.location || "—"}</TableCell>
                         <TableCell><Badge variant={w.is_active ? "default" : "secondary"}>{w.is_active ? "Ativa" : "Inativa"}</Badge></TableCell>
                         {canWrite && (
                           <TableCell>
@@ -418,6 +422,8 @@ export default function AlimentacaoHubPage() {
         mealTypes={mealTypes}
         onSubmit={(v) => editingWindow ? updateWindow.mutate({ id: editingWindow.id, ...v }) : createWindow.mutate(v)}
         isPending={createWindow.isPending || updateWindow.isPending}
+        eventId={selectedEventId}
+        stageId={selectedStageId}
       />
     </div>
   );
