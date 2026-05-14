@@ -866,16 +866,16 @@ export default function AcessosUsuariosPage() {
                     </Button>
                   )}
 
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="justify-start h-auto py-2 px-3"
                     onClick={() => setStageLinksUser({ id: selectedUser.user_id, name: selectedUser.full_name || selectedUser.email })}
                   >
                     <Layers className="h-4 w-4 mr-2 text-primary" />
                     <div className="text-left">
-                      <div className="font-medium text-xs">Vínculo de Credenciamento (Etapas)</div>
-                      <p className="text-[10px] text-muted-foreground">Restringe o acesso a etapas específicas</p>
+                      <div className="font-medium text-xs">Atribuição de Etapa (PWA)</div>
+                      <p className="text-[10px] text-muted-foreground">Auto-seleciona a etapa ao abrir o PWA</p>
                     </div>
                   </Button>
                 </div>
