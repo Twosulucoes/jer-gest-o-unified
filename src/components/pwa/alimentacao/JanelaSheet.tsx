@@ -7,6 +7,7 @@ export type JanelaStatus = "ativa" | "encerrada" | "futura";
 export interface JanelaSheetItem {
   id: string;
   nome: string;
+  local?: string;
   inicio: string;
   fim: string;
   status: JanelaStatus;
@@ -18,7 +19,6 @@ interface JanelaSheetProps {
   janelas: JanelaSheetItem[];
   selectedId: string;
   onSelect: (id: string) => void;
-  /** Número de janelas ocultas por estarem fora da janela operacional ±1h. */
   hiddenCount?: number;
 }
 
@@ -63,7 +63,7 @@ export function JanelaSheet({
         <SheetHeader className="px-5 pt-5 pb-3 text-left">
           <SheetTitle className="text-base font-bold">Trocar janela</SheetTitle>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Selecione a refeição que está sendo operada agora
+            Selecione a refeição e o local que está sendo operado agora
           </p>
         </SheetHeader>
 
@@ -77,6 +77,8 @@ export function JanelaSheet({
           {janelas.map((j) => {
             const cfg = STATUS_STYLE[j.status];
             const isSelected = j.id === selectedId;
+            const local = j.local || "Local não informado";
+
             return (
               <button
                 key={j.id}
@@ -104,7 +106,14 @@ export function JanelaSheet({
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-foreground">{j.nome}</p>
+                  <p className="truncate text-sm font-bold text-foreground">
+                    {j.nome}
+                  </p>
+
+                  <p className="truncate text-xs font-semibold text-blue-400">
+                    Local: {local}
+                  </p>
+
                   <p className="text-[11px] font-medium text-muted-foreground">
                     {j.inicio}–{j.fim}
                   </p>
@@ -126,9 +135,11 @@ export function JanelaSheet({
             );
           })}
         </div>
+
         {hiddenCount > 0 && (
           <p className="py-2 text-center text-[10px] text-muted-foreground">
-            + {hiddenCount} janela{hiddenCount > 1 ? "s" : ""} fora do período de ±1h ocultada{hiddenCount > 1 ? "s" : ""}
+            + {hiddenCount} janela{hiddenCount > 1 ? "s" : ""} fora do período de ±1h ocultada
+            {hiddenCount > 1 ? "s" : ""}
             {" · "}
             <span>Ver em "Janelas da Etapa"</span>
           </p>
