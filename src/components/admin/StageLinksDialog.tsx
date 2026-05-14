@@ -102,7 +102,7 @@ export default function StageLinksDialog({ open, onOpenChange, userId, userName 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Vínculo de Credenciamento (Etapas) — {userName}</DialogTitle>
+          <DialogTitle>Atribuição de Etapa (PWA) — {userName}</DialogTitle>
         </DialogHeader>
 
         {!eventId ? (
@@ -110,7 +110,7 @@ export default function StageLinksDialog({ open, onOpenChange, userId, userName 
         ) : (
           <div className="space-y-4">
             <p className="text-xs text-muted-foreground">
-              Vincule este usuário a etapas específicas para restringir seu escopo de atuação no credenciamento e outras operações por etapa.
+              Atribua este usuário a etapas específicas. Ao abrir o PWA, a etapa será selecionada automaticamente — eliminando dúvidas de qual etapa usar. Restringe também o escopo de atuação nas operações por etapa.
             </p>
 
             {loadingLinks ? (

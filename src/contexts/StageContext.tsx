@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
+import { useAuth } from "@/hooks/useAuth";
 import { handleContextChange } from "@/lib/context-manager";
 import { getModuleByPath } from "@/constants/modules";
 import { isStageOpenToday } from "@/lib/stageDateUtils";
@@ -30,7 +31,7 @@ export interface EventStage {
 
 /** Interface for the Stage context value */
 interface StageContextValue {
-  /** All available stages for the active event */
+  /** Stages available to the user — filtered to assigned stages when the user has explicit assignments */
   stages: EventStage[];
   /** Loading state for the stages query */
   stagesLoading: boolean;
@@ -44,6 +45,8 @@ interface StageContextValue {
   isContextLocked: boolean;
   /** Manually trigger or release a context lock */
   setContextLocked: (locked: boolean) => void;
+  /** True when the user has explicit stage assignments (restricted to specific stages) */
+  hasStageRestrictions: boolean;
 }
 
 const StageContext = createContext<StageContextValue | undefined>(undefined);
@@ -51,6 +54,7 @@ const StageContext = createContext<StageContextValue | undefined>(undefined);
 export function StageProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const eventId = useActiveEventId();
+  const { user } = useAuth();
   const { stageId: routeStageId } = useParams<{ stageId?: string }>();
   const location = useLocation();
   const [isContextLocked, setContextLocked] = useState(false);
@@ -91,7 +95,7 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentModule, queryClient]);
 
-  const { data: stages = [], isLoading: stagesLoading } = useQuery({
+  const { data: allStages = [], isLoading: stagesLoading } = useQuery({
     queryKey: ["event_stages", eventId],
     enabled: !!eventId,
     queryFn: async () => {
@@ -104,6 +108,30 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
       return (data ?? []) as EventStage[];
     },
   });
+
+  // Load the user's explicit stage assignments to filter available stages in the PWA.
+  // Admin/secretaria/coordenacao_tecnica users have no entries here → see all stages.
+  // Operational users with assignments → restricted to their assigned stages.
+  const { data: userAssignedStageIds = [] } = useQuery({
+    queryKey: ["user-stage-assignments", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_stage_assignments")
+        .select("event_stage_id")
+        .eq("user_id", user!.id);
+      return (data ?? []).map((r) => (r as any).event_stage_id as string);
+    },
+  });
+
+  // If the user has explicit assignments, expose only those stages for the current event.
+  // Otherwise expose all stages (backward-compat for unrestricted roles).
+  const stages = useMemo(() => {
+    if (userAssignedStageIds.length === 0) return allStages;
+    return allStages.filter((s) => userAssignedStageIds.includes(s.id));
+  }, [allStages, userAssignedStageIds]);
+
+  const hasStageRestrictions = userAssignedStageIds.length > 0;
 
   // activeStageId priority: 1. URL param, 2. Persisted state
   const activeStageId = routeStageId || persistedStageId;
@@ -162,8 +190,9 @@ export function StageProvider({ children }: { children: React.ReactNode }) {
       setActiveStageId,
       isContextLocked,
       setContextLocked,
+      hasStageRestrictions,
     };
-  }, [stages, stagesLoading, activeStageId, setActiveStageId, isContextLocked]);
+  }, [stages, stagesLoading, activeStageId, setActiveStageId, isContextLocked, hasStageRestrictions]);
 
   return <StageContext.Provider value={value}>{children}</StageContext.Provider>;
 }

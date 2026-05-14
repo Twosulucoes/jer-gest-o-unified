@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Calendar, MapPin, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCcw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, Calendar, MapPin, CheckCircle2, AlertTriangle, RefreshCcw, Lock } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { isStageOpenToday, stageWindowLabel, stageWindowBadge } from "@/lib/stageDateUtils";
@@ -26,10 +27,13 @@ const PwaSelectionFallback = () => {
     ? rawFrom
     : "/pwa";
   const { activeEventId, events, setActiveEventId } = useEventContext();
-  const { activeStageId, stages, setActiveStageId } = useStageContext();
+  const { activeStageId, stages, setActiveStageId, hasStageRestrictions } = useStageContext();
   
   const [selectedEventId, setSelectedEventId] = useState<string | null>(activeEventId);
-  const [selectedStageId, setSelectedStageId] = useState<string | null>(activeStageId);
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(
+    // When user has exactly one assigned stage, pre-select it automatically
+    activeStageId ?? (stages.length === 1 && hasStageRestrictions ? stages[0].id : null)
+  );
   const [isVoluntary] = useState(!!activeStageId);
   const [pendingItems, setPendingItems] = useState(0);
   const [pendingBreakdown, setPendingBreakdown] = useState<{label: string, count: number}[]>([]);
@@ -163,40 +167,62 @@ const PwaSelectionFallback = () => {
             <div className="flex items-center gap-2 px-1">
               <MapPin className={`w-4 h-4 ${selectedStageId ? "text-green-500" : "text-amber-500"}`} />
               <label className="text-sm font-semibold uppercase tracking-wider opacity-70">Etapa de Trabalho</label>
+              {hasStageRestrictions && (
+                <Badge variant="secondary" className="text-[9px] uppercase tracking-wider gap-1 px-1.5 py-0 ml-auto">
+                  <Lock className="w-2.5 h-2.5" />
+                  Atribuída
+                </Badge>
+              )}
             </div>
-            <Select 
-              value={selectedStageId || ""} 
-              onValueChange={setSelectedStageId}
-              disabled={!selectedEventId || stages.length === 0}
-            >
-              <SelectTrigger className="h-14 rounded-2xl border-muted-foreground/20 bg-white dark:bg-zinc-900 shadow-sm">
-                <SelectValue placeholder={!selectedEventId ? "Selecione um evento primeiro" : "Selecione a etapa..."} />
-              </SelectTrigger>
-              <SelectContent>
-                {(() => {
-                  const filtered = stages.filter(s => !selectedEventId || s.event_id === selectedEventId);
-                  // Etapas vigentes hoje primeiro; futuras/encerradas no final, desabilitadas.
-                  const sorted = [...filtered].sort((a, b) => (isStageOpenToday(a) ? 0 : 1) - (isStageOpenToday(b) ? 0 : 1));
-                  return sorted.map((s) => {
-                    const open = isStageOpenToday(s);
-                    const badge = stageWindowBadge(s);
-                    return (
-                      <SelectItem key={s.id} value={s.id} disabled={!open}>
-                        <span className="flex items-center gap-2">
-                          <span>{s.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{stageWindowLabel(s)}</span>
-                          {badge && (
-                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                              {badge}
-                            </span>
-                          )}
-                        </span>
-                      </SelectItem>
-                    );
-                  });
-                })()}
-              </SelectContent>
-            </Select>
+            {hasStageRestrictions && stages.length === 1 ? (
+              // Etapa única atribuída: exibe como card fixo, sem dropdown
+              <div className="h-14 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 shadow-sm flex items-center px-4 gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-green-900 dark:text-green-100 truncate">{stages[0].name}</p>
+                  <p className="text-[10px] text-green-700 dark:text-green-400">{stageWindowLabel(stages[0])}</p>
+                </div>
+                {stageWindowBadge(stages[0]) && (
+                  <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 shrink-0">
+                    {stageWindowBadge(stages[0])}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <Select
+                value={selectedStageId || ""}
+                onValueChange={setSelectedStageId}
+                disabled={!selectedEventId || stages.length === 0}
+              >
+                <SelectTrigger className="h-14 rounded-2xl border-muted-foreground/20 bg-white dark:bg-zinc-900 shadow-sm">
+                  <SelectValue placeholder={!selectedEventId ? "Selecione um evento primeiro" : "Selecione a etapa..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const filtered = stages.filter(s => !selectedEventId || s.event_id === selectedEventId);
+                    // Etapas vigentes hoje primeiro; futuras/encerradas no final, desabilitadas.
+                    const sorted = [...filtered].sort((a, b) => (isStageOpenToday(a) ? 0 : 1) - (isStageOpenToday(b) ? 0 : 1));
+                    return sorted.map((s) => {
+                      const open = isStageOpenToday(s);
+                      const badge = stageWindowBadge(s);
+                      return (
+                        <SelectItem key={s.id} value={s.id} disabled={!open}>
+                          <span className="flex items-center gap-2">
+                            <span>{s.name}</span>
+                            <span className="text-[10px] text-muted-foreground">{stageWindowLabel(s)}</span>
+                            {badge && (
+                              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                {badge}
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
+                      );
+                    });
+                  })()}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3 pt-4">
