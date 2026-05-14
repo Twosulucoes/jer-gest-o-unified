@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/assign-user-stages-WOxnp",
-  "commit": "ec2fce3f",
-  "commitFull": "ec2fce3f931e81937d54932d0cb4432038458188",
-  "buildDate": "2026-05-14T01:30:18.438Z",
+  "branch": "claude/filter-stages-by-location-FH8I1",
+  "commit": "c8503b86",
+  "commitFull": "c8503b8662e55ba759aeb06cfddbc5d68ff28718",
+  "buildDate": "2026-05-14T10:25:45.338Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
