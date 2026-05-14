@@ -949,17 +949,26 @@ export default function AlimentacaoScanPage() {
   const isJanelaAtiva = currentStatus === "ativa";
 
   const janelaSheetItems = useMemo(
-    () =>
-      visibleWindows.map((w) => ({
-        id: w.id,
-        nome: w.meal_type?.name || "Refeição",
-        local: getWindowLocal(w),
-        inicio: w.start_time.slice(0, 5),
-        fim: w.end_time.slice(0, 5),
-        status: statusForWindow(w, now),
-      })),
-    [visibleWindows, now],
-  );
+  () =>
+    visibleWindows.map((w) => ({
+      id: w.id,
+
+      nome: w.meal_type?.name || "Refeição",
+
+      local:
+        w.label ||
+        w.meal_locations?.name ||
+        w.location ||
+        "Local não informado",
+
+      inicio: w.start_time.slice(0, 5),
+
+      fim: w.end_time.slice(0, 5),
+
+      status: statusForWindow(w, now),
+    })),
+  [visibleWindows, now],
+);
 
   const hiddenWindowCount = windows.length - visibleWindows.length;
 
