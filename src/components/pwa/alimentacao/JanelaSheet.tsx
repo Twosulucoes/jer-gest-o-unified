@@ -24,23 +24,20 @@ interface JanelaSheetProps {
 
 const STATUS_STYLE: Record<
   JanelaStatus,
-  { dot: string; ring: string; chip: string; label: string }
+  { dot: string; chip: string; label: string }
 > = {
   ativa: {
     dot: "bg-green-500",
-    ring: "ring-green-500/40",
     chip: "bg-green-500/15 text-green-400 ring-1 ring-inset ring-green-500/30",
     label: "ATIVA",
   },
   encerrada: {
     dot: "bg-zinc-500",
-    ring: "ring-zinc-500/40",
     chip: "bg-zinc-500/15 text-zinc-400 ring-1 ring-inset ring-zinc-500/30",
     label: "ENCERRADA",
   },
   futura: {
     dot: "bg-blue-500",
-    ring: "ring-blue-500/40",
     chip: "bg-blue-500/15 text-blue-400 ring-1 ring-inset ring-blue-500/30",
     label: "AGUARDANDO",
   },
@@ -63,7 +60,7 @@ export function JanelaSheet({
         <SheetHeader className="px-5 pt-5 pb-3 text-left">
           <SheetTitle className="text-base font-bold">Trocar janela</SheetTitle>
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Selecione a refeição e o local que está sendo operado agora
+            Selecione a refeição e o rótulo que está sendo operado agora
           </p>
         </SheetHeader>
 
@@ -77,7 +74,7 @@ export function JanelaSheet({
           {janelas.map((j) => {
             const cfg = STATUS_STYLE[j.status];
             const isSelected = j.id === selectedId;
-            const local = j.local || "Local não informado";
+            const rotulo = j.local || "Rótulo não informado";
 
             return (
               <button
@@ -111,7 +108,7 @@ export function JanelaSheet({
                   </p>
 
                   <p className="truncate text-xs font-semibold text-blue-400">
-                    Local: {local}
+                    {rotulo}
                   </p>
 
                   <p className="text-[11px] font-medium text-muted-foreground">
