@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/dynamic-stage-selection-l3VJ0",
-  "commit": "39904903",
-  "commitFull": "39904903de41f08d0d19d72942ab9814f759efc4",
-  "buildDate": "2026-05-13T22:39:28.523Z",
+  "branch": "claude/assign-user-stages-WOxnp",
+  "commit": "ec2fce3f",
+  "commitFull": "ec2fce3f931e81937d54932d0cb4432038458188",
+  "buildDate": "2026-05-14T01:30:18.438Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
