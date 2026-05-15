@@ -1073,13 +1073,14 @@ function classifyRow(
 
   // ── CPF classification ──
   if (row.cpf_raw && !row.cpf_valid) {
-    pending.push({
-      row_number: row.row_number, reason_code: "CPF_INVALID",
-      reason_detail: `CPF informado "${row.cpf_raw}" não passou na validação de dígitos`,
-      row, fingerprint, candidate_person_id: null,
-    });
-    return { status: "pendencia", errors, warnings, pending, resolved };
-  }
+  warnings.push({
+    row: row.row_number,
+    field: "CPF",
+    value: row.cpf_raw,
+    code: "CPF_INVALID",
+    message: `CPF informado "${row.cpf_raw}" não passou na validação, mas será importado normalmente.`,
+  });
+}
 
   if (!row.cpf_raw && isAthlete) {
     let candidateId: string | null = null;
@@ -1839,6 +1840,9 @@ Deno.serve(async (req: Request) => {
               institution_id: instId,
               event_id: eventId,
               status: "confirmed",
+              school_name: schoolName,
+              school_slug: slug,
+              school_network_type: "pending_review",
             }).select("id").single();
           if (error) {
             const { data: existing } = await serviceClient.from("delegations")
@@ -1938,7 +1942,6 @@ Deno.serve(async (req: Request) => {
               const { data: newPart, error: partErr } = await serviceClient.from("participants").insert({
                 person_id: personId, event_id: eventId, delegation_id: delId,
                 participant_type: row.participant_type, status: "confirmed",
-                needs_transport: true, needs_meals: true, needs_lodging: true,
               }).select("id").single();
               if (partErr) {
                 const { data: existing } = await serviceClient.from("participants")
