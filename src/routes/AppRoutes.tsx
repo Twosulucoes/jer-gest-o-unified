@@ -482,8 +482,17 @@ export const AppRoutes = () => (
         <Route path="arbitragem/agenda" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemAgendaPage /></PwaRouteGuard>} />
         <Route path="arbitragem/indisponibilidade" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemIndisponibilidadePage /></PwaRouteGuard>} />
         <Route path="arbitragem/perfil" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><RefereePwaProfilePage /></PwaRouteGuard>} />
-        <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
-        <Route path="credenciamento/vincular" element={<VincularCredencialPage />} />
+       <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
+
+<Route
+  path="credenciamento/vincular"
+  element={<VincularCredencialPage />}
+/>
+
+<Route
+  path="credenciamento/massa"
+  element={<VinculacaoMassaPage />}
+/>
         
         <Route path="debug" element={<PwaDebugPage />} />
         <Route path="diagnostico/qr" element={<QrDiagnosticoPage />} />
