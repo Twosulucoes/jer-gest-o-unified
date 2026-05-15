@@ -46,7 +46,7 @@ const StatusPage = () => {
     <div className="container mx-auto p-4 max-w-2xl pt-12">
       <Card className="border-t-4 border-t-primary shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
-          <CardTitle className="text-2xl font-bold">Status do Deploy</CardTitle>
+          <CardTitle className="text-2xl font-bold">Statcus do Deploy</CardTitle>
           <Badge variant="secondary" className="gap-1 px-3 py-1">
             <CheckCircle2 className="h-3.5 w-3.5" />
             Online
