@@ -220,6 +220,7 @@ const ArbitragemHomePage = lazy(() => import("../pages/pwa/arbitragem/Arbitragem
 const ArbitragemAgendaPage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemAgendaPage"));
 const ArbitragemIndisponibilidadePage = lazy(() => import("../pages/pwa/arbitragem/ArbitragemIndisponibilidadePage"));
 const VincularCredencialPage = lazy(() => import("../pages/pwa/credenciamento/VincularCredencialPage"));
+const VinculacaoMassaPage = lazy(() => import("../pages/pwa/credenciamento/VinculacaoMassaPage"));
 const PwaSelectionFallback = lazy(() => import("../pages/pwa/PwaSelectionFallback"));
 const PwaNotFoundHandler = lazy(() => import("../components/pwa/PwaNotFoundHandler"));
 const PesquisaLoginPage = lazy(() => import("../pages/pwa/PesquisaLoginPage"));
