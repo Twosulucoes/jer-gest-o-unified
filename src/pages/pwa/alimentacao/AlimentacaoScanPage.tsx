@@ -44,6 +44,7 @@ import {
 } from "@/lib/pwaScan";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
+import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
 import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
 import { addToVoucherQueue } from "@/lib/voucherOffline";
 import { enqueueIncident } from "@/lib/incidentOffline";
@@ -144,6 +145,8 @@ export default function AlimentacaoScanPage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [janelaSheetOpen, setJanelaSheetOpen] = useState(false);
   const [online, setOnline] = useState(isOnline());
+
+  const { lookupQr, searchOffline } = useParticipantStatusCache({ eventId: activeEventId, online });
 
   const [prefs, setPrefs] = useState<ScanPreferences>(() =>
     loadScanPreferences(MODULE, userId),
@@ -377,6 +380,25 @@ export default function AlimentacaoScanPage() {
       return;
     }
 
+    if (!online) {
+      const results = searchOffline(debouncedManual);
+      setManualHits(
+        results.map((e) => ({
+          participant_id: e.participant_id,
+          person_id: "",
+          full_name: e.full_name,
+          cpf: e.cpf,
+          participant_type: "",
+          is_active: e.is_active,
+          needs_meals: e.needs_meals,
+          credentialed_at: e.credentialed_at,
+          left_event_at: null,
+        })),
+      );
+      setManualSearching(false);
+      return;
+    }
+
     let cancelled = false;
     setManualSearching(true);
 
@@ -391,7 +413,7 @@ export default function AlimentacaoScanPage() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedManual, activeEventId]);
+  }, [debouncedManual, activeEventId, online]);
 
   const recordIncident = useCallback(
     async (type: string, participantId?: string) => {
@@ -730,6 +752,63 @@ export default function AlimentacaoScanPage() {
         return;
       }
 
+      // --- Offline: usa cache local de participantes ---
+      if (!isOnline()) {
+        const cached = lookupQr(val);
+
+        if (cached.state === "sem_cache") {
+          const msg = "Sem conexão e cache indisponível. Abra o módulo com internet primeiro para baixar os dados.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error("Cache indisponível", { description: msg });
+          recordOutcome("error");
+          return;
+        }
+
+        if (cached.state === "nao_cadastrado") {
+          const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);
+          setNotFoundQr(val);
+          setResult({ ok: false, message: `${errorMsg} Código lido: ${val}`, source: "qr" });
+          toast.error(errorMsg);
+          recordOutcome("error");
+          void recordIncident("OTHER");
+          return;
+        }
+
+        if (cached.state === "nao_credenciado") {
+          const msg = "Participante não possui credencial ativa (Aguardando Credenciamento)";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg, { description: "Encaminhe o atleta para a secretaria." });
+          recordOutcome("error");
+          void recordIncident("NO_CREDENTIAL", cached.entry.participant_id);
+          return;
+        }
+
+        // credenciado offline — verifica elegibilidade via cache
+        const cachedEntry = cached.entry;
+
+        if (!cachedEntry.is_active) {
+          const msg = "Participante Inativo ou não encontrado";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          void recordIncident("PARTICIPANT_INACTIVE", cachedEntry.participant_id);
+          return;
+        }
+
+        if (!cachedEntry.needs_meals) {
+          const msg = "Participante não declarou necessidade de alimentação.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          void recordIncident("NEEDS_MEALS_FALSE", cachedEntry.participant_id);
+          return;
+        }
+
+        await registerMealConsumption(cachedEntry.participant_id, cachedEntry.full_name, "qr_scan", "qr", null);
+        return;
+      }
+
+      // --- Online: resolve credencial via rede ---
       const resolved = await resolveQrCredential(val, { eventId: activeEventId });
 
       if (!resolved) {
