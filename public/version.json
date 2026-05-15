@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/fix-meal-location-issues-Uokac",
-  "commit": "f5d50520",
-  "commitFull": "f5d505202be0e7195995b4814deb381ccf6604b5",
-  "buildDate": "2026-05-14T10:38:17.901Z",
+  "branch": "claude/review-pwa-offline-mode-6oNGq",
+  "commit": "fd764d7a",
+  "commitFull": "fd764d7a977781f81262ffa9884f99ab3c7aca8c",
+  "buildDate": "2026-05-15T23:40:53.606Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
