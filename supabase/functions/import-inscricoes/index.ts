@@ -1651,22 +1651,47 @@ Deno.serve(async (req: Request) => {
       }
 
       if (result.status === "pendencia") {
-        allPending.push(...result.pending);
-        for (const p of result.pending) {
-          if (p.reason_code === "CPF_INVALID") cpfsInvalidos++;
-          if (p.reason_code === "CPF_MISSING") cpfsMissing++;
-          if (p.reason_code === "BIRTH_DATE_MISSING" || p.reason_code === "BIRTH_DATE_INVALID") datasInvalidas++;
-          if (
-            p.reason_code === "SPORT_EVENT_NOT_FOUND" ||
-            p.reason_code === "SPORT_EVENT_NOT_FOUND_CANONICAL" ||
-            p.reason_code === "SPORT_PARSE_FAILED" ||
-            p.reason_code === "CATEGORY_PARSE_FAILED" ||
-            p.reason_code === "PROVA_PARSE_FAILED" ||
-            p.reason_code === "SPORT_EVENT_AMBIGUOUS"
-          ) seNaoEncontrados++;
-        }
-        continue;
-      }
+
+  // remove CPF_INVALID das pendências
+  const pendingFiltrado = result.pending.filter(
+    (p) => p.reason_code !== "CPF_INVALID"
+  );
+
+  // se só tinha CPF inválido, importa normalmente
+  if (pendingFiltrado.length === 0) {
+    validRows.push({ row, resolved: result.resolved });
+    continue;
+  }
+
+  allPending.push(...pendingFiltrado);
+
+  for (const p of pendingFiltrado) {
+
+    if (p.reason_code === "CPF_MISSING") {
+      cpfsMissing++;
+    }
+
+    if (
+      p.reason_code === "BIRTH_DATE_MISSING" ||
+      p.reason_code === "BIRTH_DATE_INVALID"
+    ) {
+      datasInvalidas++;
+    }
+
+    if (
+      p.reason_code === "SPORT_EVENT_NOT_FOUND" ||
+      p.reason_code === "SPORT_EVENT_NOT_FOUND_CANONICAL" ||
+      p.reason_code === "SPORT_PARSE_FAILED" ||
+      p.reason_code === "CATEGORY_PARSE_FAILED" ||
+      p.reason_code === "PROVA_PARSE_FAILED" ||
+      p.reason_code === "SPORT_EVENT_AMBIGUOUS"
+    ) {
+      seNaoEncontrados++;
+    }
+  }
+
+  continue;
+}
 
       // ok
       allErrors.push(...result.errors);
