@@ -1072,55 +1072,26 @@ function classifyRow(
   }
 
   // ── CPF classification ──
+  // REGRA JER: CPF inválido ou ausente NÃO bloqueia a importação.
+  // Ele vira apenas aviso. A pessoa será criada/reutilizada por Nome + Data + Sexo.
   if (row.cpf_raw && !row.cpf_valid) {
-  warnings.push({
-    row: row.row_number,
-    field: "CPF",
-    value: row.cpf_raw,
-    code: "CPF_INVALID",
-    message: `CPF informado "${row.cpf_raw}" não passou na validação, mas será importado normalmente.`,
-  });
-}
-
-  if (!row.cpf_raw && isAthlete) {
-    let candidateId: string | null = null;
-    if (row.full_name && row.birth_date) {
-      const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-      const matches = people.byNameDob.get(key) ?? [];
-      if (matches.length === 1) candidateId = matches[0];
-    }
-    pending.push({
-      row_number: row.row_number, reason_code: "CPF_MISSING",
-      reason_detail: "Atleta sem CPF — requer resolução manual",
-      row, fingerprint, candidate_person_id: candidateId,
+    warnings.push({
+      row: row.row_number,
+      field: "CPF",
+      value: row.cpf_raw,
+      code: "CPF_INVALID",
+      message: `CPF informado "${row.cpf_raw}" não passou na validação, mas será importado normalmente.`,
     });
-    return { status: "pendencia", errors, warnings, pending, resolved };
   }
 
-  // ── CPF missing for non-athlete => ALWAYS pendência ──
-  // Decision: comissão técnica sem CPF SEMPRE vai para pendência.
-  // Justificativa: evitar criação silenciosa de pessoa definitiva sem identificador único.
-  if (!row.cpf_raw && !isAthlete) {
-    let candidateId: string | null = null;
-    if (row.full_name && row.birth_date) {
-      const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
-      const matches = people.byNameDob.get(key) ?? [];
-      if (matches.length === 1) candidateId = matches[0];
-      if (matches.length > 1) {
-        pending.push({
-          row_number: row.row_number, reason_code: "PERSON_MATCH_AMBIGUOUS",
-          reason_detail: `Múltiplos matches (${matches.length}) para "${row.full_name}" nascido em ${row.birth_date} — sem CPF`,
-          row, fingerprint, candidate_person_id: matches[0],
-        });
-        return { status: "pendencia", errors, warnings, pending, resolved };
-      }
-    }
-    pending.push({
-      row_number: row.row_number, reason_code: "CPF_MISSING",
-      reason_detail: `${isAthlete ? "Atleta" : "Comissão técnica"} sem CPF — requer resolução manual`,
-      row, fingerprint, candidate_person_id: candidateId,
+  if (!row.cpf_raw) {
+    warnings.push({
+      row: row.row_number,
+      field: "CPF",
+      value: null,
+      code: "CPF_MISSING",
+      message: `${isAthlete ? "Atleta" : "Comissão técnica"} sem CPF — será importado normalmente.`,
     });
-    return { status: "pendencia", errors, warnings, pending, resolved };
   }
 
   // ── Birth date ──
@@ -1341,8 +1312,33 @@ function classifyRow(
         warnings.push({ row: row.row_number, field: "NOME", value: row.full_name, code: "AMBIGUITY_WARNING", message: `${matches.length} pessoas com mesmo nome+nascimento+sexo, mas CPF é único — prosseguindo` });
       }
     }
+  } else {
+    // Sem CPF válido: tenta reutilizar pessoa por Nome + Data + Sexo.
+    // Se não encontrar exatamente 1 pessoa, cria nova sem CPF.
+    let candidateId: string | null = null;
+    if (row.full_name && row.birth_date) {
+      const key = `${row.full_name.toLowerCase()}|${row.birth_date}|${row.gender}`;
+      const matches = people.byNameDob.get(key) ?? [];
+      if (matches.length === 1) {
+        candidateId = matches[0];
+      } else if (matches.length > 1) {
+        warnings.push({
+          row: row.row_number,
+          field: "NOME",
+          value: row.full_name,
+          code: "AMBIGUITY_WARNING_NO_CPF",
+          message: `${matches.length} pessoas com mesmo nome+nascimento+sexo e sem CPF válido — será criada/reutilizada conforme o banco no commit.`,
+        });
+      }
+    }
+
+    if (candidateId) {
+      resolved.person_id = candidateId;
+      resolved.person_action = "reuse";
+    } else {
+      resolved.person_action = "create";
+    }
   }
-  // Note: non-athlete without CPF already routed to pendência above
 
   return { status: "ok", errors, warnings, pending, resolved };
 }
@@ -1676,7 +1672,14 @@ Deno.serve(async (req: Request) => {
       allErrors.push(...result.errors);
       validRows.push({ row, resolved: result.resolved });
 
-      if (row.cpf_valid) { cpfsValidos++; }
+      if (row.cpf_valid) {
+        cpfsValidos++;
+      } else if (row.cpf_raw) {
+        cpfsInvalidos++;
+      } else {
+        cpfsMissing++;
+      }
+
       if (result.resolved.person_action === "reuse") cpfsReutilizados++;
       if (result.resolved.person_action === "create") cpfsNovos++;
       if (result.resolved.institution_will_create === "true") institutionsToCreate.add(row.institution_slug);
@@ -1899,31 +1902,113 @@ Deno.serve(async (req: Request) => {
               rowsFailed++; processed++; continue;
             }
 
-            const personKey = row.cpf_valid!;
+            const personKey =
+              row.cpf_valid ||
+              `NOCPF|${row.full_name.toLowerCase()}|${row.birth_date || "NO_DOB"}|${row.gender}|${instId}`;
+
             let personId = resolved.person_id || null;
 
             if (resolved.person_action === "create") {
               if (processedPersonKeys.has(personKey)) {
-                const { data: lookupData } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid!).single();
-                if (lookupData) { personId = lookupData.id; peopleReused++; }
-              } else {
-                processedPersonKeys.add(personKey);
-                const { data: newPerson, error: personErr } = await serviceClient.from("people").insert({
-                  full_name: row.full_name, birth_date: row.birth_date, gender: row.gender,
-                  cpf: row.cpf_valid, rg: row.rg, email: row.email, phone: row.phone,
-                  institution_id: instId, disability_type: row.pcd,
-                }).select("id").single();
-                if (personErr) {
-                  if (row.cpf_valid) {
-                    const { data: existing } = await serviceClient.from("people").select("id").eq("cpf", row.cpf_valid).single();
-                    if (existing) { personId = existing.id; peopleReused++; }
-                    else { commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; processed++; continue; }
-                  } else {
-                    commitErrors.push({ row_number: row.row_number, error_code: "PERSON_CREATE_FAILED", error_message: personErr.message }); rowsFailed++; processed++; continue;
+                if (row.cpf_valid) {
+                  const { data: lookupData } = await serviceClient
+                    .from("people")
+                    .select("id")
+                    .eq("cpf", row.cpf_valid)
+                    .maybeSingle();
+
+                  if (lookupData) {
+                    personId = lookupData.id;
+                    peopleReused++;
                   }
-                } else {
-                  personId = newPerson.id; peopleCreated++;
-                  if (row.cpf_valid) people.byCpf.set(row.cpf_valid, personId!);
+                } else if (row.birth_date) {
+                  const { data: lookupData } = await serviceClient
+                    .from("people")
+                    .select("id")
+                    .eq("full_name", row.full_name)
+                    .eq("birth_date", row.birth_date)
+                    .eq("gender", row.gender)
+                    .eq("institution_id", instId)
+                    .is("cpf", null)
+                    .maybeSingle();
+
+                  if (lookupData) {
+                    personId = lookupData.id;
+                    peopleReused++;
+                  }
+                }
+              }
+
+              if (!personId) {
+                processedPersonKeys.add(personKey);
+
+                // Antes de criar sem CPF válido, tenta reaproveitar por Nome + Data + Sexo + Escola.
+                if (!row.cpf_valid && row.birth_date) {
+                  const { data: existingNoCpf } = await serviceClient
+                    .from("people")
+                    .select("id")
+                    .eq("full_name", row.full_name)
+                    .eq("birth_date", row.birth_date)
+                    .eq("gender", row.gender)
+                    .eq("institution_id", instId)
+                    .is("cpf", null)
+                    .maybeSingle();
+
+                  if (existingNoCpf) {
+                    personId = existingNoCpf.id;
+                    peopleReused++;
+                  }
+                }
+
+                if (!personId) {
+                  const { data: newPerson, error: personErr } = await serviceClient.from("people").insert({
+                    full_name: row.full_name,
+                    birth_date: row.birth_date,
+                    gender: row.gender,
+                    cpf: row.cpf_valid,
+                    rg: row.rg,
+                    email: row.email,
+                    phone: row.phone,
+                    institution_id: instId,
+                    disability_type: row.pcd,
+                  }).select("id").single();
+
+                  if (personErr) {
+                    if (row.cpf_valid) {
+                      const { data: existing } = await serviceClient
+                        .from("people")
+                        .select("id")
+                        .eq("cpf", row.cpf_valid)
+                        .maybeSingle();
+
+                      if (existing) {
+                        personId = existing.id;
+                        peopleReused++;
+                      } else {
+                        commitErrors.push({
+                          row_number: row.row_number,
+                          error_code: "PERSON_CREATE_FAILED",
+                          error_message: personErr.message,
+                        });
+                        rowsFailed++;
+                        processed++;
+                        continue;
+                      }
+                    } else {
+                      commitErrors.push({
+                        row_number: row.row_number,
+                        error_code: "PERSON_CREATE_FAILED",
+                        error_message: personErr.message,
+                      });
+                      rowsFailed++;
+                      processed++;
+                      continue;
+                    }
+                  } else {
+                    personId = newPerson.id;
+                    peopleCreated++;
+                    if (row.cpf_valid) people.byCpf.set(row.cpf_valid, personId!);
+                  }
                 }
               }
             } else {
