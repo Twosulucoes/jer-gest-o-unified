@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import { syncOfflineQueue } from "@/lib/offlineQueue";
+import { syncVoucherQueue } from "@/lib/voucherOffline";
+import { syncIncidentQueue } from "@/lib/incidentOffline";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -36,18 +38,34 @@ export function OfflineSyncManager() {
       isSyncingRef.current = true;
         try {
           await checkStorageQuota();
-          const result = await syncOfflineQueue();
+
+          const [mealResult, voucherResult, incidentResult] = await Promise.all([
+            syncOfflineQueue(),
+            syncVoucherQueue(),
+            syncIncidentQueue(),
+          ]);
+
           if (!isMounted) return;
-          
-          if (result.count > 0) {
-            toast.success(`${result.count} registro(s) sincronizados com sucesso.`, {
+
+          const totalSynced = mealResult.count + voucherResult.count + incidentResult.synced;
+          if (totalSynced > 0) {
+            toast.success(`${totalSynced} registro(s) sincronizados com sucesso.`, {
               description: "Os dados coletados offline foram enviados ao servidor."
             });
           }
-          if (result.errors && result.errors > 0) {
-            toast.error(`Falha ao sincronizar ${result.errors} registro(s).`, {
+
+          if (mealResult.errors && mealResult.errors > 0) {
+            toast.error(`Falha ao sincronizar ${mealResult.errors} registro(s) de refeição.`, {
               description: "Verifique a Central de Conflitos no menu PWA."
             });
+          }
+          if (voucherResult.conflicts > 0) {
+            toast.warning(`${voucherResult.conflicts} voucher(s) com conflito.`, {
+              description: "Verifique a Central de Conflitos no menu PWA."
+            });
+          }
+          if (incidentResult.failed > 0) {
+            console.warn(`[OfflineSyncManager] ${incidentResult.failed} incidente(s) falharam ao sincronizar.`);
           }
         } catch (error) {
           console.error("Sync error:", error);
