@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/review-kpi-screen-KbZno",
-  "commit": "362490f6",
-  "commitFull": "362490f6b9b3b42ca963f80bf39c2e2b2f26c99d",
-  "buildDate": "2026-05-16T01:44:45.787Z",
+  "branch": "claude/audit-admin-dashboard-8Oody",
+  "commit": "02b3917d",
+  "commitFull": "02b3917d63de2d0df1fd57cff663da13c5f5de49",
+  "buildDate": "2026-05-16T12:42:54.891Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }

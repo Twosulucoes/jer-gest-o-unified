@@ -1,15 +1,11 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Database } from "@/integrations/supabase/types";
 import {
   Users, UserCheck, ShieldCheck, Bus, UtensilsCrossed, Building, Trophy,
-  CheckCircle2, AlertTriangle, Clock, TrendingUp,
+  AlertTriangle, Clock,
   Upload, UsersRound, ScanLine, Navigation, ClipboardList, CalendarDays, KeyRound,
-  RefreshCw, Bed, Truck, CalendarClock, Calendar, Gavel, Layers, ClipboardCheck,
-  LayoutDashboard, MapPin
+  RefreshCw, Gavel, ClipboardCheck, MapPin
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,12 +15,10 @@ import { useActiveEventId, useEventContext } from "@/contexts/EventContext";
 import { useDashboardData } from "./relatorios/useDashboardData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
-import { DashboardQuickActions } from "@/components/admin/DashboardQuickActions";
 import { DashboardProgressCard } from "@/components/admin/DashboardProgressCard";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -76,20 +70,7 @@ export default function DashboardPage() {
   const { activeEvent } = useEventContext();
   const [showAllDel, setShowAllDel] = useState(false);
 
-  const visibleActions = quickActions.filter((a) => a.roles.some((r) => hasRole(r)));
-
-  const { data: events = [] } = useQuery({
-    queryKey: ["events"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("events").select("*").order("year", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId, null); // Pass null for stageId to always show global view
-
-  const selectedEvent = events.find(e => e.id === eventId);
+  const { data, isLoading, refetchAll, lastUpdated } = useDashboardData(eventId, null);
   const r = data.resumo;
   const pct = (n: number, t: number) => (t > 0 ? Math.round((n / t) * 100) : 0);
 
@@ -97,8 +78,6 @@ export default function DashboardPage() {
     await refetchAll();
     toast.success("Dados atualizados");
   };
-
-  const delegationsToShow = showAllDel ? data.credenciamento.by_delegation : data.credenciamento.by_delegation.slice(0, 10);
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -115,9 +94,9 @@ export default function DashboardPage() {
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
-          {selectedEvent && (
-            <Badge variant={selectedEvent.status === "active" ? "success" : "outline"} className="text-xs">
-              {selectedEvent.status === "active" ? "Ativo" : selectedEvent.status === "draft" ? "Rascunho" : selectedEvent.status}
+          {activeEvent && (
+            <Badge variant={activeEvent.status === "active" ? "success" : "outline"} className="text-xs">
+              {activeEvent.status === "active" ? "Ativo" : activeEvent.status === "draft" ? "Rascunho" : activeEvent.status}
             </Badge>
           )}
         </div>
@@ -144,11 +123,11 @@ export default function DashboardPage() {
               loading={isLoading}
             />
             <AppKPI icon={Trophy} label="Partidas" value={r.matches_total}
-              sub={`${r.matches_done} concluídas`}
+              sub={`${r.matches_done} concluídas · ${r.matches_today} hoje`}
               loading={isLoading}
             />
-            <AppKPI icon={Gavel} label="Árbitros" value={r.referees_total}
-              sub={r.referees_assigned > 0 ? `${r.referees_assigned} designados no evento` : "Nenhum designado"}
+            <AppKPI icon={Gavel} label="Árbitros" value={r.referees_assigned}
+              sub={`de ${r.referees_total} cadastrados`}
               loading={isLoading}
               className="bg-accent/5 border-accent/10"
             />
@@ -158,6 +137,7 @@ export default function DashboardPage() {
             />
             <AppKPI icon={Building} label="Alojamento" value={`${r.lodging_occupied}/${r.lodging_capacity}`}
               sub={`${pct(r.lodging_occupied, r.lodging_capacity)}% ocupação`}
+              alert={r.lodging_capacity > 0 && pct(r.lodging_occupied, r.lodging_capacity) > 85}
               loading={isLoading}
             />
             <AppKPI icon={Bus} label="Transporte" value={r.transport_trips}
@@ -190,7 +170,7 @@ export default function DashboardPage() {
               icon={MapPin} 
               label="Vínculos por Etapa" 
               value={data.inscricoes.total_etapas}
-              sub={`${data.inscricoes.total_etapas < r.athletes_total ? "Existem atletas sem etapa" : "Todos atletas vinculados"}`}
+              sub={`em ${data.inscricoes.by_stage.filter(s => s.count > 0).length} etapa(s) ativas`}
               loading={isLoading}
             />
 
@@ -334,6 +314,31 @@ export default function DashboardPage() {
                 percentage: s.pct
               }))}
             />
+            {!isLoading && data.competicao.today.length > 0 && (
+              <Card>
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> Hoje — {data.competicao.today.length} partida{data.competicao.today.length !== 1 ? "s" : ""}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto">
+                    {data.competicao.today.map(m => (
+                      <div key={m.id} className="flex items-center gap-2 text-[11px]">
+                        <span className="text-muted-foreground tabular-nums w-9 shrink-0">{m.start_time?.slice(0, 5) ?? "—:—"}</span>
+                        <span className="flex-1 font-medium truncate">{m.sport_name}</span>
+                        <Badge
+                          variant={m.status === "completed" || m.status === "finished" ? "success" : m.status === "ongoing" ? "default" : "outline"}
+                          className="text-[9px] h-4 px-1.5 shrink-0"
+                        >
+                          {m.status === "completed" || m.status === "finished" ? "Concluída" : m.status === "ongoing" ? "Em andamento" : "Ag."}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Alimentação */}
@@ -352,7 +357,7 @@ export default function DashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                       <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
                       <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
                       />
                       <Legend iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 10 }} />
@@ -364,6 +369,19 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+            {data.alimentacao.by_delegation.length > 0 && (
+              <DashboardProgressCard
+                title="Refeições por Delegação"
+                isLoading={isLoading}
+                items={data.alimentacao.by_delegation.slice(0, 10).map((d, i) => ({
+                  id: `${d.name}-${i}`,
+                  name: d.name,
+                  current: d.total,
+                  total: r.meals_total,
+                  percentage: r.meals_total > 0 ? Math.round((d.total / r.meals_total) * 100) : 0
+                }))}
+              />
+            )}
           </div>
         </section>
       </div>
