@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/review-pwa-offline-mode-6oNGq",
-  "commit": "fd764d7a",
-  "commitFull": "fd764d7a977781f81262ffa9884f99ab3c7aca8c",
-  "buildDate": "2026-05-15T23:40:53.606Z",
+  "branch": "claude/review-kpi-screen-KbZno",
+  "commit": "362490f6",
+  "commitFull": "362490f6b9b3b42ca963f80bf39c2e2b2f26c99d",
+  "buildDate": "2026-05-16T01:44:45.787Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }

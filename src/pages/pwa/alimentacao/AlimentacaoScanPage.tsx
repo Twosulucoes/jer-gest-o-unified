@@ -365,8 +365,7 @@ export default function AlimentacaoScanPage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, activeEventId, stageId, today, consumptionCount, totalToday]);
+  }, [userId, activeEventId, stageId, today, consumptionCount]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
@@ -1164,9 +1163,8 @@ export default function AlimentacaoScanPage() {
           <KpiCard label="Total Geral" value={totalToday} tone="default" large />
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <KpiCard label="Janela" value={consumptionCount} tone="blue" />
-          <KpiCard label="Hoje" value={totalToday} tone="default" />
           <KpiCard label="OK" value={telemetry.ok} tone="green" />
           <KpiCard
             label="Erro"
