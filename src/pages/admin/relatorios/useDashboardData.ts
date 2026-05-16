@@ -45,6 +45,7 @@ export interface DashboardData {
     matches_total: number;
     matches_done: number;
     matches_published: number;
+    matches_today: number;
     meals_total: number;
     meals_today: number;
     lodging_capacity: number;
@@ -90,7 +91,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("participants")
-            .select("id, credentialed_at, delegation_id", { count: "exact" })
+            .select("id, credentialed_at, delegation_id, participant_type", { count: "exact" })
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
           if (stageId) {
@@ -313,26 +314,14 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
       },
-      // 14: athletes count
-      {
-        queryKey: ["dash3", "athletes_count", eventId],
-        enabled,
-        staleTime: STALE,
-        queryFn: () => safe(async () => {
-          const query = supabase.from("participants").select("id", { count: "exact", head: true }).eq("participant_type", "athlete");
-          if (eventId) query.eq("event_id", eventId);
-          const { count } = await query;
-          return count ?? 0;
-        }, 0),
-      },
     ],
   });
 
   const isLoading = queries.some((q) => q.isLoading);
   
   const [
-    participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied, 
-    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes, athletesTotal
+    participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied,
+    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes
   ] = queries.map((q) => q.data) as [
     { list: any[]; totalCount: number },
     { list: any[]; totalCount: number },
@@ -348,13 +337,13 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     { id: string; name: string }[],
     { list: any[]; totalCount: number },
     { list: any[]; totalCount: number },
-    number,
   ];
 
 
   // Fallbacks defensivos
   const P = participantsRes?.list ?? [];
   const P_total = participantsRes?.totalCount ?? 0;
+  const athletesTotal = P.filter((p: any) => p.participant_type === "athlete").length;
   const C = credentialsRes?.list ?? [];
   const C_total = credentialsRes?.totalCount ?? 0;
   const D = delegations ?? [];
@@ -476,9 +465,10 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // `credentialed_at` ainda alimenta o gráfico temporal credDaily abaixo
   // (granularidade diária), mas não a contagem absoluta.
   const activeCreds = C.filter((c) => c.status === "active");
-  const credentialed = new Set(
+  const credentialedIds = new Set(
     activeCreds.map((c) => c.participant_id).filter((x): x is string => !!x)
-  ).size;
+  );
+  const credentialed = credentialedIds.size;
   const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
   const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
 
@@ -500,7 +490,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     const did = p.delegation_id ?? "__sem__";
     const cur = byDelTotal.get(did) ?? { total: 0, cred: 0 };
     cur.total += 1;
-    if (p.credentialed_at) cur.cred += 1;
+    if (credentialedIds.has(p.id)) cur.cred += 1;
     byDelTotal.set(did, cur);
   }
   const byDelegation: DelegationProgressRow[] = [...byDelTotal.entries()]
@@ -634,13 +624,14 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   const data: DashboardData = {
     resumo: {
       participants_total: P_total || P.length,
-      athletes_total: athletesTotal ?? 0,
+      athletes_total: athletesTotal,
       credentialed,
       credentials_active: C_total || activeCreds.length,
       credentials_today: credToday,
       matches_total: MA_total || MA.length,
       matches_done: matchesDone,
       matches_published: matchesPublished,
+      matches_today: todayMatches.length,
       meals_total: consumptionsTotal || consumptions.length,
       meals_today: mealsToday,
       lodging_capacity: LU.reduce((s, u) => s + (u.capacity ?? 0), 0),
@@ -679,5 +670,9 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     ]);
   };
 
-  return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
+  const allQueriesForTs = [...queries, ...dependent];
+  const latestTs = allQueriesForTs.reduce((max, q) => Math.max(max, q.dataUpdatedAt ?? 0), 0);
+  const lastUpdated = latestTs > 0 ? new Date(latestTs) : new Date();
+
+  return { data, isLoading: isLoadingAll, refetchAll, lastUpdated };
 }
