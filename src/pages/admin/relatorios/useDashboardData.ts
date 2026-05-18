@@ -314,14 +314,43 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           return { list: data ?? [], totalCount: count ?? 0 };
         }, { list: [], totalCount: 0 }),
       },
+      // 14: athletes count — COUNT server-side para evitar truncamento do limite de 1000 linhas do PostgREST
+      {
+        queryKey: ["dash3", "athletes_count", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participants")
+            .select("id", { count: "exact", head: true })
+            .eq("participant_type", "athlete");
+          if (eventId) query.eq("event_id", eventId);
+          const { count } = await query;
+          return count ?? 0;
+        }, 0),
+      },
+      // 15: credenciados count — COUNT server-side (participant_credentials ativas distintas)
+      {
+        queryKey: ["dash3", "credentialed_count", eventId],
+        enabled,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const query = supabase.from("participant_credentials")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "active");
+          if (eventId) query.eq("event_id", eventId);
+          const { count } = await query;
+          return count ?? 0;
+        }, 0),
+      },
     ],
   });
 
   const isLoading = queries.some((q) => q.isLoading);
-  
+
   const [
     participantsRes, credentialsRes, delegations, mealWindows, mealTypes, lodgingUnits, lodgingOccupied,
-    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes
+    tripsRes, vehicles, sportEvents, matchesRes, eventStages, pEventStagesRes, pSportEventsRes,
+    athletesCountRes, credentialedCountRes
   ] = queries.map((q) => q.data) as [
     { list: any[]; totalCount: number },
     { list: any[]; totalCount: number },
@@ -337,13 +366,16 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
     { id: string; name: string }[],
     { list: any[]; totalCount: number },
     { list: any[]; totalCount: number },
+    number,
+    number,
   ];
 
 
   // Fallbacks defensivos
   const P = participantsRes?.list ?? [];
   const P_total = participantsRes?.totalCount ?? 0;
-  const athletesTotal = P.filter((p: any) => p.participant_type === "athlete").length;
+  // athletesTotal usa COUNT server-side (query 14) para evitar truncamento pelo limite de 1000 linhas do PostgREST
+  const athletesTotal = (athletesCountRes as number) ?? 0;
   const C = credentialsRes?.list ?? [];
   const C_total = credentialsRes?.totalCount ?? 0;
   const D = delegations ?? [];
@@ -468,7 +500,8 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   const credentialedIds = new Set(
     activeCreds.map((c) => c.participant_id).filter((x): x is string => !!x)
   );
-  const credentialed = credentialedIds.size;
+  // credentialed usa COUNT server-side (query 15) para evitar truncamento pelo limite de 1000 linhas do PostgREST
+  const credentialed = (credentialedCountRes as number) ?? credentialedIds.size;
   const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
   const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
 
