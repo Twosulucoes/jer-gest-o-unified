@@ -1,4 +1,5 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const STALE = 30_000; // Reduzido de 5min para 30s para sincronia com auditoria realtime
@@ -482,6 +483,24 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   const refereesTotal = (dependent[3]?.data ?? 0) as number;
   const refereesAssigned = (dependent[4]?.data ?? 0) as number;
 
+  // IDs únicos dos participantes que consumiram refeições
+  const consumptionParticipantIds = useMemo(
+    () => [...new Set(consumptions.map((c: any) => c.participant_id as string).filter(Boolean))],
+    [consumptions]
+  );
+
+  // Busca a delegação APENAS dos participantes que consumiram, sem o limite de 10k
+  const { data: mealParticipantDels = [] } = useQuery({
+    queryKey: ["dash3", "meal_participant_dels", eventId, consumptionParticipantIds.length],
+    enabled: consumptionParticipantIds.length > 0,
+    staleTime: STALE,
+    queryFn: () => safe(async () => {
+      const { data } = await supabase.from("participants")
+        .select("id, delegation_id")
+        .in("id", consumptionParticipantIds);
+      return (data ?? []) as { id: string; delegation_id: string | null }[];
+    }, [] as { id: string; delegation_id: string | null }[]),
+  });
 
   const isLoadingAll = isLoading || dependent.some((q) => q.isLoading);
 
@@ -563,8 +582,8 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       return out;
     });
 
-  // meals by delegation
-  const partDel = new Map(P.map((p) => [p.id, p.delegation_id] as const));
+  // meals by delegation — usa mealParticipantDels (só quem consumiu) para evitar truncamento pelo limit(10k)
+  const partDel = new Map(mealParticipantDels.map((p) => [p.id, p.delegation_id] as const));
   const mealByDel = new Map<string, number>();
   for (const c of consumptions) {
     const did = partDel.get(c.participant_id) ?? "__sem__";
