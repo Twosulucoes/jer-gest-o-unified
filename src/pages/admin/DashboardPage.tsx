@@ -157,11 +157,11 @@ export default function DashboardPage() {
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <AppKPI 
-              icon={ClipboardCheck} 
-              label="Inscrições em Provas" 
+            <AppKPI
+              icon={ClipboardCheck}
+              label="Inscrições em Provas"
               value={data.inscricoes.total_provas}
-              sub={`${pct(data.inscricoes.total_provas, r.athletes_total)}% média por atleta`}
+              sub={`${r.athletes_total > 0 ? (data.inscricoes.total_provas / r.athletes_total).toFixed(1) : "—"} provas/atleta`}
               loading={isLoading}
               className="bg-blue-500/5 border-blue-500/10"
             />
@@ -222,8 +222,8 @@ export default function DashboardPage() {
                 id: s.id,
                 name: s.name,
                 current: s.count,
-                total: data.inscricoes.total_etapas,
-                percentage: data.inscricoes.total_etapas > 0 ? Math.round((s.count / data.inscricoes.total_etapas) * 100) : 0
+                total: r.participants_total,
+                percentage: r.participants_total > 0 ? Math.round((s.count / r.participants_total) * 100) : 0
               }))}
             />
 
