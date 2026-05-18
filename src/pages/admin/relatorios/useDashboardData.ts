@@ -92,7 +92,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         queryFn: () => safe(async () => {
           const query = supabase.from("participants")
             .select("id, credentialed_at, delegation_id, participant_type", { count: "exact" })
-            .limit(5000);
+            .limit(10000);
           if (eventId) query.eq("event_id", eventId);
           if (stageId) {
             // Se houver stageId, filtramos participantes vinculados a esta etapa
@@ -294,7 +294,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const query = supabase.from("participant_event_stages" as any).select("id, event_stage_id", { count: "exact" }).limit(10000);
+          const query = supabase.from("participant_event_stages" as any).select("id, event_stage_id", { count: "exact" }).limit(25000);
           if (eventId) (query as any).eq("event_id", eventId);
           const { data, count } = await query;
           return { list: data ?? [], totalCount: count ?? 0 };
@@ -374,7 +374,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           const { data, count } = await supabase.from("meal_consumptions")
             .select("id, meal_window_id, consumed_at, participant_id", { count: "exact" })
             .in("meal_window_id", windowIds)
-            .limit(5000);
+            .limit(15000);
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
         }, { list: [], totalCount: 0 }),
       },
