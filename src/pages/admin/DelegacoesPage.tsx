@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
-import { Plus, Pencil, Users, Eye, Search, Layers, ArrowUp, ArrowDown, ArrowUpDown, FolderOpen } from "lucide-react";
+import { Plus, Pencil, Users, Eye, Search, Layers, ArrowUp, ArrowDown, ArrowUpDown, FolderOpen, Upload } from "lucide-react";
 import { Link, useSearchParams, useParams } from "react-router-dom";
 import { useStageParticipantFilter } from "@/hooks/useStageParticipantFilter";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -19,6 +19,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import DelegationFormDialog, { type DelegationFormValues } from "@/components/admin/DelegationFormDialog";
+import ImportarChefesDialog from "@/components/admin/ImportarChefesDialog";
 import { DataPagination } from "@/components/ui/data-pagination";
 import ExportButton from "@/components/admin/ExportButton";
 import PdfFieldsPicker, { type PdfFieldOption } from "@/components/admin/PdfFieldsPicker";
@@ -41,6 +42,7 @@ export default function DelegacoesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDelegation, setEditingDelegation] = useState<Tables<"delegations"> | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 350);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -656,6 +658,17 @@ export default function DelegacoesPage() {
           />
           {canWrite && (
             <Button
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              disabled={!selectedEventId}
+              className="w-full sm:w-auto"
+            >
+              <Upload className="h-4 w-4 mr-1.5" />
+              Importar Chefes
+            </Button>
+          )}
+          {canWrite && (
+            <Button
               onClick={() => { setEditingDelegation(null); setDialogOpen(true); }}
               disabled={!events.length}
               className="w-full sm:w-auto"
@@ -938,6 +951,13 @@ export default function DelegacoesPage() {
         events={events}
         onSubmit={handleSubmit}
         isPending={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <ImportarChefesDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        eventId={selectedEventId ?? ""}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["delegations-page"] })}
       />
     </div>
   );
