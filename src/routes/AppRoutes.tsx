@@ -235,6 +235,7 @@ const PublicResultsPage = lazy(() => import("../pages/public/PublicResultsPage")
 const PublicMedalTablePage = lazy(() => import("../pages/public/PublicMedalTablePage"));
 const AtletaPublicProfilePage = lazy(() => import("../pages/public/AtletaPublicProfilePage"));
 const EntregaTecnicaPage = lazy(() => import("../pages/public/EntregaTecnicaPage"));
+const SubstituicaoSolicitarPage = lazy(() => import("../pages/public/SubstituicaoSolicitarPage"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 
 const PageLoader = () => (
@@ -413,7 +414,7 @@ export const AppRoutes = () => (
         <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
         <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
         <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
-        <Route path="substituicao" element={<ProtectedRoute allowedRoles={["delegacao", "admin", "super_admin", "coordenacao_tecnica"]}><SubstituicaoPage /></ProtectedRoute>} />
+        <Route path="substituicao" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "coordenacao_tecnica"]}><SubstituicaoPage /></ProtectedRoute>} />
         <Route path="substituicao/admin" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "coordenacao_tecnica"]}><SubstituicaoAdminPage /></ProtectedRoute>} />
 
         <Route path="registros" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegistrosPage /></ProtectedRoute>} />
@@ -534,6 +535,7 @@ export const AppRoutes = () => (
       <Route path="/quadro-medalhas" element={<Navigate to="/login" replace />} />
       <Route path="/atleta/:id" element={<AtletaPublicProfilePage />} />
       <Route path="/entrega-tecnica" element={<EntregaTecnicaPage />} />
+      <Route path="/substituicao/solicitar" element={<SubstituicaoSolicitarPage />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
