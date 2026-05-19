@@ -29,4 +29,4 @@ dist-ssr
 .env.*.local
 .env.sync
 supabase/.temp/
-.claude/settings.local.json
+.claude/
