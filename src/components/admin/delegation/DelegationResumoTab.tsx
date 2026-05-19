@@ -1,7 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, UserCheck, IdCard, Trophy, BedDouble, UtensilsCrossed, Bus, Mail, Phone, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Users, UserCheck, IdCard, Trophy, BedDouble, UtensilsCrossed, Bus, Mail, Phone, User, Pencil, Save, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   delegation: {
@@ -23,6 +28,57 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function DelegationResumoTab({ delegation, institution, event }: Props) {
+  const queryClient = useQueryClient();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    chief_name: delegation.chief_name ?? "",
+    chief_phone: delegation.chief_phone ?? "",
+    chief_email: delegation.chief_email ?? "",
+    notes: delegation.notes ?? "",
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: typeof editForm) => {
+      const { error } = await supabase
+        .from("delegations")
+        .update({
+          chief_name: values.chief_name || null,
+          chief_phone: values.chief_phone || null,
+          chief_email: values.chief_email || null,
+          notes: values.notes || null,
+        })
+        .eq("id", delegation.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["delegation_detail", delegation.id] });
+      toast.success("Chefe de delegação atualizado.");
+      setIsEditing(false);
+    },
+    onError: (err: Error) => {
+      toast.error(`Erro ao atualizar: ${err.message}`);
+    },
+  });
+
+  function handleEditClick() {
+    setEditForm({
+      chief_name: delegation.chief_name ?? "",
+      chief_phone: delegation.chief_phone ?? "",
+      chief_email: delegation.chief_email ?? "",
+      notes: delegation.notes ?? "",
+    });
+    setIsEditing(true);
+  }
+
+  function handleCancel() {
+    setIsEditing(false);
+  }
+
+  function handleSave() {
+    updateMutation.mutate(editForm);
+  }
+
   const { data: participants = [] } = useQuery({
     queryKey: ["delegation_participants_summary", delegation.id],
     queryFn: async () => {
@@ -148,7 +204,23 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
         {/* Dados da delegação */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Dados da Delegação</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Dados da Delegação</CardTitle>
+              {!isEditing ? (
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleEditClick} title="Editar chefe de delegação">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:text-green-700" onClick={handleSave} disabled={updateMutation.isPending} title="Salvar">
+                    <Save className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive/80" onClick={handleCancel} disabled={updateMutation.isPending} title="Cancelar">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <Row label="Instituição" value={institution?.name ?? "—"} />
@@ -160,10 +232,66 @@ export default function DelegationResumoTab({ delegation, institution, event }: 
             )}
             <Row label="Evento" value={event ? `${event.name} (${event.year})` : undefined} />
             <Row label="Cadastrada em" value={new Date(delegation.created_at).toLocaleDateString("pt-BR")} />
-            {delegation.chief_name && <Row label="Chefe" value={delegation.chief_name} icon={<User className="h-3.5 w-3.5" />} />}
-            {delegation.chief_email && <Row label="E-mail" value={delegation.chief_email} icon={<Mail className="h-3.5 w-3.5" />} />}
-            {delegation.chief_phone && <Row label="Telefone" value={delegation.chief_phone} icon={<Phone className="h-3.5 w-3.5" />} />}
-            {delegation.notes && <Row label="Observações" value={delegation.notes} />}
+            {isEditing ? (
+              <div className="space-y-3 pt-1">
+                <div className="space-y-1">
+                  <Label htmlFor="chief_name" className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                    <User className="h-3.5 w-3.5" />Chefe
+                  </Label>
+                  <Input
+                    id="chief_name"
+                    value={editForm.chief_name}
+                    onChange={e => setEditForm(f => ({ ...f, chief_name: e.target.value }))}
+                    placeholder="Nome do chefe de delegação"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="chief_phone" className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                    <Phone className="h-3.5 w-3.5" />Telefone
+                  </Label>
+                  <Input
+                    id="chief_phone"
+                    value={editForm.chief_phone}
+                    onChange={e => setEditForm(f => ({ ...f, chief_phone: e.target.value }))}
+                    placeholder="Telefone do chefe"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="chief_email" className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                    <Mail className="h-3.5 w-3.5" />E-mail
+                  </Label>
+                  <Input
+                    id="chief_email"
+                    type="email"
+                    value={editForm.chief_email}
+                    onChange={e => setEditForm(f => ({ ...f, chief_email: e.target.value }))}
+                    placeholder="E-mail do chefe"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="notes" className="text-muted-foreground text-xs">
+                    Observações
+                  </Label>
+                  <Input
+                    id="notes"
+                    value={editForm.notes}
+                    onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder="Observações"
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                {delegation.chief_name && <Row label="Chefe" value={delegation.chief_name} icon={<User className="h-3.5 w-3.5" />} />}
+                {delegation.chief_email && <Row label="E-mail" value={delegation.chief_email} icon={<Mail className="h-3.5 w-3.5" />} />}
+                {delegation.chief_phone && <Row label="Telefone" value={delegation.chief_phone} icon={<Phone className="h-3.5 w-3.5" />} />}
+                {delegation.notes && <Row label="Observações" value={delegation.notes} />}
+              </>
+            )}
           </CardContent>
         </Card>
 
