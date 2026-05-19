@@ -58,6 +58,8 @@ const AjudaChatPage = lazy(() => import("../pages/admin/AjudaChatPage"));
 const AjudaManualPage = lazy(() => import("../pages/admin/AjudaManualPage"));
 const CompeticaoPartidaDetalhePage = lazy(() => import("../pages/admin/CompeticaoPartidaDetalhePage"));
 const SubstituicoesPage = lazy(() => import("../pages/admin/SubstituicoesPage"));
+const SubstituicaoPage = lazy(() => import("../pages/substituicao/SubstituicaoPage"));
+const SubstituicaoAdminPage = lazy(() => import("../pages/substituicao/SubstituicaoAdminPage"));
 const CompeticaoLancamentoScorePage = lazy(() => import("../pages/admin/CompeticaoLancamentoScorePage"));
 const CompeticaoLancamentoSetsPage = lazy(() => import("../pages/admin/CompeticaoLancamentoSetsPage"));
 const CompeticaoLancamentoCombatPage = lazy(() => import("../pages/admin/CompeticaoLancamentoCombatPage"));
@@ -411,6 +413,9 @@ export const AppRoutes = () => (
         <Route path="links/novo" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
         <Route path="links/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkFormPage /></ProtectedRoute>} />
         <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
+        <Route path="substituicao" element={<ProtectedRoute allowedRoles={["delegacao", "admin", "super_admin", "coordenacao_tecnica"]}><SubstituicaoPage /></ProtectedRoute>} />
+        <Route path="substituicao/admin" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "coordenacao_tecnica"]}><SubstituicaoAdminPage /></ProtectedRoute>} />
+
         <Route path="registros" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegistrosPage /></ProtectedRoute>} />
         <Route path="registros/prestacao-contas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OscAccountabilityModule /></ProtectedRoute>} />
         <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />

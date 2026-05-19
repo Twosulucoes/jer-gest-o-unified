@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/fix-kpi-errors-pZhrU",
-  "commit": "d7f3401a",
-  "commitFull": "d7f3401a6827a5407858607646407854227ac65e",
-  "buildDate": "2026-05-18T10:48:12.905Z",
+  "branch": "claude/substitution-feature-9xelj",
+  "commit": "9b8d1eb3",
+  "commitFull": "9b8d1eb396a2b350f848e15ce5972794435d5067",
+  "buildDate": "2026-05-19T21:53:02.821Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
