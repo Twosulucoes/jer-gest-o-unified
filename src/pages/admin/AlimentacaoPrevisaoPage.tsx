@@ -103,19 +103,21 @@ export default function AlimentacaoPrevisaoPage() {
   });
 
   // 4. Fetch Real-time Consumption Counts for these windows
+  const windowIdsKey = windows.map(w => w.id).join(",");
   const { data: consumptionCounts = {} } = useQuery({
-    queryKey: ["meal_consumption_counts", windows.map(w => w.id)],
+    queryKey: ["meal_consumption_counts", windowIdsKey],
     queryFn: async () => {
       const windowIds = windows.map(w => w.id);
       if (!windowIds.length) return {};
-      
+
       const { data, error } = await supabase
         .from("meal_consumptions")
         .select("meal_window_id")
-        .in("meal_window_id", windowIds);
-      
+        .in("meal_window_id", windowIds)
+        .limit(50000);
+
       if (error) throw error;
-      
+
       const counts: Record<string, number> = {};
       data.forEach(c => {
         counts[c.meal_window_id] = (counts[c.meal_window_id] || 0) + 1;
