@@ -52,15 +52,33 @@ export function useStageDashboardData(stageId?: string | null) {
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const { data, error } = await supabase.from("participant_event_stages" as any)
-            .select("participant_id, participants(credentialed_at)")
+            .select("participant_id")
             .eq("event_stage_id", stageId!);
-          
+
           if (error) {
             console.error("Error fetching participants for stage dashboard:", error);
             throw error;
           }
-          return (data ?? []) as any[];
-        }, []),
+          const rows = (data ?? []) as any[];
+          const pIds = rows.map((r: any) => r.participant_id);
+
+          let credentialedCount = 0;
+          if (pIds.length > 0) {
+            const credSet = new Set<string>();
+            for (let i = 0; i < pIds.length; i += 200) {
+              const chunk = pIds.slice(i, i + 200);
+              const { data: creds } = await supabase
+                .from("participant_credentials")
+                .select("participant_id")
+                .in("participant_id", chunk)
+                .eq("status", "active");
+              for (const c of creds ?? []) credSet.add((c as any).participant_id);
+            }
+            credentialedCount = credSet.size;
+          }
+
+          return { rows, credentialedCount };
+        }, { rows: [], credentialedCount: 0 }),
       },
       {
         queryKey: ["stage_dash", "matches", stageId],
@@ -143,45 +161,59 @@ export function useStageDashboardData(stageId?: string | null) {
   const isLoading = queries.some((q) => q.isLoading);
   const refetchAll = async () => { await Promise.all(queries.map((q) => q.refetch())); };
 
-  const [participants, matches, lodgingUnits, lodgingOccupied, mealWindows, refereeIndisponibilities] =
-    queries.map((q) => q.data) as [any[], any[], any[], number, any[], any[]];
+  const [participantsResult, matches, lodgingUnits, lodgingOccupied, mealWindows, refereeIndisponibilities] =
+    queries.map((q) => q.data) as [{ rows: any[]; credentialedCount: number } | undefined, any[], any[], number, any[], any[]];
 
   const windowIds = (mealWindows ?? []).map(w => w.id);
 
   const consumptionQuery = useQueries({
     queries: [
       {
-        queryKey: ["stage_dash", "consumptions", stageId, windowIds.join(",")],
+        queryKey: ["stage_dash", "consumptions_total", stageId, windowIds.join(",")],
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data, error } = await supabase.from("meal_consumptions" as any)
-            .select("id, consumed_at, meal_window_id")
+          const { count, error } = await supabase.from("meal_consumptions" as any)
+            .select("id", { count: "exact", head: true })
             .in("meal_window_id", windowIds);
-          
           if (error) {
-            console.error("Error fetching meal consumptions for stage dashboard:", error);
+            console.error("Error fetching meal consumptions count:", error);
             throw error;
           }
-          return (data ?? []) as any[];
-        }, []),
-      }
+          return count ?? 0;
+        }, 0),
+      },
+      {
+        queryKey: ["stage_dash", "consumptions_today", stageId, windowIds.join(","), todayISO()],
+        enabled: enabled && windowIds.length > 0,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const today = todayISO();
+          const { count, error } = await supabase.from("meal_consumptions" as any)
+            .select("id", { count: "exact", head: true })
+            .in("meal_window_id", windowIds)
+            .gte("consumed_at", `${today}T00:00:00.000Z`)
+            .lt("consumed_at", `${today}T23:59:59.999Z`);
+          if (error) {
+            console.error("Error fetching today meal consumptions count:", error);
+            throw error;
+          }
+          return count ?? 0;
+        }, 0),
+      },
     ]
   });
 
-  const consumptions = consumptionQuery[0].data ?? [];
-  const isLoadingAll = isLoading || consumptionQuery[0].isLoading;
+  const mealsTotal = (consumptionQuery[0].data ?? 0) as number;
+  const mealsTodayCount = (consumptionQuery[1].data ?? 0) as number;
+  const isLoadingAll = isLoading || consumptionQuery.some((q) => q.isLoading);
 
-  const today = todayISO();
-  const P = participants ?? [];
+  const P = participantsResult?.rows ?? [];
+  const credentialed = participantsResult?.credentialedCount ?? 0;
   const MA = matches ?? [];
   const LU = lodgingUnits ?? [];
   const LO = lodgingOccupied ?? 0;
-  const C = consumptions ?? [];
-
-  const credentialed = P.filter(p => p.participants?.credentialed_at).length;
   const matchesDone = MA.filter(m => m.status === 'completed' || m.status === 'finished').length;
-  const mealsToday = C.filter(c => c.consumed_at?.slice(0, 10) === today).length;
 
   const sportAgg = new Map<string, { name: string; total: number; done: number }>();
   MA.forEach(m => {
@@ -203,6 +235,7 @@ export function useStageDashboardData(stageId?: string | null) {
     pct: v.total > 0 ? Math.round((v.done / v.total) * 100) : 0
   })).sort((a, b) => b.pct - a.pct);
 
+  const today = todayISO();
   const todayMatches: TodayMatchRow[] = MA
     .filter(m => m.match_date === today)
     .sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""))
@@ -220,8 +253,8 @@ export function useStageDashboardData(stageId?: string | null) {
       credentialed,
       matches_total: MA.length,
       matches_done: matchesDone,
-      meals_total: C.length,
-      meals_today: mealsToday,
+      meals_total: mealsTotal,
+      meals_today: mealsTodayCount,
       lodging_capacity: LU.reduce((acc, curr) => acc + (curr.capacity || 0), 0),
       lodging_occupied: LO,
       unhandled_indisponibilities: (refereeIndisponibilities ?? []).length

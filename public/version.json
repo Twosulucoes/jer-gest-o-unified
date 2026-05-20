@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/substitution-feature-9xelj",
-  "commit": "9b8d1eb3",
-  "commitFull": "9b8d1eb396a2b350f848e15ce5972794435d5067",
-  "buildDate": "2026-05-19T21:53:02.821Z",
+  "branch": "claude/add-food-consumption-records-WDObG",
+  "commit": "2219c1e2",
+  "commitFull": "2219c1e248bf166170067ab940a6c283e20b7b2c",
+  "buildDate": "2026-05-20T02:16:22.210Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }

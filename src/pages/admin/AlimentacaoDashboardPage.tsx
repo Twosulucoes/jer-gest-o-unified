@@ -101,8 +101,9 @@ export default function AlimentacaoDashboardPage() {
 
   // Participants with delegations
   const participantIds = useMemo(() => [...new Set(consumptions.map((c) => c.participant_id))], [consumptions]);
+  const participantIdsKey = useMemo(() => participantIds.slice().sort().join(","), [participantIds]);
   const { data: participants = [] } = useQuery({
-    queryKey: ["participants-dash", eventId, participantIds.length],
+    queryKey: ["participants-dash", eventId, participantIdsKey],
     queryFn: async () => {
       if (!participantIds.length) return [];
       const { data, error } = await supabase
@@ -139,25 +140,37 @@ export default function AlimentacaoDashboardPage() {
     [delegations]
   );
 
-  // Total participants in event (ou na etapa, se estamos em escopo de etapa)
-  const { data: eventTotalParticipants = 0 } = useQuery({
-    queryKey: ["total-participants-dash", eventId, stageId, stageParticipantIds?.size ?? -1],
+  // Total participants with needs_meals=true (denominator for "sem consumo" KPI)
+  const { data: totalParticipants = 0 } = useQuery({
+    queryKey: ["total-participants-meals-dash", eventId, stageId, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
-      if (isStageScoped) return stageParticipantIds?.size ?? 0;
+      if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
+        const ids = Array.from(stageParticipantIds);
+        let count = 0;
+        for (let i = 0; i < ids.length; i += 200) {
+          const chunk = ids.slice(i, i + 200);
+          const { count: c } = await supabase
+            .from("participants")
+            .select("id", { count: "exact", head: true })
+            .in("id", chunk)
+            .eq("needs_meals", true)
+            .eq("is_active", true);
+          count += c ?? 0;
+        }
+        return count;
+      }
+      if (isStageScoped) return 0;
       const { count, error } = await supabase
         .from("participants")
         .select("id", { count: "exact", head: true })
         .eq("event_id", eventId)
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("needs_meals", true);
       if (error) throw error;
       return count ?? 0;
     },
     enabled: !!eventId && (!isStageScoped || !!stageParticipantIds),
   });
-
-  const totalParticipants = isStageScoped
-    ? (stageParticipantIds?.size ?? 0)
-    : eventTotalParticipants;
 
   // Filtered consumptions — also apply stage participant filter when scoped
   const filteredConsumptions = useMemo(() => {
@@ -219,8 +232,13 @@ export default function AlimentacaoDashboardPage() {
       .slice(0, 10);
   }, [filteredConsumptions, participantDelegationMap, delegationNameMap]);
 
-  // Participants with zero consumptions today
-  const zeroConsumptionCount = totalParticipants - participantIds.length;
+  // Participants with zero consumptions today — usa filteredConsumptions para
+  // refletir os filtros aplicados (delegação/refeição) e não o conjunto bruto.
+  const consumingParticipantIds = useMemo(
+    () => new Set(filteredConsumptions.map((c) => c.participant_id)),
+    [filteredConsumptions]
+  );
+  const zeroConsumptionCount = Math.max(0, totalParticipants - consumingParticipantIds.size);
 
   // Export CSV
   const exportCSV = useCallback(() => {
