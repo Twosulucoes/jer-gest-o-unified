@@ -95,21 +95,18 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .limit(10000);
           if (eventId) query.eq("event_id", eventId);
           if (stageId) {
-            // Se houver stageId, filtramos participantes vinculados a esta etapa
-            const { data: stageParticipants } = await (supabase.from("event_stage_participants" as any) as any)
+            const { data: stageParticipants } = await supabase.from("participant_event_stages")
               .select("participant_id")
-              .eq("stage_id", stageId);
-            
+              .eq("event_stage_id", stageId);
+
             if (stageParticipants && stageParticipants.length > 0) {
-              query.in("id", stageParticipants.map((p: any) => p.participant_id));
-            } else if (stageId) {
-              // Se filtrou por etapa mas não há ninguém, retorna vazio
+              query.in("id", stageParticipants.map((p) => p.participant_id));
+            } else {
               return { list: [], totalCount: 0 };
             }
           }
           const { data, count, error } = await query;
           if (error) console.error("Error fetching participants:", error);
-          // Return both data and the exact count from the header
           return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
         }, { list: [], totalCount: 0 }),
       },
@@ -124,13 +121,12 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
             .limit(5000);
           if (eventId) query.eq("event_id", eventId);
           if (stageId) {
-            // Filtro por etapa via participantes
-            const { data: stageParticipants } = await (supabase.from("event_stage_participants" as any) as any)
+            const { data: stageParticipants } = await supabase.from("participant_event_stages")
               .select("participant_id")
-              .eq("stage_id", stageId);
-            
+              .eq("event_stage_id", stageId);
+
             if (stageParticipants && stageParticipants.length > 0) {
-              query.in("participant_id", stageParticipants.map((p: any) => p.participant_id));
+              query.in("participant_id", stageParticipants.map((p) => p.participant_id));
             } else {
               return { list: [], totalCount: 0 };
             }
@@ -185,7 +181,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       },
       // 5: lodging_units
       {
-        queryKey: ["dash3", "lodging_units", eventId],
+        queryKey: ["dash3", "lodging_units", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
@@ -214,7 +210,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       },
       // 7: transport_trips
       {
-        queryKey: ["dash3", "transport_trips", eventId],
+        queryKey: ["dash3", "transport_trips", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
@@ -229,7 +225,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       },
       // 8: transport_vehicles
       {
-        queryKey: ["dash3", "transport_vehicles", eventId],
+        queryKey: ["dash3", "transport_vehicles", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
@@ -243,7 +239,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       },
       // 9: sport_events + sports
       {
-        queryKey: ["dash3", "sport_events", eventId],
+        queryKey: ["dash3", "sport_events", eventId, stageId],
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {

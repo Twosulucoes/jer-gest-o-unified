@@ -174,6 +174,8 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
   ];
 
   // ── vw_consumo_completo ────────────────────────────────────────────────────
+  // PostgREST trunca em 1000 por padrão; com 20k+ consumos por evento isso
+  // mascarava o resumo. Usamos limit alto para garantir contagem correta.
   const completoQuery = useQuery({
     queryKey: [...queryKey, "completo"],
     enabled,
@@ -182,7 +184,8 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
         .from("vw_consumo_completo")
         .select("*")
         .eq("event_id", eventId)
-        .order("consumed_at", { ascending: false });
+        .order("consumed_at", { ascending: false })
+        .limit(50000);
 
       if (etapaId) q = q.eq("event_stage_id", etapaId);
       if (dataInicio) q = q.gte("janela_data", dataInicio);
