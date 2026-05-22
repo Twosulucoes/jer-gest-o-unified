@@ -57,11 +57,6 @@ type SportEventOption = {
   sport_name: string;
 };
 
-type StageOption = {
-  id: string;
-  name?: string | null;
-};
-
 type ConsumptionData = {
   meals: number;
   transport: number;
@@ -431,8 +426,51 @@ export default function VincularCredencialPage() {
     setDefaultStageName(null);
   };
 
+  const ensureParticipantInStage = async (participantId: string, stageId: string) => {
+    const { data: existingStage, error: existingStageError } = await supabase
+      .from("participant_event_stages")
+      .select("id")
+      .eq("participant_id", participantId)
+      .eq("event_stage_id", stageId)
+      .eq("event_id", activeEventId)
+      .maybeSingle();
+
+    if (existingStageError) throw existingStageError;
+
+    if (existingStage?.id) {
+      return existingStage.id;
+    }
+
+    const { data, error } = await supabase
+      .from("participant_event_stages")
+      .insert({
+        participant_id: participantId,
+        event_stage_id: stageId,
+        event_id: activeEventId!,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
   const handleLink = async (participant: ParticipantManualSearchRow) => {
     if (!scannedCode || !activeEventId) return;
+
+    let stageIdToUse = defaultStageId || activeStageId;
+
+    if (!stageIdToUse) {
+      await loadSportEventsAndStage();
+      stageIdToUse = defaultStageId || activeStageId;
+    }
+
+    if (!stageIdToUse) {
+      toast.error("Nenhuma etapa ativa encontrada. Abra a etapa correta antes de vincular.");
+      return;
+    }
 
     setLinking(true);
 
@@ -444,6 +482,8 @@ export default function VincularCredencialPage() {
       if (!session?.user) {
         throw new Error("Sessão expirada — faça login novamente.");
       }
+
+      await ensureParticipantInStage(participant.participant_id, stageIdToUse);
 
       const { data: existing } = await supabase
         .from("external_credentials")
@@ -486,12 +526,13 @@ export default function VincularCredencialPage() {
         throw error;
       }
 
-      toast.success("Credencial vinculada com sucesso!");
+      toast.success("Credencial vinculada e participante incluído na etapa atual!");
 
       if (navigator.vibrate) navigator.vibrate(200);
 
       handleReset();
     } catch (err: any) {
+      console.error(err);
       toast.error(`Erro ao vincular: ${err.message}`);
     } finally {
       setLinking(false);
@@ -595,37 +636,6 @@ export default function VincularCredencialPage() {
         status: "credentialed",
         needs_meals: true,
         credentialed_at: now,
-      })
-      .select("id")
-      .single();
-
-    if (error) throw error;
-
-    return data.id;
-  };
-
-  const ensureParticipantInStage = async (participantId: string, stageId: string) => {
-    const { data: existingStage, error: existingStageError } = await supabase
-      .from("participant_event_stages")
-      .select("id")
-      .eq("participant_id", participantId)
-      .eq("event_stage_id", stageId)
-      .eq("event_id", activeEventId)
-      .maybeSingle();
-
-    if (existingStageError) throw existingStageError;
-
-    if (existingStage?.id) {
-      return existingStage.id;
-    }
-
-    const { data, error } = await supabase
-      .from("participant_event_stages")
-      .insert({
-        participant_id: participantId,
-        event_stage_id: stageId,
-        event_id: activeEventId!,
-        status: "active",
       })
       .select("id")
       .single();
