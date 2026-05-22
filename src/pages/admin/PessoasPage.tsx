@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useEventContext } from "@/contexts/EventContext";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +19,22 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import { Search, UserPlus, Users, Loader2, ShieldAlert, Merge, Filter, Download, FileSpreadsheet, Eye, Info, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Search,
+  UserPlus,
+  Users,
+  Loader2,
+  ShieldAlert,
+  Merge,
+  Filter,
+  Download,
+  FileSpreadsheet,
+  Eye,
+  Info,
+  CheckCircle2,
+  XCircle,
+  ArrowRightLeft,
+} from "lucide-react";
 import { phoneMask } from "@/lib/phoneUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,6 +84,7 @@ export default function PessoasPage() {
   const { stageId } = useParams();
   const [searchParams] = useSearchParams();
   const { hasRole } = useAuth();
+  const { activeEventId } = useEventContext();
   const qc = useQueryClient();
   const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
 
@@ -77,13 +94,16 @@ export default function PessoasPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [stageDialogOpen, setStageDialogOpen] = useState(false);
+  const [personToStage, setPersonToStage] = useState<PersonRow | null>(null);
+  const [selectedStageId, setSelectedStageId] = useState("");
+
   useEffect(() => {
     const kind = searchParams.get("kind");
     if (kind === "eventual") setKindFilter("eventual");
     else if (kind === "participant") setKindFilter("participant");
   }, [searchParams]);
 
-  // Form states
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "">("");
@@ -97,6 +117,22 @@ export default function PessoasPage() {
   const [disabilityType, setDisabilityType] = useState("");
   const [personKind, setPersonKind] = useState<"participant" | "eventual">("participant");
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { data: stages = [], isLoading: stagesLoading } = useQuery({
+    queryKey: ["event-stages-for-person", activeEventId],
+    enabled: !!activeEventId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_stages")
+        .select("id, name, status")
+        .eq("event_id", activeEventId)
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
+
+      return data ?? [];
+    },
+  });
 
   const { data: people = [], isLoading } = useQuery({
     queryKey: ["people-central", search, statusFilter, kindFilter],
@@ -207,6 +243,82 @@ export default function PessoasPage() {
       if (e.message !== "Validação falhou") {
         toast({ title: "Erro", description: e.message, variant: "destructive" });
       }
+    },
+  });
+
+  const sendToStageMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) {
+        throw new Error("Nenhum evento ativo selecionado.");
+      }
+
+      if (!personToStage) {
+        throw new Error("Nenhuma pessoa selecionada.");
+      }
+
+      if (!selectedStageId) {
+        throw new Error("Selecione uma etapa.");
+      }
+
+      const { data: participant, error: participantError } = await supabase
+        .from("participants")
+        .select("id")
+        .eq("person_id", personToStage.id)
+        .eq("event_id", activeEventId)
+        .maybeSingle();
+
+      if (participantError) throw participantError;
+
+      if (!participant?.id) {
+        throw new Error(
+          "Essa pessoa ainda não tem inscrição neste evento. Primeiro crie a inscrição dela.",
+        );
+      }
+
+      const { data: existingStage, error: existingStageError } = await supabase
+        .from("participant_event_stages")
+        .select("id")
+        .eq("participant_id", participant.id)
+        .eq("event_stage_id", selectedStageId)
+        .eq("event_id", activeEventId)
+        .maybeSingle();
+
+      if (existingStageError) throw existingStageError;
+
+      if (existingStage?.id) {
+        return;
+      }
+
+      const { error } = await supabase
+        .from("participant_event_stages")
+        .insert({
+          participant_id: participant.id,
+          event_stage_id: selectedStageId,
+          event_id: activeEventId,
+          status: "active",
+        });
+
+      if (error) throw error;
+    },
+
+    onSuccess: () => {
+      toast({
+        title: "Pessoa enviada para a etapa",
+        description: "Agora essa pessoa já aparece como inscrita na etapa selecionada.",
+      });
+
+      setStageDialogOpen(false);
+      setPersonToStage(null);
+      setSelectedStageId("");
+      qc.invalidateQueries({ queryKey: ["people-central"] });
+    },
+
+    onError: (e: any) => {
+      toast({
+        title: "Erro ao mandar para etapa",
+        description: e.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -402,12 +514,33 @@ export default function PessoasPage() {
                           : <Badge variant="outline" className="text-muted-foreground gap-1"><XCircle className="h-3 w-3" /> Inativo</Badge>}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEdit(p)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => openEdit(p)}>
-                          Editar
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setPersonToStage(p);
+                              setSelectedStageId("");
+                              setStageDialogOpen(true);
+                            }}
+                          >
+                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            Etapa
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0"
+                            onClick={() => openEdit(p)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+
+                          <Button size="sm" variant="outline" onClick={() => openEdit(p)}>
+                            Editar
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -531,6 +664,86 @@ export default function PessoasPage() {
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
               {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingId ? "Salvar Alterações" : "Criar Cadastro"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={stageDialogOpen}
+        onOpenChange={(open) => {
+          setStageDialogOpen(open);
+          if (!open) {
+            setPersonToStage(null);
+            setSelectedStageId("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mandar pessoa para etapa</DialogTitle>
+
+            <DialogDescription>
+              Escolha a etapa para enviar:
+              <br />
+              <strong>{personToStage?.full_name}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Label>Etapa</Label>
+
+            <Select value={selectedStageId} onValueChange={setSelectedStageId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a etapa" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {stagesLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Carregando etapas...
+                  </SelectItem>
+                ) : stages.length === 0 ? (
+                  <SelectItem value="empty" disabled>
+                    Nenhuma etapa encontrada
+                  </SelectItem>
+                ) : (
+                  stages.map((stage: any) => (
+                    <SelectItem key={stage.id} value={stage.id}>
+                      {stage.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+
+            {!activeEventId && (
+              <p className="text-xs text-destructive">
+                Nenhum evento ativo selecionado.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStageDialogOpen(false);
+                setPersonToStage(null);
+                setSelectedStageId("");
+              }}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              onClick={() => sendToStageMutation.mutate()}
+              disabled={sendToStageMutation.isPending || !selectedStageId}
+            >
+              {sendToStageMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
