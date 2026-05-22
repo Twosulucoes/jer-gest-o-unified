@@ -57,6 +57,11 @@ type SportEventOption = {
   sport_name: string;
 };
 
+type StageOption = {
+  id: string;
+  name?: string | null;
+};
+
 type ConsumptionData = {
   meals: number;
   transport: number;
@@ -76,7 +81,17 @@ type QuickCreateForm = {
 export default function VincularCredencialPage() {
   useAuth();
 
-  const { activeEventId } = useEventContext();
+  const eventContext = useEventContext() as any;
+
+  const activeEventId = eventContext?.activeEventId ?? null;
+
+  const activeStageId =
+    eventContext?.activeStageId ??
+    eventContext?.selectedStageId ??
+    eventContext?.currentStageId ??
+    eventContext?.activeEventStageId ??
+    null;
+
   usePwaAudit("credenciamento/vincular", activeEventId);
 
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -99,14 +114,13 @@ export default function VincularCredencialPage() {
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [loadingSchools, setLoadingSchools] = useState(false);
 
-  // Cenário 1: dados de consumo do participante já vinculado
   const [consumptionData, setConsumptionData] = useState<ConsumptionData | null>(null);
   const [loadingConsumption, setLoadingConsumption] = useState(false);
 
-  // Cenário 3: modalidades para inscrição de emergência
   const [sportEventOptions, setSportEventOptions] = useState<SportEventOption[]>([]);
   const [selectedSportEventIds, setSelectedSportEventIds] = useState<string[]>([]);
   const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
+  const [defaultStageName, setDefaultStageName] = useState<string | null>(null);
   const [loadingSportEvents, setLoadingSportEvents] = useState(false);
 
   const [quickForm, setQuickForm] = useState<QuickCreateForm>({
@@ -222,6 +236,7 @@ export default function VincularCredencialPage() {
           .select("id", { count: "exact", head: true })
           .eq("participant_id", participantId),
       ]);
+
       setConsumptionData({
         meals: mealsRes.count ?? 0,
         transport: transportRes.count ?? 0,
@@ -236,23 +251,16 @@ export default function VincularCredencialPage() {
 
   const loadSportEventsAndStage = async () => {
     if (!activeEventId) return;
+
     setLoadingSportEvents(true);
+
     try {
-      const [eventsRes, stageRes] = await Promise.all([
-        supabase
-          .from("sport_events")
-          .select("id, name, sport:sports!sport_events_sport_id_fkey(name)")
-          .eq("event_id", activeEventId)
-          .eq("is_active", true)
-          .order("name"),
-        supabase
-          .from("event_stages")
-          .select("id")
-          .eq("event_id", activeEventId)
-          .order("sort_order", { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+      const eventsRes = await supabase
+        .from("sport_events")
+        .select("id, name, sport:sports!sport_events_sport_id_fkey(name)")
+        .eq("event_id", activeEventId)
+        .eq("is_active", true)
+        .order("name");
 
       if (eventsRes.data) {
         setSportEventOptions(
@@ -264,11 +272,51 @@ export default function VincularCredencialPage() {
         );
       }
 
-      if (stageRes.data) {
-        setDefaultStageId(stageRes.data.id);
+      let stageIdToUse: string | null = activeStageId || null;
+      let stageNameToUse: string | null = null;
+
+      if (stageIdToUse) {
+        const { data: activeStageData, error: activeStageError } = await supabase
+          .from("event_stages")
+          .select("id, name")
+          .eq("id", stageIdToUse)
+          .eq("event_id", activeEventId)
+          .maybeSingle();
+
+        if (!activeStageError && activeStageData?.id) {
+          stageIdToUse = activeStageData.id;
+          stageNameToUse = activeStageData.name ?? null;
+        }
+      }
+
+      if (!stageIdToUse) {
+        const { data: fallbackStage } = await supabase
+          .from("event_stages")
+          .select("id, name")
+          .eq("event_id", activeEventId)
+          .order("sort_order", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackStage?.id) {
+          stageIdToUse = fallbackStage.id;
+          stageNameToUse = fallbackStage.name ?? null;
+
+          toast.warning(
+            "A etapa ativa não foi encontrada no contexto. Usei a primeira etapa do evento como reserva.",
+          );
+        }
+      }
+
+      setDefaultStageId(stageIdToUse);
+      setDefaultStageName(stageNameToUse);
+
+      if (!stageIdToUse) {
+        toast.error("Nenhuma etapa encontrada para este evento.");
       }
     } catch (err) {
       console.error("loadSportEventsAndStage:", err);
+      toast.error("Erro ao carregar modalidades e etapa.");
     } finally {
       setLoadingSportEvents(false);
     }
@@ -380,6 +428,7 @@ export default function VincularCredencialPage() {
     setSelectedSportEventIds([]);
     setSportEventOptions([]);
     setDefaultStageId(null);
+    setDefaultStageName(null);
   };
 
   const handleLink = async (participant: ParticipantManualSearchRow) => {
@@ -474,6 +523,7 @@ export default function VincularCredencialPage() {
         full_name: fullName,
         cpf,
         birth_date: birthDate,
+        gender: quickForm.sex === "M" ? "male" : quickForm.sex === "F" ? "female" : null,
       })
       .select("id")
       .single();
@@ -554,6 +604,37 @@ export default function VincularCredencialPage() {
     return data.id;
   };
 
+  const ensureParticipantInStage = async (participantId: string, stageId: string) => {
+    const { data: existingStage, error: existingStageError } = await supabase
+      .from("participant_event_stages")
+      .select("id")
+      .eq("participant_id", participantId)
+      .eq("event_stage_id", stageId)
+      .eq("event_id", activeEventId)
+      .maybeSingle();
+
+    if (existingStageError) throw existingStageError;
+
+    if (existingStage?.id) {
+      return existingStage.id;
+    }
+
+    const { data, error } = await supabase
+      .from("participant_event_stages")
+      .insert({
+        participant_id: participantId,
+        event_stage_id: stageId,
+        event_id: activeEventId!,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
   const handleQuickCreateAndLink = async () => {
     if (!scannedCode) {
       toast.error("Nenhuma credencial escaneada.");
@@ -592,26 +673,20 @@ export default function VincularCredencialPage() {
       return;
     }
 
+    if (!defaultStageId) {
+      toast.error("Nenhuma etapa ativa foi encontrada. Abra a etapa correta antes de cadastrar.");
+      return;
+    }
+
     setCreatingParticipant(true);
 
     try {
       const personId = await createPerson();
       const participantId = await createParticipant(personId);
 
-      if (selectedSportEventIds.length > 0 && defaultStageId) {
-        // Garante que o participante está vinculado à etapa
-        await supabase
-          .from("participant_event_stages")
-          .insert({
-            participant_id: participantId,
-            event_stage_id: defaultStageId,
-            event_id: activeEventId!,
-            status: "active",
-          })
-          .select("id")
-          .maybeSingle();
+      await ensureParticipantInStage(participantId, defaultStageId);
 
-        // Inscreve nas modalidades selecionadas
+      if (selectedSportEventIds.length > 0) {
         const enrollments = selectedSportEventIds.map((sport_event_id) => ({
           participant_id: participantId,
           sport_event_id,
@@ -622,11 +697,14 @@ export default function VincularCredencialPage() {
 
         const { error: pseError } = await supabase
           .from("participant_sport_events")
-          .insert(enrollments);
+          .upsert(enrollments, {
+            onConflict: "participant_id,sport_event_id,event_stage_id",
+            ignoreDuplicates: true,
+          });
 
         if (pseError) {
           console.error("Erro ao inscrever modalidades:", pseError);
-          toast.warning("Participante criado, mas houve erro nas inscrições de modalidade.");
+          toast.warning("Participante criado na etapa, mas houve erro nas modalidades.");
         }
       }
 
@@ -913,6 +991,20 @@ export default function VincularCredencialPage() {
                           Cadastra o participante e vincula a credencial{" "}
                           <strong>{scannedCode}</strong>.
                         </p>
+
+                        {defaultStageName ? (
+                          <p className="mt-1 text-xs font-bold text-primary">
+                            Etapa atual: {defaultStageName}
+                          </p>
+                        ) : defaultStageId ? (
+                          <p className="mt-1 text-xs font-bold text-primary">
+                            Etapa ativa selecionada
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs font-bold text-destructive">
+                            Nenhuma etapa ativa identificada
+                          </p>
+                        )}
                       </div>
                     </div>
 
