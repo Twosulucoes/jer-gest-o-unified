@@ -1,753 +1,1373 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { useEventContext } from "@/contexts/EventContext";
-import { z } from "zod";
+import { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
-import {
+  ScanLine,
+  CheckCircle,
   Search,
-  UserPlus,
-  Users,
   Loader2,
-  ShieldAlert,
-  Merge,
-  Filter,
-  Download,
-  FileSpreadsheet,
-  Eye,
-  Info,
-  CheckCircle2,
-  XCircle,
-  ArrowRightLeft,
+  User,
+  IdCard,
+  Link as LinkIcon,
+  RefreshCcw,
+  UserPlus,
+  Save,
+  UtensilsCrossed,
+  Bus,
+  BedDouble,
+  Trophy,
 } from "lucide-react";
-import { phoneMask } from "@/lib/phoneUtils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { exportToXLSX, timestampedName } from "@/lib/exportData";
+import { toast } from "sonner";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import {
+  resolveQrCredential,
+  extractCandidates,
+  type ResolvedCredential,
+} from "@/lib/resolveQrCredential";
+import { isVoucherQr } from "@/lib/voucherScan";
+import {
+  searchParticipantsByNameOrCpf,
+  type ParticipantManualSearchRow,
+} from "@/lib/participantManualSearch";
+import { useAuth } from "@/hooks/useAuth";
+import { useEventContext } from "@/contexts/EventContext";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const personSchema = z.object({
-  full_name: z.string().trim().min(2, "Nome muito curto").max(200),
-  birth_date: z.string().min(10, "Data obrigatória"),
-  gender: z.enum(["male", "female"], { required_error: "Gênero obrigatório" }),
-  cpf: z.string().trim().max(14).optional().or(z.literal("")),
-  rg: z.string().trim().max(20).optional().or(z.literal("")),
-  email: z.string().trim().email("E-mail inválido").max(200).optional().or(z.literal("")),
-  phone: z.string().trim().max(30).optional().or(z.literal("")),
-  is_active: z.boolean().default(true),
-  food_restrictions: z.string().optional().or(z.literal("")),
-  medical_notes: z.string().optional().or(z.literal("")),
-  disability_type: z.string().optional().or(z.literal("")),
-});
-
-interface PersonRow {
+type SchoolOption = {
   id: string;
-  full_name: string;
-  cpf: string | null;
-  rg: string | null;
-  birth_date: string | null;
-  gender: string | null;
-  email: string | null;
-  phone: string | null;
-  is_active: boolean;
-  participants_count: number;
-  food_restrictions: string | null;
-  medical_notes: string | null;
-  disability_type: string | null;
-  kind: "participant" | "eventual";
-}
-
-const cpfMask = (v: string) => {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  name: string;
 };
 
-export default function PessoasPage() {
-  const { stageId } = useParams();
-  const [searchParams] = useSearchParams();
-  const { hasRole } = useAuth();
-  const { activeEventId } = useEventContext();
-  const qc = useQueryClient();
-  const canManage = hasRole("admin") || hasRole("secretaria") || hasRole("super_admin");
+type SportEventOption = {
+  id: string;
+  name: string;
+  sport_name: string;
+};
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [kindFilter, setKindFilter] = useState<"all" | "participant" | "eventual">("all");
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+type ConsumptionData = {
+  meals: number;
+  transport: number;
+  lodging: number;
+};
 
-  const [stageDialogOpen, setStageDialogOpen] = useState(false);
-  const [personToStage, setPersonToStage] = useState<PersonRow | null>(null);
-  const [selectedStageId, setSelectedStageId] = useState("");
+type QuickCreateForm = {
+  full_name: string;
+  cpf: string;
+  birth_date: string;
+  sex: string;
+  school_id: string;
+  participant_type: string;
+  function_name: string;
+};
+
+export default function VincularCredencialPage() {
+  useAuth();
+
+  const params = useParams() as any;
+  const eventContext = useEventContext() as any;
+
+  const activeEventId = eventContext?.activeEventId ?? null;
+
+  const routeStageId =
+    params?.stageId ??
+    params?.eventStageId ??
+    params?.etapaId ??
+    params?.id ??
+    null;
+
+  const activeStageId =
+    routeStageId ??
+    eventContext?.activeStageId ??
+    eventContext?.selectedStageId ??
+    eventContext?.currentStageId ??
+    eventContext?.activeEventStageId ??
+    null;
+
+  usePwaAudit("credenciamento/vincular", activeEventId);
+
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [participantScannerOpen, setParticipantScannerOpen] = useState(false);
+  const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [resolved, setResolved] = useState<ResolvedCredential | null>(null);
+  const [currentOwner, setCurrentOwner] = useState<{ name: string; id: string } | null>(null);
+
+  const [manualQuery, setManualQuery] = useState("");
+  const [debouncedManual, setDebouncedManual] = useState("");
+  const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
+  const [manualSearching, setManualSearching] = useState(false);
+
+  const [linking, setLinking] = useState(false);
+  const [pendingLink, setPendingLink] = useState<ParticipantManualSearchRow | null>(null);
+
+  const [showQuickCreate, setShowQuickCreate] = useState(false);
+  const [creatingParticipant, setCreatingParticipant] = useState(false);
+  const [schoolQuery, setSchoolQuery] = useState("");
+  const [schools, setSchools] = useState<SchoolOption[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(false);
+
+  const [consumptionData, setConsumptionData] = useState<ConsumptionData | null>(null);
+  const [loadingConsumption, setLoadingConsumption] = useState(false);
+
+  const [sportEventOptions, setSportEventOptions] = useState<SportEventOption[]>([]);
+  const [selectedSportEventIds, setSelectedSportEventIds] = useState<string[]>([]);
+  const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
+  const [defaultStageName, setDefaultStageName] = useState<string | null>(null);
+  const [loadingSportEvents, setLoadingSportEvents] = useState(false);
+
+  const [quickForm, setQuickForm] = useState<QuickCreateForm>({
+    full_name: "",
+    cpf: "",
+    birth_date: "",
+    sex: "",
+    school_id: "",
+    participant_type: "athlete",
+    function_name: "",
+  });
+
+  const lastScanRef = useRef<{ value: string; at: number } | null>(null);
+
+  const normalizeCredentialCode = (value: string) => value.trim().replace(/\s+/g, "");
+  const onlyDigits = (value: string) => value.replace(/\D/g, "");
+  const normalizeCpf = (value: string) => onlyDigits(value);
+
+  const formatBirthDateToISO = (value: string) => {
+    if (!value) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) {
+      const [, day, month, year] = match;
+      return `${year}-${month}-${day}`;
+    }
+
+    return null;
+  };
+
+  const selectedSchool = schools.find((s) => s.id === quickForm.school_id);
 
   useEffect(() => {
-    const kind = searchParams.get("kind");
-    if (kind === "eventual") setKindFilter("eventual");
-    else if (kind === "participant") setKindFilter("participant");
-  }, [searchParams]);
+    const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
+    return () => clearTimeout(t);
+  }, [manualQuery]);
 
-  const [fullName, setFullName] = useState("");
-  const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState<"male" | "female" | "">("");
-  const [cpf, setCpf] = useState("");
-  const [rg, setRg] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [isActive, setIsActive] = useState(true);
-  const [foodRestrictions, setFoodRestrictions] = useState("");
-  const [medicalNotes, setMedicalNotes] = useState("");
-  const [disabilityType, setDisabilityType] = useState("");
-  const [personKind, setPersonKind] = useState<"participant" | "eventual">("participant");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!activeEventId || debouncedManual.length < 2) {
+      setManualHits([]);
+      setManualSearching(false);
+      return;
+    }
 
-  const { data: stages = [], isLoading: stagesLoading } = useQuery({
-    queryKey: ["event-stages-for-person", activeEventId],
-    enabled: !!activeEventId,
-    queryFn: async () => {
+    let cancelled = false;
+    setManualSearching(true);
+
+    void searchParticipantsByNameOrCpf(debouncedManual, activeEventId)
+      .then((rows) => {
+        if (!cancelled) setManualHits(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setManualSearching(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedManual, activeEventId]);
+
+  useEffect(() => {
+    if (schoolQuery.trim().length < 2) {
+      setSchools([]);
+      setLoadingSchools(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadSchools = async () => {
+      setLoadingSchools(true);
+
+      const { data, error } = await supabase
+        .from("institutions")
+        .select("id, name")
+        .ilike("name", `%${schoolQuery.trim()}%`)
+        .limit(20);
+
+      if (!cancelled) {
+        if (error) {
+          console.error(error);
+          setSchools([]);
+        } else {
+          setSchools((data || []) as SchoolOption[]);
+        }
+
+        setLoadingSchools(false);
+      }
+    };
+
+    void loadSchools();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [schoolQuery]);
+
+  const resolveCurrentStage = async () => {
+    if (!activeEventId) {
+      return { id: null as string | null, name: null as string | null };
+    }
+
+    const stageIdFromRouteOrContext = activeStageId;
+
+    if (stageIdFromRouteOrContext) {
       const { data, error } = await supabase
         .from("event_stages")
-        .select("id, name, status")
-        .eq("event_id", activeEventId)
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-
-      return data ?? [];
-    },
-  });
-
-  const { data: people = [], isLoading } = useQuery({
-    queryKey: ["people-central", search, statusFilter, kindFilter],
-    queryFn: async () => {
-      let q = supabase
-        .from("people")
-        .select("id, full_name, cpf, rg, birth_date, gender, email, phone, is_active, food_restrictions, medical_notes, disability_type, kind")
-        .order("full_name")
-        .limit(300);
-
-      if (statusFilter === "active") q = q.eq("is_active", true);
-      else if (statusFilter === "inactive") q = q.eq("is_active", false);
-
-      if (kindFilter !== "all") q = q.eq("kind", kindFilter);
-
-      if (search.trim().length >= 2) {
-        const term = `%${search.trim()}%`;
-        q = q.or(`full_name.ilike.${term},cpf.ilike.${term},email.ilike.${term},rg.ilike.${term}`);
-      }
-      
-      const { data, error } = await q;
-      if (error) throw error;
-
-      const ids = (data ?? []).map((r) => r.id);
-      let counts: Record<string, number> = {};
-      if (ids.length > 0) {
-        const { data: parts } = await supabase
-          .from("participants")
-          .select("person_id")
-          .in("person_id", ids);
-        (parts ?? []).forEach((p: any) => {
-          counts[p.person_id] = (counts[p.person_id] ?? 0) + 1;
-        });
-      }
-      return (data ?? []).map((r) => ({ ...r, participants_count: counts[r.id] ?? 0 })) as PersonRow[];
-    },
-  });
-
-  const resetForm = () => {
-    setFullName(""); setBirthDate(""); setGender(""); setCpf(""); setRg("");
-    setEmail(""); setPhone(""); setIsActive(true); setFoodRestrictions("");
-    setMedicalNotes(""); setDisabilityType(""); setPersonKind("participant"); setErrors({}); setEditingId(null);
-  };
-
-  const openCreate = () => { resetForm(); setFormOpen(true); };
-
-  const openEdit = (p: PersonRow) => {
-    setEditingId(p.id);
-    setFullName(p.full_name);
-    setBirthDate(p.birth_date ?? "");
-    setGender((p.gender as "male" | "female") ?? "");
-    setCpf(p.cpf ?? "");
-    setRg(p.rg ?? "");
-    setEmail(p.email ?? "");
-    setPhone(p.phone ?? "");
-    setIsActive(p.is_active);
-    setFoodRestrictions(p.food_restrictions ?? "");
-    setMedicalNotes(p.medical_notes ?? "");
-    setDisabilityType(p.disability_type ?? "");
-    setPersonKind(p.kind);
-    setErrors({});
-    setFormOpen(true);
-  };
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const parsed = personSchema.safeParse({
-        full_name: fullName, birth_date: birthDate, gender,
-        cpf, rg, email, phone, is_active: isActive,
-        food_restrictions: foodRestrictions, medical_notes: medicalNotes,
-        disability_type: disabilityType,
-      });
-      if (!parsed.success) {
-        const errs: Record<string, string> = {};
-        parsed.error.errors.forEach((e) => { errs[e.path[0] as string] = e.message; });
-        setErrors(errs);
-        throw new Error("Validação falhou");
-      }
-      const payload: any = {
-        full_name: parsed.data.full_name,
-        birth_date: parsed.data.birth_date,
-        gender: parsed.data.gender,
-        cpf: parsed.data.cpf || null,
-        rg: parsed.data.rg || null,
-        email: parsed.data.email || null,
-        phone: parsed.data.phone || null,
-        is_active: parsed.data.is_active,
-        food_restrictions: parsed.data.food_restrictions || null,
-        medical_notes: parsed.data.medical_notes || null,
-        disability_type: parsed.data.disability_type || null,
-        kind: personKind,
-      };
-      if (editingId) {
-        const { error } = await supabase.from("people").update(payload).eq("id", editingId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("people").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      toast({ title: editingId ? "Pessoa atualizada" : "Pessoa criada" });
-      setFormOpen(false);
-      resetForm();
-      qc.invalidateQueries({ queryKey: ["people-central"] });
-    },
-    onError: (e: any) => {
-      if (e.message !== "Validação falhou") {
-        toast({ title: "Erro", description: e.message, variant: "destructive" });
-      }
-    },
-  });
-
-  const sendToStageMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeEventId) {
-        throw new Error("Nenhum evento ativo selecionado.");
-      }
-
-      if (!personToStage) {
-        throw new Error("Nenhuma pessoa selecionada.");
-      }
-
-      if (!selectedStageId) {
-        throw new Error("Selecione uma etapa.");
-      }
-
-      const { data: participant, error: participantError } = await supabase
-        .from("participants")
-        .select("id")
-        .eq("person_id", personToStage.id)
+        .select("id, name")
+        .eq("id", stageIdFromRouteOrContext)
         .eq("event_id", activeEventId)
         .maybeSingle();
 
-      if (participantError) throw participantError;
+      if (!error && data?.id) {
+        return {
+          id: data.id as string,
+          name: (data.name ?? null) as string | null,
+        };
+      }
+    }
 
-      if (!participant?.id) {
-        throw new Error(
-          "Essa pessoa ainda não tem inscrição neste evento. Primeiro crie a inscrição dela.",
+    const { data: fallbackStage } = await supabase
+      .from("event_stages")
+      .select("id, name")
+      .eq("event_id", activeEventId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackStage?.id) {
+      return {
+        id: fallbackStage.id as string,
+        name: (fallbackStage.name ?? null) as string | null,
+      };
+    }
+
+    return { id: null as string | null, name: null as string | null };
+  };
+
+  const fetchConsumption = async (participantId: string) => {
+    setLoadingConsumption(true);
+    try {
+      const [mealsRes, transportRes, lodgingRes] = await Promise.all([
+        supabase
+          .from("meal_consumptions")
+          .select("id", { count: "exact", head: true })
+          .eq("participant_id", participantId),
+        supabase
+          .from("transport_passengers")
+          .select("id", { count: "exact", head: true })
+          .eq("participant_id", participantId),
+        supabase
+          .from("lodging_occupancies")
+          .select("id", { count: "exact", head: true })
+          .eq("participant_id", participantId),
+      ]);
+
+      setConsumptionData({
+        meals: mealsRes.count ?? 0,
+        transport: transportRes.count ?? 0,
+        lodging: lodgingRes.count ?? 0,
+      });
+    } catch (err) {
+      console.error("fetchConsumption:", err);
+    } finally {
+      setLoadingConsumption(false);
+    }
+  };
+
+  const loadSportEventsAndStage = async () => {
+    if (!activeEventId) return;
+
+    setLoadingSportEvents(true);
+
+    try {
+      const eventsRes = await supabase
+        .from("sport_events")
+        .select("id, name, sport:sports!sport_events_sport_id_fkey(name)")
+        .eq("event_id", activeEventId)
+        .eq("is_active", true)
+        .order("name");
+
+      if (eventsRes.data) {
+        setSportEventOptions(
+          eventsRes.data.map((se: any) => ({
+            id: se.id,
+            name: se.name,
+            sport_name: (se.sport as any)?.name ?? "",
+          })),
         );
       }
 
-      const { data: existingStage, error: existingStageError } = await supabase
-        .from("participant_event_stages")
-        .select("id")
-        .eq("participant_id", participant.id)
-        .eq("event_stage_id", selectedStageId)
-        .eq("event_id", activeEventId)
-        .maybeSingle();
+      const stage = await resolveCurrentStage();
 
-      if (existingStageError) throw existingStageError;
+      setDefaultStageId(stage.id);
+      setDefaultStageName(stage.name);
 
-      if (existingStage?.id) {
-        return;
+      if (!stage.id) {
+        toast.error("Nenhuma etapa encontrada para este evento.");
+      } else if (!activeStageId) {
+        toast.warning(
+          "A etapa ativa não foi encontrada no contexto. Usei a primeira etapa do evento como reserva.",
+        );
       }
-
-      const { error } = await supabase
-        .from("participant_event_stages")
-        .insert({
-          participant_id: participant.id,
-          event_stage_id: selectedStageId,
-          event_id: activeEventId,
-          status: "active",
-        });
-
-      if (error) throw error;
-    },
-
-    onSuccess: () => {
-      toast({
-        title: "Pessoa enviada para a etapa",
-        description: "Agora essa pessoa já aparece como inscrita na etapa selecionada.",
-      });
-
-      setStageDialogOpen(false);
-      setPersonToStage(null);
-      setSelectedStageId("");
-      qc.invalidateQueries({ queryKey: ["people-central"] });
-    },
-
-    onError: (e: any) => {
-      toast({
-        title: "Erro ao mandar para etapa",
-        description: e.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleExport = () => {
-    if (people.length === 0) {
-      toast({ title: "Nada para exportar", variant: "destructive" });
-      return;
+    } catch (err) {
+      console.error("loadSportEventsAndStage:", err);
+      toast.error("Erro ao carregar modalidades e etapa.");
+    } finally {
+      setLoadingSportEvents(false);
     }
-    exportToXLSX(people, [
-      { header: "Nome Completo", accessor: (r) => r.full_name },
-      { header: "CPF", accessor: (r) => r.cpf },
-      { header: "RG", accessor: (r) => r.rg },
-      { header: "Nascimento", accessor: (r) => r.birth_date },
-      { header: "Gênero", accessor: (r) => r.gender === "male" ? "Masc" : "Fem" },
-      { header: "E-mail", accessor: (r) => r.email },
-      { header: "Telefone", accessor: (r) => r.phone },
-      { header: "Status", accessor: (r) => r.is_active ? "Ativo" : "Inativo" },
-      { header: "Participações", accessor: (r) => r.participants_count },
-      { header: "Restrições Alimentares", accessor: (r) => r.food_restrictions },
-      { header: "Notas Médicas", accessor: (r) => r.medical_notes },
-      { header: "Tipo Deficiência", accessor: (r) => r.disability_type },
-    ], timestampedName("central_pessoas"));
   };
 
-  const duplicidadesLink = "/admin/pessoas/duplicidades";
+  const handleScan = async (rawValue: string) => {
+    setScannerOpen(false);
+    if (!rawValue.trim()) return;
 
-  if (!canManage) {
-    return (
-      <Card className="m-4">
-        <CardContent className="flex items-center gap-2 p-6 text-muted-foreground">
-          <ShieldAlert className="h-5 w-5" />
-          Acesso restrito a administração e secretaria.
-        </CardContent>
-      </Card>
-    );
-  }
+    const now = Date.now();
+    const last = lastScanRef.current;
+
+    if (last && last.value === rawValue && now - last.at < 1500) return;
+
+    lastScanRef.current = { value: rawValue, at: now };
+
+    if (isVoucherQr(rawValue)) {
+      toast.error("Este QR é um voucher, não uma credencial.", {
+        description:
+          "Vouchers são consumidos no módulo de Alimentação, Transporte ou Alojamento — não podem ser vinculados aqui.",
+        duration: 6000,
+      });
+      return;
+    }
+
+    const { values } = extractCandidates(rawValue);
+    const code = values[0] || normalizeCredentialCode(rawValue);
+
+    if (!code) {
+      toast.error("Código inválido");
+      return;
+    }
+
+    setScannedCode(code);
+
+    try {
+      const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
+      setResolved(res);
+
+      if (res) {
+        setCurrentOwner({
+          name: res.full_name || "Sem nome",
+          id: res.participant_id,
+        });
+
+        if (res.source === "cpf") {
+          toast.success(`CPF de ${res.full_name} identificado!`);
+        } else {
+          toast.info(`Este código já pertence a: ${res.full_name}`);
+          void fetchConsumption(res.participant_id);
+        }
+      } else {
+        setCurrentOwner(null);
+        toast.success("Código disponível para vínculo!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao verificar código");
+    }
+  };
+
+  const handleParticipantScan = async (rawValue: string) => {
+    setParticipantScannerOpen(false);
+    if (!rawValue.trim() || !activeEventId) return;
+
+    if (isVoucherQr(rawValue)) {
+      toast.error("Este QR é um voucher, não identifica participante.");
+      return;
+    }
+
+    try {
+      setManualSearching(true);
+
+      const res = await resolveQrCredential(rawValue, { eventId: activeEventId });
+
+      if (res && res.participant_id) {
+        await handleLink({
+          participant_id: res.participant_id,
+          full_name: res.full_name || "Participante identificado",
+          person_id: "",
+          cpf: "",
+          participant_type: "",
+        });
+      } else {
+        const { cpfDigits } = extractCandidates(rawValue);
+
+        if (cpfDigits) {
+          setManualQuery(cpfDigits);
+          toast.info("Pesquisando pelo CPF extraído...");
+        } else {
+          toast.error("Não foi possível identificar o participante por este QR Code");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao identificar participante");
+    } finally {
+      setManualSearching(false);
+    }
+  };
+
+  const handleReset = () => {
+    setScannedCode(null);
+    setResolved(null);
+    setCurrentOwner(null);
+    setManualQuery("");
+    setShowQuickCreate(false);
+    setConsumptionData(null);
+    setSelectedSportEventIds([]);
+    setSportEventOptions([]);
+    setDefaultStageId(null);
+    setDefaultStageName(null);
+  };
+
+  const ensureParticipantInStage = async (participantId: string, stageId: string) => {
+    const { data: existingStage, error: existingStageError } = await supabase
+      .from("participant_event_stages")
+      .select("id")
+      .eq("participant_id", participantId)
+      .eq("event_stage_id", stageId)
+      .eq("event_id", activeEventId)
+      .maybeSingle();
+
+    if (existingStageError) throw existingStageError;
+
+    if (existingStage?.id) {
+      return existingStage.id;
+    }
+
+    const { data, error } = await supabase
+      .from("participant_event_stages")
+      .insert({
+        participant_id: participantId,
+        event_stage_id: stageId,
+        event_id: activeEventId!,
+        status: "active",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
+  const handleLink = async (participant: ParticipantManualSearchRow) => {
+    if (!scannedCode || !activeEventId) return;
+
+    setLinking(true);
+
+    try {
+      const stage = defaultStageId
+        ? { id: defaultStageId, name: defaultStageName }
+        : await resolveCurrentStage();
+
+      if (!stage.id) {
+        throw new Error("Nenhuma etapa ativa encontrada. Abra a etapa correta antes de vincular.");
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        throw new Error("Sessão expirada — faça login novamente.");
+      }
+
+      await ensureParticipantInStage(participant.participant_id, stage.id);
+
+      const { data: existing } = await supabase
+        .from("external_credentials")
+        .select("id")
+        .eq("participant_id", participant.participant_id)
+        .eq("event_id", activeEventId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      const { error } = await (supabase as any).rpc("link_external_credential", {
+        p_event_id: activeEventId,
+        p_participant_id: participant.participant_id,
+        p_credential_code: scannedCode,
+        p_user_id: session.user.id,
+        p_replace_id: existing?.id ?? null,
+        p_is_internal_mode: false,
+      });
+
+      if (error) {
+        const raw = (error.message || "").toLowerCase();
+
+        if (
+          raw.includes("já vinculada a outro") ||
+          raw.includes("uq_external_credentials_event_code")
+        ) {
+          throw new Error(
+            "Esta credencial já está com outro participante. Cancele a vinculação atual no admin antes de transferir.",
+          );
+        }
+
+        if (
+          raw.includes("uq_external_credentials_active_participant") ||
+          raw.includes("uq_participant_credentials_active")
+        ) {
+          throw new Error(
+            "Este participante já possui uma credencial ativa. Use a opção de substituir.",
+          );
+        }
+
+        throw error;
+      }
+
+      toast.success(
+        stage.name
+          ? `Credencial vinculada na etapa ${stage.name}!`
+          : "Credencial vinculada na etapa atual!",
+      );
+
+      if (navigator.vibrate) navigator.vibrate(200);
+
+      handleReset();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Erro ao vincular: ${err.message}`);
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const createPerson = async () => {
+    const cpf = normalizeCpf(quickForm.cpf);
+    const birthDate = formatBirthDateToISO(quickForm.birth_date);
+
+    if (!birthDate) {
+      throw new Error("Data de nascimento inválida.");
+    }
+
+    const { data: existingPerson, error: existingError } = await supabase
+      .from("people")
+      .select("id")
+      .eq("cpf", cpf)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existingPerson?.id) return existingPerson.id;
+
+    const fullName = quickForm.full_name.trim().toUpperCase();
+
+    const { data, error } = await (supabase as any)
+      .from("people")
+      .insert({
+        full_name: fullName,
+        cpf,
+        birth_date: birthDate,
+        gender: quickForm.sex === "M" ? "male" : quickForm.sex === "F" ? "female" : null,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
+  const getOrCreateDelegation = async () => {
+    if (!activeEventId || !selectedSchool?.id) {
+      throw new Error("Selecione a escola/delegação.");
+    }
+
+    const { data: existing, error: existingError } = await supabase
+      .from("delegations")
+      .select("id")
+      .eq("event_id", activeEventId)
+      .eq("institution_id", selectedSchool.id)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (existing?.id) return existing.id;
+
+    const { data, error } = await supabase
+      .from("delegations")
+      .insert({
+        event_id: activeEventId,
+        institution_id: selectedSchool.id,
+        status: "confirmed",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
+  const createParticipant = async (personId: string) => {
+    if (!activeEventId) {
+      throw new Error("Nenhum evento ativo selecionado.");
+    }
+
+    const { data: existingParticipants, error: existingError } = await supabase
+      .from("participants")
+      .select("id, participant_type")
+      .eq("person_id", personId)
+      .eq("event_id", activeEventId);
+
+    if (existingError) throw existingError;
+
+    if (existingParticipants?.length) {
+      return existingParticipants[0].id;
+    }
+
+    const delegationId = await getOrCreateDelegation();
+
+    const now = new Date().toISOString();
+
+    const { data, error } = await (supabase as any)
+      .from("participants")
+      .insert({
+        person_id: personId,
+        event_id: activeEventId,
+        delegation_id: delegationId,
+        participant_type: quickForm.participant_type,
+        function_name: quickForm.function_name || null,
+        status: "credentialed",
+        needs_meals: true,
+        credentialed_at: now,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+
+    return data.id;
+  };
+
+  const handleQuickCreateAndLink = async () => {
+    if (!scannedCode) {
+      toast.error("Nenhuma credencial escaneada.");
+      return;
+    }
+
+    if (!activeEventId) {
+      toast.error("Nenhum evento ativo selecionado.");
+      return;
+    }
+
+    const cpf = normalizeCpf(quickForm.cpf);
+
+    if (!quickForm.full_name.trim()) {
+      toast.error("Informe o nome completo.");
+      return;
+    }
+
+    if (cpf.length !== 11) {
+      toast.error("Informe um CPF com 11 dígitos.");
+      return;
+    }
+
+    if (!quickForm.birth_date) {
+      toast.error("Informe a data de nascimento.");
+      return;
+    }
+
+    if (!quickForm.sex) {
+      toast.error("Informe o sexo.");
+      return;
+    }
+
+    if (!quickForm.school_id) {
+      toast.error("Selecione a escola/delegação.");
+      return;
+    }
+
+    setCreatingParticipant(true);
+
+    try {
+      const stage = defaultStageId
+        ? { id: defaultStageId, name: defaultStageName }
+        : await resolveCurrentStage();
+
+      if (!stage.id) {
+        throw new Error("Nenhuma etapa ativa foi encontrada. Abra a etapa correta antes de cadastrar.");
+      }
+
+      const personId = await createPerson();
+      const participantId = await createParticipant(personId);
+
+      await ensureParticipantInStage(participantId, stage.id);
+
+      if (selectedSportEventIds.length > 0) {
+        const enrollments = selectedSportEventIds.map((sport_event_id) => ({
+          participant_id: participantId,
+          sport_event_id,
+          event_stage_id: stage.id,
+          status: "confirmed",
+          registration_source: "emergency",
+        }));
+
+        const { error: pseError } = await supabase
+          .from("participant_sport_events")
+          .upsert(enrollments, {
+            onConflict: "participant_id,sport_event_id,event_stage_id",
+            ignoreDuplicates: true,
+          });
+
+        if (pseError) {
+          console.error("Erro ao inscrever modalidades:", pseError);
+          toast.warning("Participante criado na etapa, mas houve erro nas modalidades.");
+        }
+      }
+
+      await handleLink({
+        participant_id: participantId,
+        person_id: personId,
+        full_name: quickForm.full_name.trim().toUpperCase(),
+        cpf,
+        participant_type: quickForm.participant_type,
+      });
+
+      setQuickForm({
+        full_name: "",
+        cpf: "",
+        birth_date: "",
+        sex: "",
+        school_id: "",
+        participant_type: "athlete",
+        function_name: "",
+      });
+
+      setSchoolQuery("");
+      setSchools([]);
+      setShowQuickCreate(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Erro ao cadastrar participante: ${err.message}`);
+    } finally {
+      setCreatingParticipant(false);
+    }
+  };
 
   return (
-    <div className="space-y-4 p-4 md:p-6 animate-fade-in">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <Users className="h-6 w-6 text-primary" /> Central de Pessoas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gestão unificada do cadastro de inscrições e equipe.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={isLoading || people.length === 0}>
-            <Download className="mr-2 h-4 w-4" /> Exportar
-          </Button>
-          <Button asChild variant="outline">
-            <Link to={duplicidadesLink}>
-              <Merge className="mr-2 h-4 w-4" /> Duplicidades
-            </Link>
-          </Button>
-          <Button onClick={openCreate}>
-            <UserPlus className="mr-2 h-4 w-4" /> Nova pessoa
-          </Button>
-        </div>
-      </div>
+    <PwaLayout backTo="/pwa" moduleTitle="Credenciamento">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="md:col-span-3">
-          <CardHeader className="pb-3 pt-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" /> Filtros e Busca
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="flex flex-col gap-3 md:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Nome, CPF, RG ou e-mail..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                  maxLength={100}
-                />
+      <main className="relative mx-auto max-w-md space-y-6 p-4">
+        {!scannedCode ? (
+          <div className="space-y-4">
+            <div className="text-center space-y-2">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <ScanLine className="h-8 w-8" />
               </div>
-              <Select value={kindFilter} onValueChange={(v: any) => setKindFilter(v)}>
-                <SelectTrigger className="w-full md:w-[150px]">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos Tipos</SelectItem>
-                  <SelectItem value="participant">Inscrições</SelectItem>
-                  <SelectItem value="eventual">Pessoas Eventuais</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
-                <SelectTrigger className="w-full md:w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos Status</SelectItem>
-                  <SelectItem value="active">Ativos</SelectItem>
-                  <SelectItem value="inactive">Inativos</SelectItem>
-                </SelectContent>
-              </Select>
+
+              <h2 className="text-lg font-bold">Passo 1: Escanear</h2>
+
+              <p className="text-sm text-muted-foreground">
+                Escaneie o QR Code da credencial física.
+              </p>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3 pt-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Info className="h-4 w-4 text-muted-foreground" /> Resumo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Listados:</span>
-                <span className="font-medium">{people.length}</span>
+
+            <Button
+              variant="module"
+              className="h-16 w-full rounded-2xl text-lg font-bold shadow-app-lg"
+              onClick={() => setScannerOpen(true)}
+            >
+              <ScanLine className="mr-3 h-6 w-6" />
+              Escanear Credencial
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <Card className="border-primary/20 bg-primary/5 shadow-app-sm">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary text-primary-foreground p-2 rounded-lg">
+                    <IdCard className="h-5 w-5" />
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-primary/70 tracking-wider">
+                      Código Escaneado
+                    </p>
+                    <p className="text-lg font-mono font-bold">{scannedCode}</p>
+                  </div>
+                </div>
+
+                <Button variant="ghost" size="icon" onClick={handleReset}>
+                  <RefreshCcw className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {resolved?.source === "cpf" ? (
+              <div className="rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4 space-y-3 text-center animate-in zoom-in-95 duration-300">
+                <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                  Pessoa encontrada via CPF
+                </p>
+
+                <p className="text-xl font-black text-blue-900 dark:text-blue-100">
+                  {resolved.full_name}
+                </p>
+
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl h-14"
+                  onClick={() =>
+                    setPendingLink({
+                      participant_id: resolved.participant_id,
+                      full_name: resolved.full_name || "",
+                      person_id: "",
+                      cpf: scannedCode,
+                      participant_type: "",
+                    })
+                  }
+                  disabled={linking}
+                >
+                  <LinkIcon className="mr-2 h-5 w-5" />
+                  Confirmar Vínculo
+                </Button>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Com participações:</span>
-                <span className="font-medium text-primary">
-                  {people.filter(p => p.participants_count > 0).length}
+            ) : currentOwner ? (
+              <div className="rounded-xl bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 p-4 space-y-3 text-center">
+                <p className="text-sm font-medium text-orange-800 dark:text-orange-300 flex items-center justify-center gap-2">
+                  <User className="h-4 w-4" /> Credencial já vinculada a:
+                </p>
+
+                <p className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                  {currentOwner.name}
+                </p>
+
+                {loadingConsumption ? (
+                  <div className="flex justify-center pt-1">
+                    <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+                  </div>
+                ) : consumptionData ? (
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <div className="rounded-lg bg-orange-50 dark:bg-orange-900/50 p-2 text-center">
+                      <UtensilsCrossed className="h-4 w-4 mx-auto text-orange-500 mb-1" />
+                      <p className="text-lg font-black text-orange-900 dark:text-orange-100">
+                        {consumptionData.meals}
+                      </p>
+                      <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                        Refeições
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-orange-50 dark:bg-orange-900/50 p-2 text-center">
+                      <Bus className="h-4 w-4 mx-auto text-orange-500 mb-1" />
+                      <p className="text-lg font-black text-orange-900 dark:text-orange-100">
+                        {consumptionData.transport}
+                      </p>
+                      <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                        Transportes
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-orange-50 dark:bg-orange-900/50 p-2 text-center">
+                      <BedDouble className="h-4 w-4 mx-auto text-orange-500 mb-1" />
+                      <p className="text-lg font-black text-orange-900 dark:text-orange-100">
+                        {consumptionData.lodging}
+                      </p>
+                      <p className="text-[10px] text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+                        Alojamentos
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="rounded-xl bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-4 flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
+                <CheckCircle className="h-5 w-5" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Código disponível para vínculo
                 </span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            )}
 
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="space-y-2 p-4">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
-          ) : people.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-2">
-              <Search className="h-10 w-10 opacity-20" />
-              <p>Nenhuma pessoa encontrada com os filtros atuais.</p>
-              {search && (
-                <Button variant="link" onClick={() => setSearch("")}>Limpar busca</Button>
+            <div className="space-y-4">
+              <div className="text-center space-y-1">
+                <h2 className="text-lg font-bold">Passo 2: Quem é o dono?</h2>
+
+                <p className="text-sm text-muted-foreground">
+                  Busque o participante pelo nome ou CPF.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                  <Input
+                    placeholder="Buscar por nome ou CPF…"
+                    value={manualQuery}
+                    onChange={(e) => {
+                      setManualQuery(e.target.value);
+
+                      setQuickForm((prev) => ({
+                        ...prev,
+                        full_name:
+                          e.target.value.replace(/\d/g, "").trim().length > 2
+                            ? e.target.value
+                            : prev.full_name,
+                        cpf:
+                          onlyDigits(e.target.value).length >= 8
+                            ? onlyDigits(e.target.value)
+                            : prev.cpf,
+                      }));
+                    }}
+                    className="h-12 border-border/80 bg-card/90 pl-10 shadow-app-sm rounded-xl"
+                    autoFocus
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-12 rounded-xl p-0 border-primary/20 bg-primary/5 text-primary shadow-app-sm"
+                  onClick={() => setParticipantScannerOpen(true)}
+                >
+                  <ScanLine className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="min-h-[200px]">
+                {manualSearching ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-muted-foreground space-y-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="text-sm">Pesquisando participante...</span>
+                  </div>
+                ) : manualHits.length > 0 ? (
+                  <div className="grid gap-3">
+                    {manualHits.map((h) => (
+                      <button
+                        key={h.participant_id}
+                        type="button"
+                        onClick={() => setPendingLink(h)}
+                        disabled={linking}
+                        className="group flex items-center gap-4 rounded-2xl border bg-card p-4 text-left shadow-app-sm transition-all hover:border-primary/30 hover:shadow-app-md active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          <User className="h-6 w-6" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-base font-bold text-foreground">
+                            {h.full_name}
+                          </p>
+
+                          <p className="truncate text-xs text-muted-foreground">
+                            {h.participant_type}
+                          </p>
+                        </div>
+
+                        <div className="bg-primary/5 text-primary p-2 rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                          <LinkIcon className="h-5 w-5" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : debouncedManual.length >= 2 ? (
+                  <div className="space-y-3 text-center py-6 bg-muted/30 rounded-2xl border-2 border-dashed border-muted px-4">
+                    <p className="text-muted-foreground font-medium">
+                      Nenhum participante encontrado.
+                    </p>
+
+                    <Button
+                      type="button"
+                      variant="module"
+                      className="w-full gap-2"
+                      onClick={() => {
+                        setShowQuickCreate(true);
+                        void loadSportEventsAndStage();
+                      }}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Cadastrar novo participante
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <p className="text-sm">Os resultados aparecerão aqui.</p>
+                  </div>
+                )}
+              </div>
+
+              {showQuickCreate && (
+                <Card className="border-amber-500/40 bg-card/95">
+                  <CardContent className="space-y-3 p-4">
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5 text-amber-500" />
+
+                      <div>
+                        <p className="font-bold">Cadastro rápido</p>
+
+                        <p className="text-xs text-muted-foreground">
+                          Cadastra o participante e vincula a credencial{" "}
+                          <strong>{scannedCode}</strong>.
+                        </p>
+
+                        {defaultStageName ? (
+                          <p className="mt-1 text-xs font-bold text-primary">
+                            Etapa atual: {defaultStageName}
+                          </p>
+                        ) : defaultStageId ? (
+                          <p className="mt-1 text-xs font-bold text-primary">
+                            Etapa ativa selecionada
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs font-bold text-destructive">
+                            Nenhuma etapa ativa identificada
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Nome completo
+                      </label>
+
+                      <Input
+                        value={quickForm.full_name}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            full_name: e.target.value,
+                          }))
+                        }
+                        placeholder="Nome completo"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        CPF
+                      </label>
+
+                      <Input
+                        value={quickForm.cpf}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            cpf: normalizeCpf(e.target.value),
+                          }))
+                        }
+                        placeholder="Somente números"
+                        inputMode="numeric"
+                        maxLength={11}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-muted-foreground">
+                          Data nascimento
+                        </label>
+
+                        <Input
+                          type="date"
+                          value={quickForm.birth_date}
+                          onChange={(e) =>
+                            setQuickForm((prev) => ({
+                              ...prev,
+                              birth_date: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-muted-foreground">
+                          Sexo
+                        </label>
+
+                        <select
+                          value={quickForm.sex}
+                          onChange={(e) =>
+                            setQuickForm((prev) => ({
+                              ...prev,
+                              sex: e.target.value,
+                            }))
+                          }
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="">Selecione</option>
+                          <option value="M">Masculino</option>
+                          <option value="F">Feminino</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Tipo
+                      </label>
+
+                      <select
+                        value={quickForm.participant_type}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            participant_type: e.target.value,
+                          }))
+                        }
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="athlete">Atleta</option>
+                        <option value="coach">Técnico</option>
+                        <option value="head_of_delegation">Chefe de Delegação</option>
+                        <option value="official">Oficial</option>
+                        <option value="staff">Staff / Equipe geral</option>
+                        <option value="motorista">Motorista</option>
+                        <option value="agente_operacao">Operacional</option>
+                        <option value="logistica">Logística</option>
+                        <option value="cozinheira">Cozinheira / Alimentação</option>
+                        <option value="guia">Guia</option>
+                        <option value="secretaria">Secretaria</option>
+                        <option value="mesario">Mesário</option>
+                        <option value="arbitro">Árbitro</option>
+                        <option value="delegado">Delegado</option>
+                        <option value="fiscal">Fiscal</option>
+                        <option value="operador_pesquisa">Operador de Pesquisa</option>
+                        <option value="tecnico_ti">Técnico de TI</option>
+                        <option value="terceiro">Terceirizado</option>
+                        <option value="colaborador">Colaborador</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Função detalhada
+                      </label>
+
+                      <Input
+                        value={quickForm.function_name}
+                        onChange={(e) =>
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            function_name: e.target.value,
+                          }))
+                        }
+                        placeholder="Ex: Fisioterapeuta, Fotógrafo, Credenciamento..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5">
+                        <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                        Inscrição de emergência — Modalidades
+                      </label>
+
+                      {loadingSportEvents ? (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Carregando modalidades...
+                        </div>
+                      ) : sportEventOptions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground py-2">
+                          Nenhuma modalidade ativa disponível.
+                        </p>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto rounded-xl border bg-background divide-y">
+                          {sportEventOptions.map((se) => (
+                            <label
+                              key={se.id}
+                              className="flex items-center gap-3 px-3 py-2 hover:bg-muted cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-border accent-primary"
+                                checked={selectedSportEventIds.includes(se.id)}
+                                onChange={(e) => {
+                                  setSelectedSportEventIds((prev) =>
+                                    e.target.checked
+                                      ? [...prev, se.id]
+                                      : prev.filter((id) => id !== se.id),
+                                  );
+                                }}
+                              />
+                              <span className="flex-1 min-w-0">
+                                <span className="text-sm font-medium">{se.name}</span>
+                                {se.sport_name && (
+                                  <span className="text-xs text-muted-foreground ml-1">
+                                    — {se.sport_name}
+                                  </span>
+                                )}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+
+                      {selectedSportEventIds.length > 0 && (
+                        <p className="text-xs text-primary font-medium">
+                          {selectedSportEventIds.length} modalidade
+                          {selectedSportEventIds.length !== 1 ? "s" : ""} selecionada
+                          {selectedSportEventIds.length !== 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-muted-foreground">
+                        Escola / Delegação
+                      </label>
+
+                      <Input
+                        value={schoolQuery}
+                        onChange={(e) => {
+                          setSchoolQuery(e.target.value);
+                          setQuickForm((prev) => ({
+                            ...prev,
+                            school_id: "",
+                          }));
+                        }}
+                        placeholder="Digite o nome da escola"
+                      />
+
+                      {loadingSchools && (
+                        <p className="text-xs text-muted-foreground">
+                          Buscando escolas...
+                        </p>
+                      )}
+
+                      {schools.length > 0 && (
+                        <div className="max-h-40 overflow-y-auto rounded-xl border bg-background">
+                          {schools.map((school) => (
+                            <button
+                              key={school.id}
+                              type="button"
+                              onClick={() => {
+                                setQuickForm((prev) => ({
+                                  ...prev,
+                                  school_id: school.id,
+                                }));
+                                setSchoolQuery(school.name);
+                              }}
+                              className={`w-full border-b px-3 py-2 text-left text-sm last:border-0 hover:bg-muted ${
+                                quickForm.school_id === school.id
+                                  ? "bg-muted font-bold"
+                                  : ""
+                              }`}
+                            >
+                              {school.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowQuickCreate(false)}
+                        disabled={creatingParticipant}
+                      >
+                        Cancelar
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="module"
+                        className="w-full gap-2"
+                        onClick={handleQuickCreateAndLink}
+                        disabled={creatingParticipant}
+                      >
+                        {creatingParticipant ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+
+                        Salvar e vincular
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[300px]">Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Documentos</TableHead>
-                    <TableHead>Nascimento</TableHead>
-                    <TableHead className="text-center">Eventos</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {people.map((p) => (
-                    <TableRow key={p.id} className={!p.is_active ? "opacity-60 bg-muted/30" : ""}>
-                      <TableCell className="font-medium">
-                        <div className="flex flex-col">
-                          <span>{p.full_name}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase">{p.email || ""}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[10px] uppercase">
-                          {p.kind === "eventual" ? "Eventual" : "Inscrição"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs space-y-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className="h-5 px-1 font-mono text-[10px]">CPF</Badge>
-                          <span>{p.cpf ? cpfMask(p.cpf) : "—"}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className="h-5 px-1 font-mono text-[10px]">RG</Badge>
-                          <span>{p.rg || "—"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {p.birth_date ? new Date(p.birth_date + "T00:00:00").toLocaleDateString("pt-BR") : "—"}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={p.participants_count > 0 ? "default" : "outline"} className="rounded-full h-6 w-6 p-0 flex items-center justify-center">
-                          {p.participants_count}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {p.is_active
-                          ? <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1"><CheckCircle2 className="h-3 w-3" /> Ativo</Badge>
-                          : <Badge variant="outline" className="text-muted-foreground gap-1"><XCircle className="h-3 w-3" /> Inativo</Badge>}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPersonToStage(p);
-                              setSelectedStageId("");
-                              setStageDialogOpen(true);
-                            }}
-                          >
-                            <ArrowRightLeft className="mr-2 h-4 w-4" />
-                            Etapa
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0"
-                            onClick={() => openEdit(p)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-
-                          <Button size="sm" variant="outline" onClick={() => openEdit(p)}>
-                            Editar
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={formOpen} onOpenChange={(v) => { setFormOpen(v); if (!v) resetForm(); }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingId ? "Editar pessoa" : "Nova pessoa"}</DialogTitle>
-            <DialogDescription>
-              Informações globais do cadastro. Alterações afetam todos os eventos.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs defaultValue="geral" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="geral">Dados Gerais</TabsTrigger>
-              <TabsTrigger value="adicional">Info Adicional</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="geral" className="space-y-4 pt-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Nome completo *</Label>
-                  <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={200} />
-                  {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Tipo de Cadastro</Label>
-                    <Select value={personKind} onValueChange={(v: any) => setPersonKind(v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="participant">Participante</SelectItem>
-                        <SelectItem value="eventual">Pessoa Eventual</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="birth_date">Data nascimento *</Label>
-                    <Input id="birth_date" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-                    {errors.birth_date && <p className="text-xs text-destructive">{errors.birth_date}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="gender">Gênero *</Label>
-                    <Select value={gender} onValueChange={(v) => setGender(v as "male" | "female")}>
-                      <SelectTrigger id="gender"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Masculino</SelectItem>
-                        <SelectItem value="female">Feminino</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.gender && <p className="text-xs text-destructive">{errors.gender}</p>}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
-                    <Input id="cpf" value={cpf} onChange={(e) => setCpf(cpfMask(e.target.value))} maxLength={14} placeholder="000.000.000-00" />
-                    {errors.cpf && <p className="text-xs text-destructive">{errors.cpf}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rg">RG</Label>
-                    <Input id="rg" value={rg} onChange={(e) => setRg(e.target.value)} maxLength={20} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={200} />
-                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" value={phone} onChange={(e) => setPhone(phoneMask(e.target.value))} maxLength={30} placeholder="(00) 00000-0000" />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 pt-2">
-                  <Switch id="is_active" checked={isActive} onCheckedChange={setIsActive} />
-                  <Label htmlFor="is_active">Cadastro ativo</Label>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="adicional" className="space-y-4 pt-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="disability_type">Tipo de Deficiência / Acessibilidade</Label>
-                  <Input id="disability_type" value={disabilityType} onChange={(e) => setDisabilityType(e.target.value)} placeholder="Ex: Auditiva, Visual, Cadeirante..." />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="food_restrictions">Restrições Alimentares</Label>
-                  <Textarea id="food_restrictions" value={foodRestrictions} onChange={(e) => setFoodRestrictions(e.target.value)} placeholder="Alergias, dietas específicas..." rows={3} />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="medical_notes">Observações Médicas / Saúde</Label>
-                  <Textarea id="medical_notes" value={medicalNotes} onChange={(e) => setMedicalNotes(e.target.value)} placeholder="Medicamentos contínuos, condições especiais..." rows={3} />
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="mt-6 gap-2">
-            <Button variant="ghost" onClick={() => setFormOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-              {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingId ? "Salvar Alterações" : "Criar Cadastro"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={stageDialogOpen}
-        onOpenChange={(open) => {
-          setStageDialogOpen(open);
-          if (!open) {
-            setPersonToStage(null);
-            setSelectedStageId("");
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Mandar pessoa para etapa</DialogTitle>
-
-            <DialogDescription>
-              Escolha a etapa para enviar:
-              <br />
-              <strong>{personToStage?.full_name}</strong>
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <Label>Etapa</Label>
-
-            <Select value={selectedStageId} onValueChange={setSelectedStageId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a etapa" />
-              </SelectTrigger>
-
-              <SelectContent>
-                {stagesLoading ? (
-                  <SelectItem value="loading" disabled>
-                    Carregando etapas...
-                  </SelectItem>
-                ) : stages.length === 0 ? (
-                  <SelectItem value="empty" disabled>
-                    Nenhuma etapa encontrada
-                  </SelectItem>
-                ) : (
-                  stages.map((stage: any) => (
-                    <SelectItem key={stage.id} value={stage.id}>
-                      {stage.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-
-            {!activeEventId && (
-              <p className="text-xs text-destructive">
-                Nenhum evento ativo selecionado.
-              </p>
-            )}
           </div>
+        )}
+      </main>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
+      <QrCodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScan={handleScan}
+        title="Escanear Credencial Física"
+      />
+
+      <QrCodeScanner
+        isOpen={participantScannerOpen}
+        onClose={() => setParticipantScannerOpen(false)}
+        onScan={handleParticipantScan}
+        title="Identificar Participante"
+      />
+
+      {linking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-lg font-bold">Vinculando...</p>
+          </div>
+        </div>
+      )}
+
+      <AlertDialog open={!!pendingLink} onOpenChange={(o) => !o && setPendingLink(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar vínculo de credencial</AlertDialogTitle>
+
+            <AlertDialogDescription>
+              Vincular a credencial{" "}
+              <strong className="font-mono">{scannedCode ?? "—"}</strong> ao
+              participante <strong>{pendingLink?.full_name || "—"}</strong>?
+              <br />
+              <span className="text-destructive font-medium">
+                Esta ação é definitiva no PWA.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+
+            <AlertDialogAction
               onClick={() => {
-                setStageDialogOpen(false);
-                setPersonToStage(null);
-                setSelectedStageId("");
+                if (pendingLink) {
+                  const target = pendingLink;
+                  setPendingLink(null);
+                  void handleLink(target);
+                }
               }}
             >
-              Cancelar
-            </Button>
-
-            <Button
-              onClick={() => sendToStageMutation.mutate()}
-              disabled={sendToStageMutation.isPending || !selectedStageId}
-            >
-              {sendToStageMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+              Confirmar vínculo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </PwaLayout>
   );
 }
