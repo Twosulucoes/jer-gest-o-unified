@@ -350,7 +350,7 @@ export default function TransporteHubPage() {
                           <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" title="Embarque" onClick={() => navigate(`/admin/transporte/embarque/${t.id}`)}>
+                              <Button variant="ghost" size="icon" title="Embarque" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/transporte/embarque/${t.id}` : `/admin/transporte/embarque/${t.id}`)}>
                                 <Users className="h-4 w-4" />
                               </Button>
                               {canWrite && (

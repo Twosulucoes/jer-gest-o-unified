@@ -174,7 +174,7 @@ export default function AlojamentoOcupacaoPage() {
             {isStageScoped && stage ? `Etapa: ${stage.name}` : "Gestão operacional de alojamento"}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => navigate("../alojamento")}>
+        <Button variant="outline" size="sm" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alojamento` : "/admin/alojamento")}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Visão Geral
         </Button>
       </div>
