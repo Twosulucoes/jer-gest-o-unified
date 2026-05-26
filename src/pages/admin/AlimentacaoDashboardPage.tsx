@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
+import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -239,6 +240,13 @@ export default function AlimentacaoDashboardPage() {
     [filteredConsumptions]
   );
   const zeroConsumptionCount = Math.max(0, totalParticipants - consumingParticipantIds.size);
+
+  useStageModuleKpis([
+    { label: "Consumos hoje", value: filteredConsumptions.length, tone: "primary" },
+    ...(zeroConsumptionCount > 0
+      ? [{ label: "Sem refeição", value: zeroConsumptionCount, tone: "danger" as const }]
+      : []),
+  ]);
 
   // Export CSV
   const exportCSV = useCallback(() => {

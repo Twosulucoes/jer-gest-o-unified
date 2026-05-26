@@ -193,6 +193,7 @@ const AlimentacaoScanPage = lazy(() => import("@/pages/pwa/alimentacao/Alimentac
 const AlimentacaoBuscarPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoBuscarPage"));
 const AlimentacaoJanelasPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoJanelasPage"));
 const AlimentacaoListaConsumosPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoListaConsumosPage"));
+const AlimentacaoHistoricoPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoHistoricoPage"));
 const CoordenacaoHomePage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoHomePage"));
 const CoordenacaoAgendaPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoAgendaPage"));
 const CoordenacaoPartidasPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoPartidasPage"));
@@ -288,7 +289,6 @@ export const AppRoutes = () => (
         <Route path="etapas/:stageId" element={<Navigate to="/admin/etapas" replace />} />
         <Route path="etapa/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><StageLayout /></ProtectedRoute>}>
            <Route index element={<StageHomePage />} />
-           <Route path="reports" element={<StageReportsPage />} />
            <Route path="credenciamento" element={<CredenciamentoPage />} />
            <Route path="credenciamento-externo" element={<CredenciamentoExternoPage />} />
            <Route path="validacao-qr" element={<ValidacaoQRPage />} />
@@ -457,6 +457,7 @@ export const AppRoutes = () => (
         <Route path="alimentacao/buscar" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoBuscarPage /></PwaRouteGuard>} />
         <Route path="alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoJanelasPage /></PwaRouteGuard>} />
         <Route path="alimentacao/consumos" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
+        <Route path="alimentacao/historico" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHistoricoPage /></PwaRouteGuard>} />
 
         <Route path="coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />

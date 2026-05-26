@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { useSearchParams, useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers, Calculator, MapPin, FileText, UserX, ShieldCheck
+  Plus, Pencil, UtensilsCrossed, Clock, ClipboardList, LayoutDashboard, AlertTriangle, Layers, Calculator, MapPin, FileText, UserX, ShieldCheck, BarChart2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,6 @@ type TabKey = "janelas" | "tipos";
 
 export default function AlimentacaoHubPage() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const { stageId } = useParams<{ stageId: string }>();
   const { hasRole } = useAuth();
   const selectedEventId = useActiveEventId();
@@ -220,85 +219,29 @@ export default function AlimentacaoHubPage() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/consumo` : "/admin/alimentacao/consumo")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <ClipboardList className="h-8 w-8 text-primary shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Registrar Consumo</p>
-              <p className="text-xs text-muted-foreground">Operação diária de refeições</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/previsao` : "/admin/alimentacao/previsao")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Calculator className="h-8 w-8 text-primary shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Previsão de Demanda</p>
-              <p className="text-xs text-muted-foreground">Ocupação vs Previsão para cozinha</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/dashboard` : "/admin/alimentacao/dashboard")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <LayoutDashboard className="h-8 w-8 text-primary shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Dashboard</p>
-              <p className="text-xs text-muted-foreground">Totais e estatísticas</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/locais` : "/admin/alimentacao/locais")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <MapPin className="h-8 w-8 text-primary shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Locais de Refeição</p>
-              <p className="text-xs text-muted-foreground">Gestão de refeitórios</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/relatorios` : "/admin/alimentacao/relatorios")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <FileText className="h-8 w-8 text-primary shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Relatórios</p>
-              <p className="text-xs text-muted-foreground">Exportações e listagens</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/divergencias` : "/admin/alimentacao/divergencias")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <UserX className="h-8 w-8 text-amber-500 shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Divergências</p>
-              <p className="text-xs text-muted-foreground">Recusas e ausências</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/padroes` : "/admin/alimentacao/padroes")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <Clock className="h-8 w-8 text-primary shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Padrões de Janelas</p>
-              <p className="text-xs text-muted-foreground">Configuração de horários padrão</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/auditoria` : "/admin/alimentacao/auditoria")}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <ShieldCheck className="h-8 w-8 text-primary shrink-0" />
-            <div>
-              <p className="font-medium text-sm">Auditoria</p>
-              <p className="text-xs text-muted-foreground">Trilha de inserções e estornos</p>
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/consumo` : "/admin/alimentacao/consumo", icon: <ClipboardList className="h-8 w-8 text-primary shrink-0" />, label: "Registrar Consumo", desc: "Operação diária de refeições" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/previsao` : "/admin/alimentacao/previsao", icon: <Calculator className="h-8 w-8 text-primary shrink-0" />, label: "Previsão de Demanda", desc: "Ocupação vs Previsão para cozinha" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/dashboard` : "/admin/alimentacao/dashboard", icon: <LayoutDashboard className="h-8 w-8 text-primary shrink-0" />, label: "Dashboard", desc: "Totais e estatísticas em tempo real" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/locais` : "/admin/alimentacao/locais", icon: <MapPin className="h-8 w-8 text-primary shrink-0" />, label: "Locais de Refeição", desc: "Gestão de refeitórios" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/relatorios` : "/admin/alimentacao/relatorios", icon: <FileText className="h-8 w-8 text-primary shrink-0" />, label: "Relatórios", desc: "Exportações e listagens" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/relatorios/consumo` : "/admin/alimentacao/relatorios/consumo", icon: <BarChart2 className="h-8 w-8 text-primary shrink-0" />, label: "Análise de Consumo", desc: "Analytics avançado por dia, janela e operador" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/divergencias` : "/admin/alimentacao/divergencias", icon: <UserX className="h-8 w-8 text-amber-500 shrink-0" />, label: "Divergências", desc: "Recusas e ausências" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/padroes` : "/admin/alimentacao/padroes", icon: <Clock className="h-8 w-8 text-primary shrink-0" />, label: "Padrões de Janelas", desc: "Configuração de horários padrão" },
+          { to: stageId ? `/admin/etapa/${stageId}/alimentacao/auditoria` : "/admin/alimentacao/auditoria", icon: <ShieldCheck className="h-8 w-8 text-primary shrink-0" />, label: "Auditoria", desc: "Trilha de inserções e estornos" },
+        ].map((item) => (
+          <Link key={item.to} to={item.to}>
+            <Card className="cursor-pointer hover:bg-accent/50 transition-colors h-full">
+              <CardContent className="flex items-center gap-3 p-4">
+                {item.icon}
+                <div>
+                  <p className="font-medium text-sm">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
 
       {!selectedStageId ? (
