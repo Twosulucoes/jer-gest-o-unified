@@ -397,7 +397,7 @@ export default function AlimentacaoRelatoriosPage() {
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.participants?.person?.full_name || "—"}</TableCell>
                   <TableCell>{c.participants?.delegations?.institutions?.name || "—"}</TableCell>
-                  <TableCell>{c.meal_windows?.label || "—"}</TableCell>
+                  <TableCell>{c.meal_windows?.label || c.meal_windows?.meal_types?.name || "—"}</TableCell>
                   <TableCell>{c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "—"}</TableCell>
                   <TableCell>{c.method || "scan"}</TableCell>
                 </TableRow>

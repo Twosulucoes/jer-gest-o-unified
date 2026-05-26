@@ -1,16 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { FileBarChart, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const REPORTS = [
-  { label: "Credenciamento", description: "Status de check-in e emissão de credenciais.", to: "/admin/relatorios/credenciamento" },
-  { label: "Competição", description: "Resultados, classificações e pendências.", to: "/admin/relatorios/boletins" },
-  { label: "Alojamento", description: "Ocupação por local e unidade.", to: "/admin/relatorios/dashboard" },
-  { label: "Alimentação", description: "Consumos e pendências por janela.", to: "/admin/relatorios/dashboard" },
-  { label: "Transporte", description: "Embarques, viagens e ocorrências.", to: "/admin/relatorios/dashboard" },
-];
-
 export default function StageReportsPage() {
+  const { stageId } = useParams<{ stageId: string }>();
+
+  const REPORTS = [
+    { key: "credenciamento", label: "Credenciamento", description: "Status de check-in e emissão de credenciais.", to: "/admin/relatorios/credenciamento" },
+    { key: "competicao", label: "Competição", description: "Resultados, classificações e pendências.", to: "/admin/relatorios/boletins" },
+    { key: "alojamento", label: "Alojamento", description: "Ocupação por local e unidade.", to: `/admin/etapa/${stageId}/alojamento/relatorios` },
+    { key: "alimentacao", label: "Alimentação", description: "Consumos e pendências por janela.", to: `/admin/etapa/${stageId}/alimentacao/relatorios` },
+    { key: "transporte", label: "Transporte", description: "Embarques, viagens e ocorrências.", to: `/admin/etapa/${stageId}/transporte/relatorios` },
+  ];
+
   return (
     <div className="animate-fade-in space-y-6">
       <div>
@@ -24,7 +26,7 @@ export default function StageReportsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {REPORTS.map((r) => (
-          <Link key={r.to} to={r.to} className="group">
+          <Link key={r.key} to={r.to} className="group">
             <Card className="h-full hover:border-primary hover:shadow-app-md transition-all">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between text-base">
