@@ -67,7 +67,8 @@ export default function AlimentacaoRelatoriosPage() {
           participants(person:people(full_name), delegation_id, delegations(institutions(name)))
         `)
         .eq("meal_windows.event_id", eventId)
-        .order("consumed_at", { ascending: false });
+        .order("consumed_at", { ascending: false })
+        .limit(50000);
 
       if (isStageScoped && stageId) {
         q = q.eq("meal_windows.event_stage_id", stageId);

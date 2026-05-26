@@ -108,9 +108,11 @@ const navGroups: NavGroup[] = [
     icon: <FileBarChart className="h-4 w-4" />,
     items: [
       { label: "Central de Relatórios", to: "/admin/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
+      { label: "Dashboard Operacional", to: "/admin/relatorios/dashboard", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Credenciamento", to: "/admin/relatorios/credenciamento", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Boletins Oficiais", to: "/admin/relatorios/boletins", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
       { label: "Quadro de Medalhas", to: "/admin/relatorios/quadro-medalhas", icon: <FileBarChart className="h-4 w-4" />, roles: ADMIN_ROLES },
-      { label: "Prestação de Contas (OSC)", to: "/admin/registros/prestacao-contas", icon: <ShieldCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
+      { label: "Prestação de Contas (OSC)", to: "/admin/relatorios/osc", icon: <ShieldCheck className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
       { label: "Painel de Conformidade", to: "/admin/conformidade", icon: <ShieldCheck className="h-4 w-4" />, roles: ADMIN_ROLES },
     ],
   },

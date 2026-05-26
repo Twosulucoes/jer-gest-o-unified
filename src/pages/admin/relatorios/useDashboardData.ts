@@ -467,6 +467,35 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
           return distinct.size;
         }, 0),
       },
+      // 5: refeições servidas hoje — COUNT server-side para evitar truncamento do limit(15000)
+      {
+        queryKey: ["dash3", "meals_today_count", eventId, windowIds.join(",")],
+        enabled: enabled && windowIds.length > 0,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const todayWindows = MW.filter((w) => w.service_date === todayISO()).map((w) => w.id);
+          if (todayWindows.length === 0) return 0;
+          const { count } = await supabase.from("meal_consumptions")
+            .select("id", { count: "exact", head: true })
+            .in("meal_window_id", todayWindows);
+          return count ?? 0;
+        }, 0),
+      },
+      // 6: credenciais emitidas hoje — COUNT server-side para evitar truncamento do limit(5000)
+      {
+        queryKey: ["dash3", "credentials_today_count", eventId],
+        enabled: enabled && !!eventId,
+        staleTime: STALE,
+        queryFn: () => safe(async () => {
+          const today = todayISO();
+          const { count } = await supabase.from("participant_credentials")
+            .select("id", { count: "exact", head: true })
+            .eq("event_id", eventId)
+            .gte("issued_at", `${today}T00:00:00`)
+            .lte("issued_at", `${today}T23:59:59`);
+          return count ?? 0;
+        }, 0),
+      },
     ],
   });
 
@@ -477,6 +506,8 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   const results = (dependent[2].data ?? []) as { match_id: string; result_status: string }[];
   const refereesTotal = (dependent[3]?.data ?? 0) as number;
   const refereesAssigned = (dependent[4]?.data ?? 0) as number;
+  const mealsTodayCount = (dependent[5]?.data ?? 0) as number;
+  const credentialsTodayCount = (dependent[6]?.data ?? 0) as number;
 
 
   const isLoadingAll = isLoading || dependent.some((q) => q.isLoading);
@@ -499,7 +530,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // credentialed usa COUNT server-side (query 15) para evitar truncamento pelo limite de 1000 linhas do PostgREST
   const credentialed = (credentialedCountRes as number) ?? credentialedIds.size;
   const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
-  const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
+  const credToday = credentialsTodayCount || C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
 
   // daily credenciamento (por credentialed_at)
   const credDailyMap = new Map<string, number>();
@@ -535,7 +566,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // Alimentação
   const mtName = new Map(MT.map((m) => [m.id, m.name] as const));
   const winById = new Map(MW.map((w) => [w.id, w] as const));
-  const mealsToday = consumptions.filter((c) => (c.consumed_at ?? "").slice(0, 10) === today).length;
+  const mealsToday = mealsTodayCount || consumptions.filter((c) => (c.consumed_at ?? "").slice(0, 10) === today).length;
 
   // daily empilhado por meal_type
   const dailyMap = new Map<string, Record<string, number>>();
