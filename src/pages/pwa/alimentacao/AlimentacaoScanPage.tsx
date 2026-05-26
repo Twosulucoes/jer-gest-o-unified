@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -169,6 +169,7 @@ export default function AlimentacaoScanPage() {
   const [manualSearching, setManualSearching] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [notFoundQr, setNotFoundQr] = useState<string | null>(null);
 
   const [now, setNow] = useState(() => new Date());
@@ -642,9 +643,10 @@ export default function AlimentacaoScanPage() {
   }
 
   const handleScan = async (rawValue: string) => {
-    if (isSubmitting) return;
-
+    if (submittingRef.current || isSubmitting) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
+    setResult(null);
     setScannerOpen(false);
 
     let val = rawValue.trim();
@@ -870,6 +872,15 @@ export default function AlimentacaoScanPage() {
         return;
       }
 
+      if (partData.needs_meals === false) {
+        const msg = getSystemMessage("NEEDS_MEALS_FALSE", lang) || "Participante não declarou necessidade de alimentação.";
+        setResult({ ok: false, message: msg, source: "qr" });
+        toast.error(msg);
+        recordOutcome("error");
+        void recordIncident("NEEDS_MEALS_FALSE", resolved.participant_id);
+        return;
+      }
+
       participantId = resolved.participant_id;
       participantName = resolved.full_name;
       method = "qr_scan";
@@ -901,6 +912,7 @@ export default function AlimentacaoScanPage() {
       setNotFoundQr(null);
       recordOutcome("error");
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -1052,7 +1064,7 @@ export default function AlimentacaoScanPage() {
 
   return (
     <PwaLayout
-      backTo="/pwa/alimentacao/scan"
+      backTo="/pwa/alimentacao"
       moduleTitle={getSystemMessage("SCAN_QR", lang)}
     >
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />

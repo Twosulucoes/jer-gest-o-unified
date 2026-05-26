@@ -31,6 +31,7 @@ export default function AlimentacaoPadroesPage() {
   const [editing, setEditing] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStageId, setSelectedStageId] = useState<string>("all");
+  const [pendingDuplicateFrom, setPendingDuplicateFrom] = useState<string | null>(null);
   const selectedEventId = useActiveEventId();
   const canWrite = hasRole("admin") || hasRole("secretaria");
 
@@ -76,7 +77,7 @@ export default function AlimentacaoPadroesPage() {
     mutationFn: async (v: MealWindowPatternFormValues) => {
       const payload: any = {
         event_id: selectedEventId,
-        event_stage_id: selectedStageId === "all" ? null : selectedStageId,
+        event_stage_id: (selectedStageId === "all" || selectedStageId === "global") ? null : selectedStageId,
         meal_type_id: v.meal_type_id,
         label: v.label || null,
         start_time: v.start_time,
@@ -165,11 +166,16 @@ export default function AlimentacaoPadroesPage() {
     mutationFn: async ({ fromStageId, toStageId }: { fromStageId: string; toStageId: string }) => {
       if (fromStageId === toStageId) throw new Error("Estágio de origem e destino devem ser diferentes");
       
-      const { data: sourcePatterns, error: fetchError } = await supabase
+      let q = supabase
         .from("meal_window_patterns")
         .select("*")
-        .eq("event_stage_id", fromStageId === "global" ? null : fromStageId)
         .eq("event_id", selectedEventId);
+      if (fromStageId === "global") {
+        q = q.is("event_stage_id", null);
+      } else {
+        q = q.eq("event_stage_id", fromStageId);
+      }
+      const { data: sourcePatterns, error: fetchError } = await q;
       
       if (fetchError) throw fetchError;
       if (!sourcePatterns || sourcePatterns.length === 0) throw new Error("Nenhum padrão encontrado no estágio de origem");

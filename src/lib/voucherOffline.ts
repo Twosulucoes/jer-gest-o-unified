@@ -24,8 +24,12 @@ const SYNC_LOCK_TIMEOUT = 5 * 60 * 1000;
 function acquireVoucherLock(): boolean {
   const raw = localStorage.getItem(SYNC_LOCK_KEY);
   if (raw) {
-    const { ts } = JSON.parse(raw) as { ts: number };
-    if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+    try {
+      const { ts } = JSON.parse(raw) as { ts: number };
+      if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+    } catch {
+      // Corrupted lock data — remove and proceed to acquire
+    }
   }
   localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ ts: Date.now() }));
   return true;
@@ -50,7 +54,12 @@ function resetStuckVoucherItems() {
 export const getVoucherQueue = (): VoucherOfflineItem[] => {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored) as VoucherOfflineItem[];
+  } catch {
+    return [];
+  }
 };
 
 export const saveVoucherQueue = (queue: VoucherOfflineItem[]) => {
@@ -107,22 +116,30 @@ let isVoucherSyncing = false;
 
 export const syncVoucherQueue = async () => {
   if (isVoucherSyncing || !navigator.onLine) return { count: 0, conflicts: 0 };
-  if (!acquireVoucherLock()) return { count: 0, conflicts: 0 };
+
   resetStuckVoucherItems();
+
+  if (!acquireVoucherLock()) return { count: 0, conflicts: 0 };
 
   const queue = getVoucherQueue();
   const pending = queue.filter(i => i.status === "pending" || i.status === "failed");
-  if (pending.length === 0) return { count: 0, conflicts: 0 };
+  if (pending.length === 0) {
+    releaseVoucherLock();
+    return { count: 0, conflicts: 0 };
+  }
 
   isVoucherSyncing = true;
   let syncedCount = 0;
   let conflictCount = 0;
-  const updatedQueue = [...queue];
 
   for (const item of pending) {
-    const idx = updatedQueue.findIndex(i => i.id === item.id);
-    updatedQueue[idx].status = "syncing";
-    saveVoucherQueue(updatedQueue);
+    // Re-read fresh from localStorage before each status update
+    const currentQueue = getVoucherQueue();
+    const idx = currentQueue.findIndex(i => i.id === item.id);
+    if (idx === -1) continue;
+
+    currentQueue[idx].status = "syncing";
+    saveVoucherQueue(currentQueue);
 
     try {
       const { data, error } = await supabase.rpc("redeem_voucher" as any, {
@@ -136,31 +153,44 @@ export const syncVoucherQueue = async () => {
       const res = data as VoucherRedeemResult;
 
       if (error || !res.ok) {
-        updatedQueue[idx].status = "conflict";
-        updatedQueue[idx].conflict_reason = res?.reason || error?.message || "unknown";
-        updatedQueue[idx].conflict_context = {
-          used_at: res?.used_at,
-          operator_name: res?.operator_name,
-          ...res
-        };
+        const afterQueue = getVoucherQueue();
+        const afterIdx = afterQueue.findIndex(i => i.id === item.id);
+        if (afterIdx !== -1) {
+          afterQueue[afterIdx].status = "conflict";
+          afterQueue[afterIdx].conflict_reason = res?.reason || error?.message || "unknown";
+          afterQueue[afterIdx].conflict_context = {
+            used_at: res?.used_at,
+            operator_name: res?.operator_name,
+            ...res
+          };
+          saveVoucherQueue(afterQueue);
+        }
         conflictCount++;
       } else {
-        updatedQueue[idx].status = "synced";
+        const afterQueue = getVoucherQueue();
+        const afterIdx = afterQueue.findIndex(i => i.id === item.id);
+        if (afterIdx !== -1) {
+          afterQueue[afterIdx].status = "synced";
+          saveVoucherQueue(afterQueue);
+        }
         syncedCount++;
       }
-      saveVoucherQueue(updatedQueue);
     } catch (err: any) {
       console.error("Erro ao sincronizar voucher offline", err);
-      updatedQueue[idx].attempts += 1;
-      updatedQueue[idx].last_error = err.message || "Erro de conexão";
-      
-      if (updatedQueue[idx].attempts >= 5) {
-        updatedQueue[idx].status = "conflict";
-        updatedQueue[idx].conflict_reason = "Limite de tentativas excedido.";
-      } else {
-        updatedQueue[idx].status = "failed";
+      const afterQueue = getVoucherQueue();
+      const afterIdx = afterQueue.findIndex(i => i.id === item.id);
+      if (afterIdx !== -1) {
+        afterQueue[afterIdx].attempts += 1;
+        afterQueue[afterIdx].last_error = err.message || "Erro de conexão";
+
+        if (afterQueue[afterIdx].attempts >= 5) {
+          afterQueue[afterIdx].status = "conflict";
+          afterQueue[afterIdx].conflict_reason = "Limite de tentativas excedido.";
+        } else {
+          afterQueue[afterIdx].status = "failed";
+        }
+        saveVoucherQueue(afterQueue);
       }
-      saveVoucherQueue(updatedQueue);
     }
   }
 
