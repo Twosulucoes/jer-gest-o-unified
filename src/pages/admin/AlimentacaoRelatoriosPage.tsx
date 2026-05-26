@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageScope } from "@/hooks/useStageScope";
 import { format } from "date-fns";
-import { Download, Utensils, AlertCircle, Info, FileText, Table as TableIcon, FileSpreadsheet } from "lucide-react";
+import { Download, Utensils, AlertCircle, Info, FileText, Table as TableIcon, FileSpreadsheet, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { downloadCsv, downloadXlsxSheets, downloadXlsx } from "@/lib/reportExpor
 
 export default function AlimentacaoRelatoriosPage() {
   const eventId = useActiveEventId();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const { isStageScoped, stageId, stage } = useStageScope();
   const canExport = hasRole("admin") || hasRole("secretaria") || hasRole("alimentacao");
@@ -272,10 +274,32 @@ export default function AlimentacaoRelatoriosPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Relatório de Alimentação</h1>
           <p className="text-sm text-muted-foreground mt-1">Consumos por refeição, delegação e período</p>
+        </div>
+        <div className="flex gap-2 items-center flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao/relatorios/consumo` : "/admin/alimentacao/relatorios/consumo")}>
+            <BarChart2 className="mr-2 h-4 w-4" /> Análise avançada
+          </Button>
+          {canExport && (
+            <>
+              <Button variant="outline" size="sm" onClick={exportCsv} disabled={!consumptions?.length || isExporting}>
+                <Download className="mr-2 h-4 w-4" /> CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportXlsx} disabled={!consumptions?.length || isExporting}>
+                <TableIcon className="mr-2 h-4 w-4" /> XLSX
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportBuffetRealized} disabled={!consumptions?.length || isExporting} title="Exportar realizado para buffet">
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Buffet (Realizado)
+              </Button>
+              <Button size="sm" onClick={exportPdf} disabled={!consumptions?.length || isExporting}>
+                <FileText className="mr-2 h-4 w-4" /> PDF
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {isStageScoped && stage && (
@@ -287,23 +311,6 @@ export default function AlimentacaoRelatoriosPage() {
           </div>
         </div>
       )}
-        {canExport && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!consumptions?.length || isExporting}>
-              <Download className="mr-2 h-4 w-4" /> CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportXlsx} disabled={!consumptions?.length || isExporting}>
-              <TableIcon className="mr-2 h-4 w-4" /> XLSX
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportBuffetRealized} disabled={!consumptions?.length || isExporting} title="Exportar realizado para buffet">
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Buffet (Realizado)
-            </Button>
-            <Button size="sm" onClick={exportPdf} disabled={!consumptions?.length || isExporting}>
-              <FileText className="mr-2 h-4 w-4" /> PDF
-            </Button>
-          </div>
-        )}
-      </div>
 
       <Card>
         <CardHeader><CardTitle className="text-sm">Filtros</CardTitle></CardHeader>
@@ -356,7 +363,7 @@ export default function AlimentacaoRelatoriosPage() {
               <p className="text-xs text-muted-foreground">Total consumos</p>
             </CardContent>
           </Card>
-          {Array.from(totalByType.entries()).slice(0, 3).map(([k, v]) => (
+          {Array.from(totalByType.entries()).map(([k, v]) => (
             <Card key={k}>
               <CardContent className="pt-4 text-center">
                 <p className="text-2xl font-bold">{v}</p>
