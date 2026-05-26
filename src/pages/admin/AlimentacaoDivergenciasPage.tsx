@@ -244,7 +244,7 @@ export default function AlimentacaoDivergenciasPage() {
           <p className="text-sm text-muted-foreground mt-1">Consolidado de recusas e ausências de consumo</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="outline" size="sm" onClick={() => navigate(stageId ? `/admin/etapa/${stageId}/alimentacao` : "/admin/alimentacao")}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
           <Button variant="outline" size="sm" onClick={exportXlsx} disabled={loadingIncidents || loadingMissing}>

@@ -6,8 +6,8 @@ export default function StageReportsPage() {
   const { stageId } = useParams<{ stageId: string }>();
 
   const REPORTS = [
-    { label: "Credenciamento", description: "Status de check-in e emissão de credenciais.", to: "/admin/relatorios/credenciamento" },
-    { label: "Competição", description: "Resultados, classificações e pendências.", to: "/admin/relatorios/boletins" },
+    { label: "Credenciamento", description: "Status de check-in e emissão de credenciais.", to: `/admin/etapa/${stageId}/credenciamento` },
+    { label: "Competição", description: "Resultados, classificações e pendências.", to: `/admin/etapa/${stageId}/competicao/resultados` },
     { label: "Alojamento", description: "Ocupação por local e unidade.", to: `/admin/etapa/${stageId}/alojamento/relatorios` },
     { label: "Alimentação", description: "Consumos e pendências por janela.", to: `/admin/etapa/${stageId}/alimentacao/relatorios` },
     { label: "Transporte", description: "Embarques, viagens e ocorrências.", to: `/admin/etapa/${stageId}/transporte/relatorios` },
