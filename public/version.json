@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/add-food-consumption-records-WDObG",
-  "commit": "2219c1e2",
-  "commitFull": "2219c1e248bf166170067ab940a6c283e20b7b2c",
-  "buildDate": "2026-05-20T02:16:22.210Z",
+  "branch": "claude/uiramutã-consumption-report-AxXCJ",
+  "commit": "3a405521",
+  "commitFull": "3a40552198442f057c78079c56141265437f4a3d",
+  "buildDate": "2026-05-25T23:57:00.799Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
