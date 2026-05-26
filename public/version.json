@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/uiramutã-consumption-report-AxXCJ",
-  "commit": "3a405521",
-  "commitFull": "3a40552198442f057c78079c56141265437f4a3d",
-  "buildDate": "2026-05-25T23:57:00.799Z",
+  "branch": "claude/reports-nutrition-audit-Moe21",
+  "commit": "0105c617",
+  "commitFull": "0105c6178ff604256bc6ae8ddf018b597e528682",
+  "buildDate": "2026-05-26T02:36:41.014Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
