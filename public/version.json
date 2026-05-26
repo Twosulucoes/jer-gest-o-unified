@@ -2,8 +2,8 @@
   "appVersion": "0.4.0",
   "environment": "teste",
   "branch": "claude/alimentacao-module-audit-q8XbP",
-  "commit": "c722faed",
-  "commitFull": "c722faed9c0698b2d7e3f2651f04a6e9a860c786",
-  "buildDate": "2026-05-26T12:53:04.354Z",
+  "commit": "f7838260",
+  "commitFull": "f7838260014266c9493e0a3505f2da991ac932b9",
+  "buildDate": "2026-05-26T12:53:41.948Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }

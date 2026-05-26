@@ -284,7 +284,7 @@ export default function AlimentacaoPadroesPage() {
               <p className="text-xs text-blue-700 dark:text-blue-300">Copie padrões de outro estágio para o estágio selecionado</p>
             </div>
           </div>
-          <Select onValueChange={(val) => duplicateFromStageMut.mutate({ fromStageId: val, toStageId: selectedStageId })}>
+          <Select onValueChange={(val) => setPendingDuplicateFrom(val)}>
             <SelectTrigger className="w-[200px] bg-white dark:bg-slate-950">
               <SelectValue placeholder="Duplicar de..." />
             </SelectTrigger>
@@ -297,6 +297,26 @@ export default function AlimentacaoPadroesPage() {
           </Select>
         </div>
       )}
+
+      <AlertDialog open={!!pendingDuplicateFrom} onOpenChange={(open) => { if (!open) setPendingDuplicateFrom(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Duplicação de Padrões?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso copiará todos os padrões do estágio de origem para o estágio selecionado. Padrões existentes no destino não serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (pendingDuplicateFrom) {
+                duplicateFromStageMut.mutate({ fromStageId: pendingDuplicateFrom, toStageId: selectedStageId });
+              }
+              setPendingDuplicateFrom(null);
+            }}>Duplicar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {!selectedEventId ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 py-16 text-center">

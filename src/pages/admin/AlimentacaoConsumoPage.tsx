@@ -111,7 +111,7 @@ export default function AlimentacaoConsumoPage() {
         .select("*, participant:participants!participant_id(person:people!person_id(full_name, cpf, food_restrictions))")
         .in("meal_window_id", windowIds)
         .order("consumed_at", { ascending: false })
-        .limit(2000);
+        .limit(10000);
       if (error) throw error;
       return data;
     },
@@ -316,6 +316,12 @@ export default function AlimentacaoConsumoPage() {
               </p>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {consumptions.length >= 10000 && (
+        <div className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 p-2 rounded">
+          Exibindo os 10.000 registros mais recentes. Use filtros para refinar.
         </div>
       )}
 

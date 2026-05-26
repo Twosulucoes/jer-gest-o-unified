@@ -120,6 +120,7 @@ export default function DelegacaoAlimentacaoPage() {
         .from("meal_consumptions")
         .select("id, participant_id, meal_window_id, consumed_at, method")
         .in("meal_window_id", windowIds)
+        .eq("status", "active")
         .order("consumed_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as ConsumptionRow[];

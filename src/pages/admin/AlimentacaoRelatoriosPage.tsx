@@ -64,8 +64,9 @@ export default function AlimentacaoRelatoriosPage() {
         .select(`
           *,
           meal_windows!inner(id, label, service_date, meal_type_id, event_id, event_stage_id, meal_types(name)),
-          participants(person:people(full_name), delegation_id, delegations(institutions(name)))
+          participants!inner(person:people(full_name), delegation_id, delegations(institutions(name)))
         `)
+        .eq("status", "active")
         .eq("meal_windows.event_id", eventId)
         .order("consumed_at", { ascending: false });
 

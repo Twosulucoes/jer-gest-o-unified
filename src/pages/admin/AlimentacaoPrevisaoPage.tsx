@@ -235,7 +235,7 @@ export default function AlimentacaoPrevisaoPage() {
     queryKey: ["recent_meal_exports", eventId, stageId],
     queryFn: async () => {
       const { data, error } = await (supabase as any).from("meal_forecast_exports")
-        .select("*, profiles:generated_by(display_name)")
+        .select("*, profiles:generated_by(full_name)")
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -475,7 +475,7 @@ export default function AlimentacaoPrevisaoPage() {
                           <span className="uppercase">{exp.export_format}</span>
                           <span className="text-muted-foreground">{format(new Date(exp.created_at), "dd/MM HH:mm")}</span>
                         </div>
-                        <p className="text-muted-foreground mt-1 truncate">Por: {exp.profiles?.display_name || "Sistema"}</p>
+                        <p className="text-muted-foreground mt-1 truncate">Por: {exp.profiles?.full_name || "Sistema"}</p>
                       </div>
                     ))}
                   </div>
