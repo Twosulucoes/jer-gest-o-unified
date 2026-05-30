@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, BarChart3, Trophy, Receipt, BadgeCheck } from "lucide-react";
+import { FileText, BarChart3, Trophy, Receipt, BadgeCheck, ClipboardList } from "lucide-react";
 
 interface ReportEntry {
   key: string;
@@ -52,6 +52,14 @@ const REPORTS: ReportEntry[] = [
     icon: <Receipt className="h-6 w-6 text-primary" />,
     status: "available",
     to: "/admin/relatorios/osc",
+  },
+  {
+    key: "execucao-fisica",
+    title: "Execução Física das Metas (OSC)",
+    description: "Relatório de execução FÍSICA das metas do Termo de Fomento para o IDJUV (processo SEI). Meta 1 por etapa regional e Meta 2 previsto x executado. Exportação PDF e DOCX.",
+    icon: <ClipboardList className="h-6 w-6 text-primary" />,
+    status: "available",
+    to: "/admin/relatorios/execucao-fisica",
   },
 ];
 
