@@ -81,6 +81,7 @@ const QuadroMedalhasPage = lazy(() => import("../pages/admin/relatorios/QuadroMe
 const PrestacaoContasOscPage = lazy(() => import("../pages/admin/relatorios/PrestacaoContasOscPage"));
 const RelatoriosHubPage = lazy(() => import("../pages/admin/RelatoriosHubPage"));
 const RelatoriosCredenciamentoPage = lazy(() => import("../pages/admin/relatorios/RelatoriosCredenciamentoPage"));
+const ExecucaoFisicaPage = lazy(() => import("../pages/admin/relatorios/ExecucaoFisicaPage"));
 const CompeticaoPublicacaoPage = lazy(() => import("../pages/admin/CompeticaoPublicacaoPage"));
 const CompeticaoBoletinsPage = lazy(() => import("../pages/admin/CompeticaoBoletinsPage"));
 const LinksPage = lazy(() => import("../pages/admin/LinksPage"));
@@ -392,6 +393,7 @@ export const AppRoutes = () => (
         <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
         <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
         <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
+        <Route path="relatorios/execucao-fisica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ExecucaoFisicaPage /></ProtectedRoute>} />
         <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
         <Route path="debug-publicados" element={<Navigate to="/super/debug-publicados" replace />} />
         <Route path="auth/email-templates" element={<Navigate to="/admin" replace />} />
