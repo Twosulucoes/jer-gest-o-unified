@@ -99,7 +99,11 @@ export default function ExecucaoFisicaPage() {
     if (raw === undefined || raw === "") return;
     const valor = Number(raw);
     if (Number.isNaN(valor) || valor < 0) { toast.error("Valor previsto inválido."); return; }
-    saveTarget.mutate({ metricKey, valor });
+    saveTarget.mutate(
+      { metricKey, valor },
+      // Após salvar, descarta o rascunho local para o campo refletir o valor revalidado do banco.
+      { onSuccess: () => setEditPrevisto((s) => { const { [metricKey]: _omit, ...rest } = s; return rest; }) },
+    );
   };
 
   return (
@@ -257,8 +261,7 @@ export default function ExecucaoFisicaPage() {
                         type="number"
                         min={0}
                         className="h-8 w-28 ml-auto text-right"
-                        defaultValue={m.previsto || ""}
-                        value={editPrevisto[m.metric_key] ?? undefined}
+                        value={editPrevisto[m.metric_key] ?? (m.previsto ? String(m.previsto) : "")}
                         placeholder="—"
                         onChange={(e) => setEditPrevisto((s) => ({ ...s, [m.metric_key]: e.target.value }))}
                         onBlur={() => commitPrevisto(m.metric_key)}
