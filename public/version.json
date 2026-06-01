@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/reports-nutrition-audit-Moe21",
-  "commit": "0105c617",
-  "commitFull": "0105c6178ff604256bc6ae8ddf018b597e528682",
-  "buildDate": "2026-05-26T02:36:41.014Z",
+  "branch": "claude/modest-knuth-mlEsV",
+  "commit": "c49a5f9d",
+  "commitFull": "c49a5f9dcbb557143b455a9830c6d5dea35c6b79",
+  "buildDate": "2026-06-01T02:37:43.622Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
