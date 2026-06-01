@@ -293,7 +293,7 @@ export default function PrestacaoContasOscPage() {
             <Kpi icon={Users} label="Participantes" value={r.totalParticipants} sub={`${r.totalAthletes} atletas`} />
             <Kpi icon={BadgeCheck} label="Credenciados" value={r.totalCredentialed} sub={`${credPct}% do total`} />
             <Kpi icon={Building2} label="Delegações" value={r.totalDelegations} sub={`${r.totalSports} modalidades`} />
-            <Kpi icon={Trophy} label="Partidas publicadas" value={r.totalMatchesPublished} sub={`${r.totalMatches} agendadas`} />
+            <Kpi icon={Trophy} label="Partidas com resultado" value={r.totalMatchesPublished} sub={`${r.totalMatches} agendadas`} />
             <Kpi icon={UtensilsCrossed} label="Refeições servidas" value={r.totalMeals} />
             <Kpi icon={Bed} label="Alojamento" value={`${r.totalLodgingOccupied}/${r.totalLodgingCapacity}`} sub={`${lodgePct}% ocupação`} />
             <Kpi icon={Bus} label="Viagens realizadas" value={r.totalTrips} sub={`${r.totalPassengers} passageiros`} />
@@ -324,7 +324,7 @@ export default function PrestacaoContasOscPage() {
                 <TableRow>
                   <TableHead>Modalidade</TableHead>
                   <TableHead className="text-center w-24">Partidas</TableHead>
-                  <TableHead className="text-center w-28">Publicadas</TableHead>
+                  <TableHead className="text-center w-28">Com resultado</TableHead>
                   <TableHead className="w-40">Progresso</TableHead>
                 </TableRow>
               </TableHeader>

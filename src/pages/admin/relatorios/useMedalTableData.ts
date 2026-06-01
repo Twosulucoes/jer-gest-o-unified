@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { REPORTABLE_RESULT_STATUSES } from "@/lib/resultStatus";
 
 export type ScopeFilter = "all" | "jer" | "jerpa";
 export type TypeFilter = "all" | "collective" | "individual";
@@ -144,7 +145,7 @@ export function useMedalTableData(eventId: string | null | undefined, filters: M
         ? await supabase
             .from("competition_match_results")
             .select("id, match_id, match_entry_id, position, result_status")
-            .eq("result_status", "publicado")
+            .in("result_status", REPORTABLE_RESULT_STATUSES as unknown as string[])
             .in("match_id", matchIds)
             .not("position", "is", null)
         : { data: [] as any[] };

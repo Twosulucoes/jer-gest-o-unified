@@ -15,6 +15,22 @@ export const RESULT_STATUS = {
 export type ResultStatusValue = (typeof RESULT_STATUS)[keyof typeof RESULT_STATUS];
 
 /**
+ * Status de resultado contabilizados nos RELATÓRIOS oficiais.
+ * Decisão de produto: os relatórios refletem todos os resultados já lançados
+ * (Lançado + Validado + Publicado), não apenas os publicados no portal.
+ * Fonte única — alterar aqui propaga para todos os relatórios.
+ */
+export const REPORTABLE_RESULT_STATUSES: ResultStatusValue[] = [
+  RESULT_STATUS.LAUNCHED,
+  RESULT_STATUS.VALIDATED,
+  RESULT_STATUS.PUBLISHED,
+];
+
+/** Indica se um resultado deve ser contabilizado nos relatórios (tem status de resultado válido). */
+export const isReportableResult = (s: string | null | undefined): boolean =>
+  s != null && (REPORTABLE_RESULT_STATUSES as string[]).includes(s);
+
+/**
  * Status para Boletins Oficiais
  */
 export const BULLETIN_STATUS = {

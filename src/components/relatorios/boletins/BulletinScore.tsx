@@ -25,7 +25,7 @@ export function computeScoreStandings(data: BulletinDataset): Map<string, Standi
   for (const r of data.results) resultByEntry.set(r.match_entry_id, r);
 
   for (const m of data.matches) {
-    if (m.status !== "completed" && m.status !== "publicado") continue;
+    if (m.status !== "completed" && m.status !== "finished") continue;
     const ents = entriesByMatch.get(m.id) || [];
     if (ents.length < 2) continue;
     const groupKey = m.group_id ?? "__no_group__";

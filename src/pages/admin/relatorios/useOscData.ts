@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { REPORTABLE_RESULT_STATUSES } from "@/lib/resultStatus";
 
 export interface OscDelegationStat {
   delegationId: string;
@@ -165,7 +166,7 @@ export function useOscData(eventId: string | null | undefined) {
       const { data: results } = await supabase
         .from("competition_match_results")
         .select("match_id, position, result_status, match_entry_id")
-        .eq("result_status", "publicado")
+        .in("result_status", REPORTABLE_RESULT_STATUSES as unknown as string[])
         .in("match_id", matchesList.map((m) => m.id).length ? matchesList.map((m) => m.id) : ["00000000-0000-0000-0000-000000000000"]);
       const publishedMatches = new Set(((results || []) as Array<{ match_id: string }>).map((r) => r.match_id));
 

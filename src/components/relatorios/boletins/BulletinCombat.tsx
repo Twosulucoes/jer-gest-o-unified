@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Trophy, Medal } from "lucide-react";
 import type { BulletinDataset } from "./useBulletinData";
 import { statusBadgeLabel } from "./useBulletinData";
+import { isReportableResult } from "@/lib/resultStatus";
 
 const ROUND_LABELS: Record<string, string> = {
   R32: "32-avos", R16: "Oitavas", QF: "Quartas", SF: "Semifinal", BRONZE: "Bronze",
@@ -27,7 +28,7 @@ export default function BulletinCombat({ data }: { data: BulletinDataset }) {
     // pódio: posição 1, 2, 3 (em qualquer fase final) lendo position do result
     const podio: Array<{ pos: number; name: string; delegation: string | null }> = [];
     for (const r of data.results) {
-      if (r.position && r.position >= 1 && r.position <= 3 && (r.result_status === "publicado" || r.result_status === "resultado_validado")) {
+      if (r.position && r.position >= 1 && r.position <= 3 && isReportableResult(r.result_status)) {
         const ent = data.entries.find((e) => e.id === r.match_entry_id);
         if (ent) podio.push({ pos: r.position, name: ent.display_name, delegation: ent.delegation_name });
       }

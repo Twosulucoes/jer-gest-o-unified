@@ -140,7 +140,7 @@ export default function DashboardOperacionalPage() {
                 sub={`${r.credentials_today} emitidas hoje`}
                 tint="bg-accent/10 text-accent-foreground" />
               <KpiCard icon={Trophy} label="Partidas" value={r.matches_total}
-                sub={`${r.matches_done} concluídas · ${r.matches_published} publicadas`}
+                sub={`${r.matches_done} concluídas · ${r.matches_published} com resultado`}
                 tint="bg-amber-500/10 text-amber-600" />
               <KpiCard icon={UtensilsCrossed} label="Refeições Servidas" value={r.meals_total}
                 sub={`${r.meals_today} servidas hoje`}

@@ -49,7 +49,7 @@ export default function BulletinSets({ data }: { data: BulletinDataset }) {
 
     const sg = new Map<string, Standing[]>();
     for (const m of data.matches) {
-      if (m.status !== "completed" && m.status !== "publicado") continue;
+      if (m.status !== "completed" && m.status !== "finished") continue;
       const ents = eByM.get(m.id) || [];
       if (ents.length < 2) continue;
       const gid = m.group_id ?? "__no_group__";

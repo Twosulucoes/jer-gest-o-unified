@@ -29,7 +29,7 @@ export async function exportOscXlsx(data: OscData, meta: Meta) {
     ["Delegações", r.totalDelegations],
     ["Modalidades", r.totalSports],
     ["Partidas (total)", r.totalMatches],
-    ["Partidas publicadas", r.totalMatchesPublished],
+    ["Partidas com resultado", r.totalMatchesPublished],
     ["Refeições servidas", r.totalMeals],
     ["Alojamento ocupado", r.totalLodgingOccupied],
     ["Capacidade alojamento", r.totalLodgingCapacity],
@@ -50,7 +50,7 @@ export async function exportOscXlsx(data: OscData, meta: Meta) {
   w2.columns = [
     { header: "Modalidade", key: "name", width: 40 },
     { header: "Partidas", key: "matches", width: 12 },
-    { header: "Publicadas", key: "published", width: 14 },
+    { header: "Com resultado", key: "published", width: 14 },
     { header: "% Concluído", key: "pct", width: 14 },
   ];
   w2.getRow(1).font = { bold: true };

@@ -1,5 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isReportableResult } from "@/lib/resultStatus";
 
 const STALE = 30_000; // Reduzido de 5min para 30s para sincronia com auditoria realtime
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -590,7 +591,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   };
   const seName = new Map(SE.map((s) => [s.id, buildSeLabel(s) || "Modalidade"] as const));
   const matchesDone = MA.filter((m) => m.status === "completed" || m.status === "finished").length;
-  const publishedMatchIds = new Set(results.filter((r) => r.result_status === "publicado").map((r) => r.match_id));
+  const publishedMatchIds = new Set(results.filter((r) => isReportableResult(r.result_status)).map((r) => r.match_id));
   const matchesPublished = publishedMatchIds.size;
 
   const sportAgg = new Map<string, { total: number; done: number; pub: number }>();

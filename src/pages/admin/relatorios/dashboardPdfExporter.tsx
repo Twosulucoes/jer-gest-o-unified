@@ -44,7 +44,7 @@ function DashboardDocument({ data, meta }: { data: DashboardData; meta: Meta }) 
   const kpis = [
     { l: "Participantes", v: r.participants_total, s: `${r.credentialed} credenciados (${pct(r.credentialed, r.participants_total)}%)` },
     { l: "Credenciais Ativas", v: r.credentials_active, s: `${r.credentials_today} emitidas hoje` },
-    { l: "Partidas", v: r.matches_total, s: `${r.matches_done} concluídas · ${r.matches_published} publicadas` },
+    { l: "Partidas", v: r.matches_total, s: `${r.matches_done} concluídas · ${r.matches_published} com resultado` },
     { l: "Refeições Servidas", v: r.meals_total, s: `${r.meals_today} servidas hoje` },
     { l: "Alojamento", v: `${r.lodging_occupied}/${r.lodging_capacity}`, s: `${pct(r.lodging_occupied, r.lodging_capacity)}% de ocupação` },
     { l: "Transporte", v: r.transport_trips, s: `${r.transport_passengers} passageiros` },
@@ -77,7 +77,7 @@ function DashboardDocument({ data, meta }: { data: DashboardData; meta: Meta }) 
           <Text style={[s.th, { width: "52%" }]}>Modalidade</Text>
           <Text style={[s.th, { width: "12%", textAlign: "center" }]}>Total</Text>
           <Text style={[s.th, { width: "12%", textAlign: "center" }]}>Concluídas</Text>
-          <Text style={[s.th, { width: "12%", textAlign: "center" }]}>Publicadas</Text>
+          <Text style={[s.th, { width: "12%", textAlign: "center" }]}>Com resultado</Text>
           <Text style={[s.th, { width: "12%", textAlign: "center" }]}>%</Text>
         </View>
         {data.competicao.by_sport.slice(0, 30).map((row) => (

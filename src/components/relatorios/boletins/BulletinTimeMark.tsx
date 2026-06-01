@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { BulletinDataset } from "./useBulletinData";
 import { statusBadgeLabel } from "./useBulletinData";
+import { isReportableResult } from "@/lib/resultStatus";
 
 function fmtTime(ms: number | null) {
   if (ms == null) return "—";
@@ -26,7 +27,7 @@ export default function BulletinTimeMark({ data }: { data: BulletinDataset }) {
 
     const byPhase = new Map<string, Array<{ entry: typeof data.entries[number]; result: typeof data.results[number] }>>();
     for (const r of data.results) {
-      if (r.result_status !== "publicado" && r.result_status !== "resultado_validado" && r.result_status !== "resultado_lancado") continue;
+      if (!isReportableResult(r.result_status)) continue;
       const e = eById.get(r.match_entry_id);
       if (!e) continue;
       const phaseId = matchPhase.get(r.match_id) ?? "__";
