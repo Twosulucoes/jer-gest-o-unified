@@ -82,6 +82,7 @@ const PrestacaoContasOscPage = lazy(() => import("../pages/admin/relatorios/Pres
 const RelatoriosHubPage = lazy(() => import("../pages/admin/RelatoriosHubPage"));
 const RelatoriosCredenciamentoPage = lazy(() => import("../pages/admin/relatorios/RelatoriosCredenciamentoPage"));
 const ExecucaoFisicaPage = lazy(() => import("../pages/admin/relatorios/ExecucaoFisicaPage"));
+const RelatorioConsolidadoPage = lazy(() => import("../pages/admin/relatorios/RelatorioConsolidadoPage"));
 const CompeticaoPublicacaoPage = lazy(() => import("../pages/admin/CompeticaoPublicacaoPage"));
 const CompeticaoBoletinsPage = lazy(() => import("../pages/admin/CompeticaoBoletinsPage"));
 const LinksPage = lazy(() => import("../pages/admin/LinksPage"));
@@ -391,6 +392,7 @@ export const AppRoutes = () => (
         <Route path="relatorios/credenciamento" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RelatoriosCredenciamentoPage /></ProtectedRoute>} />
         <Route path="relatorios/boletins" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><BoletinsPorModalidadePage /></ProtectedRoute>} />
         <Route path="relatorios/dashboard" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><DashboardOperacionalPage /></ProtectedRoute>} />
+        <Route path="relatorios/consolidado" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "super_admin"]}><RelatorioConsolidadoPage /></ProtectedRoute>} />
         <Route path="relatorios/quadro-medalhas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><QuadroMedalhasPage /></ProtectedRoute>} />
         <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
         <Route path="relatorios/execucao-fisica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ExecucaoFisicaPage /></ProtectedRoute>} />

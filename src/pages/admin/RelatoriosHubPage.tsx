@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, BarChart3, Trophy, Receipt, BadgeCheck, ClipboardList } from "lucide-react";
+import { FileText, BarChart3, Trophy, Receipt, BadgeCheck, ClipboardList, Layers } from "lucide-react";
 
 interface ReportEntry {
   key: string;
@@ -28,6 +28,14 @@ const REPORTS: ReportEntry[] = [
     icon: <FileText className="h-6 w-6 text-primary" />,
     status: "available",
     to: "/admin/relatorios/boletins",
+  },
+  {
+    key: "consolidado",
+    title: "Consolidado de Etapas",
+    description: "Totais agregados de todas as etapas do evento (inscrições, credenciamento e operacional), sem duplicar participante. Exportação PDF e Excel.",
+    icon: <Layers className="h-6 w-6 text-primary" />,
+    status: "available",
+    to: "/admin/relatorios/consolidado",
   },
   {
     key: "dashboard",
