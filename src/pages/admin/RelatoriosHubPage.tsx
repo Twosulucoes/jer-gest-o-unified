@@ -30,6 +30,14 @@ const REPORTS: ReportEntry[] = [
     to: "/admin/relatorios/boletins",
   },
   {
+    key: "modalidades-etapa",
+    title: "Modalidades por Etapa",
+    description: "Defina quais modalidades acontecem em cada etapa/sede (vínculo modalidade × sede). Base para boletins, escopo e relatórios.",
+    icon: <Layers className="h-6 w-6 text-primary" />,
+    status: "available",
+    to: "/admin/modalidades-por-etapa",
+  },
+  {
     key: "consolidado",
     title: "Consolidado de Etapas",
     description: "Totais agregados de todas as etapas do evento (inscrições, credenciamento e operacional), sem duplicar participante. Exportação PDF e Excel.",
