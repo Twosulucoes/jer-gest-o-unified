@@ -5,92 +5,129 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Upload, CheckCircle2, ArrowRight, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  Upload,
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  Eye,
+  X,
+  Printer,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const REASON_OPTIONS = [
-  { value: "lesao",       label: "Lesão" },
+  { value: "lesao", label: "Lesão" },
   { value: "desistencia", label: "Desistência" },
   { value: "disciplinar", label: "Medida disciplinar" },
-  { value: "convocacao",  label: "Convocação externa" },
-  { value: "outro",       label: "Outro" },
+  { value: "outro", label: "Outro" },
 ];
 
 const DOCUMENT_SLOTS = [
-  { key: "foto_atleta",        label: "Foto do atleta entrante" },
-  { key: "rg_frente",          label: "RG — frente" },
-  { key: "rg_verso",           label: "RG — verso" },
-  { key: "termo_inscricao",    label: "Termo de inscrição" },
-  { key: "aptidao_fisica",     label: "Aptidão física" },
-  { key: "oficio_substituicao", label: "Ofício de substituição da escola" },
+  { key: "foto_atleta", label: "Foto do atleta entrante" },
+  { key: "rg_atleta", label: "RG do atleta" },
+  { key: "termo_inscricao", label: "Termo de inscrição" },
+  { key: "termo_aptidao", label: "Termo de aptidão" },
+  { key: "oficio_substituicao", label: "Ofício de substituição" },
 ];
 
 type Step = 1 | 2 | 3 | 4;
 
-interface DelegacaoInfo {
-  delegation_id: string;
-  institution_name: string;
-  city: string;
-  chief_name: string;
-}
-
-interface Athlete {
-  participant_id: string;
-  full_name: string;
-}
-
-interface SportEvent {
-  sport_event_id: string;
-  sport_event_name: string;
-  sport_name: string;
-  category_name: string;
-}
+type SolicitacaoFeita = {
+  protocolo: string;
+  escola: string;
+  tipo: string;
+  modalidade: string;
+  prova: string;
+  categoria: string;
+  naipe: string;
+  atletaSai: string;
+  atletaEntra: string;
+};
 
 export default function SubstituicaoSolicitarPage() {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [protocol, setProtocol] = useState<string | null>(null);
+  const [mostrarVoucher, setMostrarVoucher] = useState(false);
+  const [solicitacoesFeitas, setSolicitacoesFeitas] = useState<SolicitacaoFeita[]>([]);
 
-  // Etapa 1 — Identificação
   const [events, setEvents] = useState<{ event_id: string; event_name: string }[]>([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
   const [eventId, setEventId] = useState("");
   const [stages, setStages] = useState<{ stage_id: string; stage_name: string }[]>([]);
   const [stageId, setStageId] = useState("");
-  const [phoneSuffix, setPhoneSuffix] = useState("");
-  const [delegacao, setDelegacao] = useState<DelegacaoInfo | null>(null);
 
-  // Etapa 2 — Substituição
-  const [sportEvents, setSportEvents] = useState<SportEvent[]>([]);
-  const [sportEventId, setSportEventId] = useState("");
-  const [outAthletes, setOutAthletes] = useState<Athlete[]>([]);
-  const [inAthletes, setInAthletes] = useState<Athlete[]>([]);
-  const [participantOutId, setParticipantOutId] = useState("");
-  const [participantInId, setParticipantInId] = useState("");
+  const [escolaNome, setEscolaNome] = useState("");
+  const [responsavelNome, setResponsavelNome] = useState("");
+  const [responsavelTelefone, setResponsavelTelefone] = useState("");
+  const [responsavelEmail, setResponsavelEmail] = useState("");
+
+  const [tipoModalidade, setTipoModalidade] = useState("");
+  const [modalidadeNome, setModalidadeNome] = useState("");
+  const [provaNome, setProvaNome] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [naipe, setNaipe] = useState("");
+  const [atletaSaiNome, setAtletaSaiNome] = useState("");
+  const [atletaEntraNome, setAtletaEntraNome] = useState("");
   const [reasonCode, setReasonCode] = useState("lesao");
   const [reason, setReason] = useState("");
 
-  // Etapa 3 — Documentos
   const [docs, setDocs] = useState<Record<string, File>>({});
   const [docPaths, setDocPaths] = useState<Record<string, string>>({});
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  // Etapa 4 — E-mail
-  const [contactEmail, setContactEmail] = useState("");
+  const limparDadosSubstituicao = () => {
+    setTipoModalidade("");
+    setModalidadeNome("");
+    setProvaNome("");
+    setCategoria("");
+    setNaipe("");
+    setAtletaSaiNome("");
+    setAtletaEntraNome("");
+    setReasonCode("lesao");
+    setReason("");
+    setDocs({});
+    setDocPaths({});
 
-  // ── Carregar eventos ao montar ──────────────────────────────────────────
+    Object.keys(fileRefs.current).forEach((key) => {
+      if (fileRefs.current[key]) fileRefs.current[key]!.value = "";
+    });
+  };
+
+  const previewFile = (file: File) => {
+    const url = URL.createObjectURL(file);
+    window.open(url, "_blank");
+  };
+
   const loadEvents = async () => {
     if (eventsLoaded) return;
+
     const { data, error } = await (supabase as any).rpc("substituicao_buscar_eventos");
-    if (error) { toast.error("Não foi possível carregar os eventos."); return; }
+
+    if (error) {
+      toast.error("Não foi possível carregar os eventos.");
+      return;
+    }
+
     setEvents((data ?? []) as any[]);
     setEventsLoaded(true);
   };
@@ -99,115 +136,106 @@ export default function SubstituicaoSolicitarPage() {
     setEventId(eid);
     setStageId("");
     setStages([]);
-    const { data, error } = await (supabase as any).rpc("substituicao_buscar_etapas", { p_event_id: eid });
-    if (!error) setStages((data ?? []) as any[]);
+
+    const { data, error } = await (supabase as any).rpc("substituicao_buscar_etapas", {
+      p_event_id: eid,
+    });
+
+    if (error) {
+      toast.error("Não foi possível carregar as etapas.");
+      return;
+    }
+
+    setStages((data ?? []) as any[]);
   };
 
-  // ── Etapa 1 → buscar delegação ──────────────────────────────────────────
-  const handleIdentificar = async () => {
-    if (!eventId || !stageId || phoneSuffix.length !== 4) {
-      toast.error("Preencha o evento, a etapa e os 4 dígitos do telefone.");
+  const handleIdentificar = () => {
+    if (!eventId || !stageId || !escolaNome || !responsavelNome || !responsavelTelefone || !responsavelEmail) {
+      toast.error("Preencha todos os dados.");
       return;
     }
-    setLoading(true);
-    const { data, error } = await (supabase as any).rpc("substituicao_buscar_delegacao", {
-      p_phone_suffix: phoneSuffix,
-      p_event_id: eventId,
-    });
-    setLoading(false);
-    if (error || !data || data.length === 0) {
-      toast.error("Delegação não encontrada. Verifique o evento e o telefone.");
-      return;
-    }
-    setDelegacao(data[0] as DelegacaoInfo);
 
-    // Carrega provas e vai para etapa 2
-    const { data: seData } = await (supabase as any).rpc("substituicao_buscar_provas", {
-      p_event_id: eventId,
-      p_stage_id: stageId,
-    });
-    setSportEvents((seData ?? []) as SportEvent[]);
     setStep(2);
   };
 
-  // ── Etapa 2 → carregar atletas ao selecionar prova ─────────────────────
-  const handleSportEventChange = async (seid: string) => {
-    setSportEventId(seid);
-    setParticipantOutId("");
-    setParticipantInId("");
-    if (!delegacao) return;
-
-    const [outRes, inRes] = await Promise.all([
-      (supabase as any).rpc("substituicao_buscar_atletas_saindo", {
-        p_delegation_id: delegacao.delegation_id,
-        p_sport_event_id: seid,
-        p_stage_id: stageId,
-      }),
-      (supabase as any).rpc("substituicao_buscar_atletas_entrando", {
-        p_delegation_id: delegacao.delegation_id,
-        p_sport_event_id: seid,
-        p_stage_id: stageId,
-        p_event_id: eventId,
-      }),
-    ]);
-    setOutAthletes((outRes.data ?? []) as Athlete[]);
-    setInAthletes((inRes.data ?? []) as Athlete[]);
-  };
-
-  const selectedSE = sportEvents.find((s) => s.sport_event_id === sportEventId);
-
-  // ── Etapa 3 → upload de documento ──────────────────────────────────────
-  const handleFileChange = async (key: string, file: File | undefined) => {
+  const handleFileChange = (key: string, file: File | undefined) => {
     if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo maior que 10MB.");
+      return;
+    }
+
     setDocs((prev) => ({ ...prev, [key]: file }));
   };
 
   const uploadDocs = async (): Promise<Record<string, string>> => {
     const tempId = crypto.randomUUID();
     const paths: Record<string, string> = {};
+
     setUploading(true);
+
     for (const [key, file] of Object.entries(docs)) {
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `temp/${tempId}/${key}.${ext}`;
+
       const { error } = await supabase.storage
         .from("substitution-docs")
         .upload(path, file, { upsert: true });
-      if (error) {
-        toast.error(`Erro no upload de ${key}: ${error.message}`);
-      } else {
-        paths[key] = path;
-      }
+
+      if (error) toast.error(`Erro no upload de ${key}`);
+      else paths[key] = path;
     }
+
     setUploading(false);
     setDocPaths(paths);
     return paths;
   };
 
-  // ── Etapa 4 → enviar formulário ─────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!contactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
-      toast.error("Informe um e-mail válido.");
+    if (
+      !tipoModalidade ||
+      !modalidadeNome ||
+      (tipoModalidade === "Individual" && !provaNome) ||
+      !categoria ||
+      !naipe ||
+      !atletaSaiNome ||
+      !atletaEntraNome
+    ) {
+      toast.error("Preencha os dados.");
       return;
     }
+
+    if (atletaSaiNome.trim().toLowerCase() === atletaEntraNome.trim().toLowerCase()) {
+      toast.error("O atleta que entra deve ser diferente do atleta que sai.");
+      return;
+    }
+
     setLoading(true);
 
-    // Upload dos docs (se ainda não feito)
     let paths = docPaths;
+
     if (Object.keys(paths).length === 0 && Object.keys(docs).length > 0) {
       paths = await uploadDocs();
     }
 
     const { data, error } = await supabase.functions.invoke("submit-substitution-public", {
       body: {
-        phone_suffix: phoneSuffix,
         event_id: eventId,
         stage_id: stageId,
-        sport_event_id: sportEventId,
-        participant_out_id: participantOutId,
-        participant_in_id: participantInId,
+        escola_nome_digitada: escolaNome.trim(),
+        tipo_modalidade: tipoModalidade,
+        modalidade_nome_digitada: modalidadeNome.trim(),
+        prova_nome_digitada: tipoModalidade === "Individual" ? provaNome.trim() : null,
+        categoria,
+        naipe,
+        atleta_sai_nome: atletaSaiNome.trim(),
+        atleta_entra_nome: atletaEntraNome.trim(),
         reason_code: reasonCode,
         reason: reason.trim() || null,
-        contact_email: contactEmail,
+        responsavel_nome: responsavelNome.trim(),
+        responsavel_telefone: responsavelTelefone.trim(),
+        contact_email: responsavelEmail.trim(),
         doc_paths: paths,
       },
     });
@@ -215,24 +243,109 @@ export default function SubstituicaoSolicitarPage() {
     setLoading(false);
 
     if (error) {
-      toast.error(`Erro ao enviar: ${error.message}`);
+      toast.error(error.message);
       return;
     }
 
-    const result = data as { ok: boolean; protocol_number?: string; error?: string };
+    const result = data as {
+      ok: boolean;
+      protocol_number?: string;
+      error?: string;
+    };
+
     if (!result.ok) {
-      toast.error(result.error ?? "Erro ao processar a solicitação.");
+      toast.error(result.error ?? "Erro");
       return;
     }
 
-    setProtocol(result.protocol_number ?? "");
+    const protocolo = result.protocol_number ?? "";
+
+    setSolicitacoesFeitas((prev) => [
+      ...prev,
+      {
+        protocolo,
+        escola: escolaNome,
+        tipo: tipoModalidade,
+        modalidade: modalidadeNome,
+        prova: provaNome,
+        categoria,
+        naipe,
+        atletaSai: atletaSaiNome,
+        atletaEntra: atletaEntraNome,
+      },
+    ]);
+
+    setProtocol(protocolo);
   };
 
   const stepLabel = ["Identificação", "Substituição", "Documentos", "Enviar"];
 
+  if (mostrarVoucher) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex flex-col">
+        <header className="bg-background border-b border-border px-6 py-4">
+          <div className="font-bold text-lg">JER Gestão — Comprovante de Substituições</div>
+        </header>
+
+        <main className="flex-1 flex justify-center p-4 md:p-8">
+          <div className="w-full max-w-3xl space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Comprovante / Voucher de Solicitações</CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="rounded-md bg-muted/50 p-4 text-sm space-y-1">
+                  <p><strong>Escola:</strong> {escolaNome}</p>
+                  <p><strong>Responsável:</strong> {responsavelNome}</p>
+                  <p><strong>Telefone:</strong> {responsavelTelefone}</p>
+                  <p><strong>E-mail:</strong> {responsavelEmail}</p>
+                </div>
+
+                <div className="space-y-3">
+                  {solicitacoesFeitas.map((s, index) => (
+                    <div key={s.protocolo} className="border rounded-md p-4 text-sm space-y-1">
+                      <p className="font-bold">Substituição {index + 1}</p>
+                      <p><strong>Protocolo:</strong> {s.protocolo}</p>
+                      <p><strong>Tipo:</strong> {s.tipo}</p>
+                      <p><strong>Modalidade:</strong> {s.modalidade}</p>
+                      {s.tipo === "Individual" && <p><strong>Prova:</strong> {s.prova}</p>}
+                      <p><strong>Categoria:</strong> {s.categoria}</p>
+                      <p><strong>Naipe:</strong> {s.naipe}</p>
+                      <p><strong>Sai:</strong> {s.atletaSai}</p>
+                      <p><strong>Entra:</strong> {s.atletaEntra}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-sm leading-relaxed">
+                  Informamos que a retirada dos crachás dos participantes dos municípios de Boa Vista
+                  (área urbana e rural) ocorrerá durante o período de credenciamento, nos dias
+                  <strong> 24 e 26/06/2026</strong>. Quanto aos demais municípios, a retirada dos crachás
+                  será realizada na data de chegada à capital, prevista para o dia
+                  <strong> 02/07/2026</strong>.
+                </div>
+
+                <div className="flex gap-2 print:hidden">
+                  <Button className="flex-1" onClick={() => window.print()}>
+                    <Printer className="h-4 w-4 mr-1.5" />
+                    Imprimir / Salvar PDF
+                  </Button>
+
+                  <Button variant="outline" className="flex-1" onClick={() => window.location.reload()}>
+                    Nova solicitação do zero
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Header */}
       <header className="bg-background border-b border-border px-6 py-4 flex items-center gap-3">
         <div className="font-bold text-lg tracking-tight">JER Gestão</div>
         <span className="text-muted-foreground text-sm">— Solicitação de Substituição</span>
@@ -240,52 +353,65 @@ export default function SubstituicaoSolicitarPage() {
 
       <main className="flex-1 flex items-start justify-center p-4 md:p-8">
         <div className="w-full max-w-xl space-y-6">
-          {/* Stepper */}
           <div className="flex items-center gap-1">
             {stepLabel.map((label, i) => {
               const s = (i + 1) as Step;
               const active = step === s;
               const done = step > s;
+
               return (
                 <div key={s} className="flex items-center gap-1 flex-1">
-                  <div className={`flex items-center gap-1.5 text-xs font-medium ${
-                    active ? "text-primary" : done ? "text-emerald-600" : "text-muted-foreground"
-                  }`}>
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                      active ? "bg-primary text-primary-foreground" :
-                      done ? "bg-emerald-500 text-white" :
-                      "bg-muted text-muted-foreground"
-                    }`}>
+                  <div
+                    className={`flex items-center gap-1.5 text-xs font-medium ${
+                      active ? "text-primary" : done ? "text-emerald-600" : "text-muted-foreground"
+                    }`}
+                  >
+                    <span
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : done
+                          ? "bg-emerald-500 text-white"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
                       {done ? "✓" : s}
                     </span>
+
                     <span className="hidden sm:inline">{label}</span>
                   </div>
-                  {i < stepLabel.length - 1 && (
-                    <div className="flex-1 h-px bg-border mx-1" />
-                  )}
+
+                  {i < stepLabel.length - 1 && <div className="flex-1 h-px bg-border mx-1" />}
                 </div>
               );
             })}
           </div>
 
-          {/* ── ETAPA 1: Identificação ── */}
           {step === 1 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Identificação da Delegação</CardTitle>
+                <CardTitle>Identificação da Solicitação</CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <div className="space-y-1">
                   <Label>Evento</Label>
                   <Select
                     value={eventId}
                     onValueChange={handleEventChange}
-                    onOpenChange={(open) => { if (open) loadEvents(); }}
+                    onOpenChange={(open) => {
+                      if (open) loadEvents();
+                    }}
                   >
-                    <SelectTrigger><SelectValue placeholder="Selecione o evento" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o evento" />
+                    </SelectTrigger>
+
                     <SelectContent>
                       {events.map((e) => (
-                        <SelectItem key={e.event_id} value={e.event_id}>{e.event_name}</SelectItem>
+                        <SelectItem key={e.event_id} value={e.event_id}>
+                          {e.event_name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -294,299 +420,325 @@ export default function SubstituicaoSolicitarPage() {
                 <div className="space-y-1">
                   <Label>Etapa</Label>
                   <Select value={stageId} onValueChange={setStageId} disabled={!eventId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a etapa" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a etapa" />
+                    </SelectTrigger>
+
                     <SelectContent>
                       {stages.map((s) => (
-                        <SelectItem key={s.stage_id} value={s.stage_id}>{s.stage_name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label>4 últimos dígitos do telefone do chefe de delegação</Label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={4}
-                    value={phoneSuffix}
-                    onChange={(e) => setPhoneSuffix(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    placeholder="Ex.: 5678"
-                    className="tracking-widest text-lg"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Use o número cadastrado para a sua delegação no sistema.
-                  </p>
-                </div>
-
-                <Button
-                  className="w-full"
-                  onClick={handleIdentificar}
-                  disabled={loading || !eventId || !stageId || phoneSuffix.length !== 4}
-                >
-                  {loading
-                    ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                    : <ArrowRight className="h-4 w-4 mr-1.5" />}
-                  Identificar delegação
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── ETAPA 2: Substituição ── */}
-          {step === 2 && delegacao && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Dados da Substituição</CardTitle>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Badge variant="outline">{delegacao.institution_name}</Badge>
-                  {delegacao.city && <Badge variant="outline">{delegacao.city}</Badge>}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-1">
-                  <Label>Modalidade</Label>
-                  <Select value={sportEventId} onValueChange={handleSportEventChange}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a modalidade" /></SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {sportEvents.map((s) => (
-                        <SelectItem key={s.sport_event_id} value={s.sport_event_id}>
-                          {s.sport_event_name}
-                          <span className="text-muted-foreground text-xs ml-2">
-                            · {s.sport_name} · {s.category_name}
-                          </span>
+                        <SelectItem key={s.stage_id} value={s.stage_id}>
+                          {s.stage_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {selectedSE && (
-                  <div className="space-y-0.5">
-                    <Label className="text-xs text-muted-foreground">Categoria</Label>
-                    <p className="text-sm font-medium">{selectedSE.category_name}</p>
+                <div className="space-y-1">
+                  <Label>Escola</Label>
+                  <Input value={escolaNome} onChange={(e) => setEscolaNome(e.target.value)} placeholder="Digite o nome da escola" />
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Professor responsável</Label>
+                  <Input value={responsavelNome} onChange={(e) => setResponsavelNome(e.target.value)} placeholder="Digite o nome" />
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Telefone</Label>
+                  <Input value={responsavelTelefone} onChange={(e) => setResponsavelTelefone(e.target.value)} placeholder="(95) 99999-9999" />
+                </div>
+
+                <div className="space-y-1">
+                  <Label>E-mail</Label>
+                  <Input type="email" value={responsavelEmail} onChange={(e) => setResponsavelEmail(e.target.value)} placeholder="email@escola.com" />
+                </div>
+
+                <Button className="w-full" onClick={handleIdentificar}>
+                  <ArrowRight className="h-4 w-4 mr-1.5" />
+                  Continuar
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {step === 2 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Dados da Substituição</CardTitle>
+                <div className="pt-1">
+                  <Badge variant="outline">{escolaNome}</Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <Label>Tipo da modalidade</Label>
+                  <Select
+                    value={tipoModalidade}
+                    onValueChange={(value) => {
+                      setTipoModalidade(value);
+                      if (value === "Coletiva") setProvaNome("");
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="Individual">Individual</SelectItem>
+                      <SelectItem value="Coletiva">Coletiva</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Modalidade</Label>
+                  <Input value={modalidadeNome} onChange={(e) => setModalidadeNome(e.target.value)} placeholder="Ex.: Atletismo, Futsal..." />
+                </div>
+
+                {tipoModalidade === "Individual" && (
+                  <div className="space-y-1">
+                    <Label>Nome da prova</Label>
+                    <Input value={provaNome} onChange={(e) => setProvaNome(e.target.value)} placeholder="100m rasos, salto..." />
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label>Atleta que sai</Label>
-                    <Select value={participantOutId} onValueChange={setParticipantOutId} disabled={!sportEventId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={
-                          !sportEventId ? "—" :
-                          outAthletes.length === 0 ? "Nenhum inscrito" : "Selecione"
-                        } />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {outAthletes.map((a) => (
-                          <SelectItem key={a.participant_id} value={a.participant_id}>
-                            {a.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Atleta que entra</Label>
-                    <Select value={participantInId} onValueChange={setParticipantInId} disabled={!sportEventId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={
-                          !sportEventId ? "—" :
-                          inAthletes.length === 0 ? "Nenhum disponível" : "Selecione"
-                        } />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {inAthletes
-                          .filter((a) => a.participant_id !== participantOutId)
-                          .map((a) => (
-                            <SelectItem key={a.participant_id} value={a.participant_id}>
-                              {a.full_name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-1">
+                  <Label>Categoria</Label>
+                  <Select value={categoria} onValueChange={setCategoria}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="12 a 14 anos">12 a 14 anos</SelectItem>
+                      <SelectItem value="15 a 17 anos">15 a 17 anos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Naipe</Label>
+                  <Select value={naipe} onValueChange={setNaipe}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="Feminino">Feminino</SelectItem>
+                      <SelectItem value="Masculino">Masculino</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Atleta que sai</Label>
+                  <Input value={atletaSaiNome} onChange={(e) => setAtletaSaiNome(e.target.value)} placeholder="Digite o nome" />
+                </div>
+
+                <div className="space-y-1">
+                  <Label>Atleta que entra</Label>
+                  <Input value={atletaEntraNome} onChange={(e) => setAtletaEntraNome(e.target.value)} placeholder="Digite o nome" />
                 </div>
 
                 <div className="space-y-1">
                   <Label>Motivo</Label>
                   <Select value={reasonCode} onValueChange={setReasonCode}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+
                     <SelectContent>
                       {REASON_OPTIONS.map((r) => (
-                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                        <SelectItem key={r.value} value={r.value}>
+                          {r.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1">
-                  <Label>Observações (opcional)</Label>
-                  <Textarea
-                    rows={2}
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Ex.: atestado médico será apresentado presencialmente."
-                  />
+                  <Label>Observações</Label>
+                  <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
                 </div>
 
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>
-                    <ArrowLeft className="h-4 w-4 mr-1.5" /> Voltar
+                    <ArrowLeft className="h-4 w-4 mr-1.5" />
+                    Voltar
                   </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={() => setStep(3)}
-                    disabled={!sportEventId || !participantOutId || !participantInId}
-                  >
-                    Próximo <ArrowRight className="h-4 w-4 ml-1.5" />
+
+                  <Button className="flex-1" onClick={() => setStep(3)}>
+                    Próximo
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
                   </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* ── ETAPA 3: Documentos ── */}
           {step === 3 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Documentos do Atleta Entrante</CardTitle>
+                <CardTitle>Documentos do Atleta Entrante</CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Faça o upload dos documentos obrigatórios (imagem ou PDF, máx. 10 MB cada).
-                </p>
-                <div className="space-y-2">
-                  {DOCUMENT_SLOTS.map((slot) => (
-                    <div
-                      key={slot.key}
-                      className="flex items-center gap-3 rounded-md border border-border/60 px-3 py-2.5"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium">{slot.label}</p>
-                        {docs[slot.key] ? (
-                          <p className="text-[10px] text-emerald-600 truncate">{docs[slot.key].name}</p>
-                        ) : (
-                          <p className="text-[10px] text-muted-foreground">Nenhum arquivo</p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        className="shrink-0 flex items-center gap-1 text-xs text-primary hover:underline"
-                        onClick={() => fileRefs.current[slot.key]?.click()}
-                      >
-                        {docs[slot.key]
-                          ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                          : <Upload className="h-4 w-4" />}
+                {DOCUMENT_SLOTS.map((slot) => (
+                  <div key={slot.key} className="flex items-center gap-3 rounded-md border border-border/60 px-3 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{slot.label}</p>
+
+                      {docs[slot.key] ? (
+                        <p className="text-xs text-emerald-500 truncate mt-1">{docs[slot.key].name}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">Nenhum arquivo selecionado</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {docs[slot.key] && (
+                        <button type="button" className="flex items-center gap-1 text-xs text-blue-500 hover:underline" onClick={() => previewFile(docs[slot.key])}>
+                          <Eye className="h-4 w-4" />
+                          Ver
+                        </button>
+                      )}
+
+                      <button type="button" className="flex items-center gap-1 text-xs text-primary hover:underline" onClick={() => fileRefs.current[slot.key]?.click()}>
+                        {docs[slot.key] ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Upload className="h-4 w-4" />}
                         {docs[slot.key] ? "Alterar" : "Selecionar"}
                       </button>
+
+                      {docs[slot.key] && (
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 text-xs text-red-500 hover:underline"
+                          onClick={() => {
+                            setDocs((prev) => {
+                              const novo = { ...prev };
+                              delete novo[slot.key];
+                              return novo;
+                            });
+
+                            setDocPaths((prev) => {
+                              const novo = { ...prev };
+                              delete novo[slot.key];
+                              return novo;
+                            });
+
+                            if (fileRefs.current[slot.key]) fileRefs.current[slot.key]!.value = "";
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                          Remover
+                        </button>
+                      )}
+
                       <input
-                        ref={(el) => { fileRefs.current[slot.key] = el; }}
+                        ref={(el) => {
+                          fileRefs.current[slot.key] = el;
+                        }}
                         type="file"
                         className="hidden"
                         accept="image/jpeg,image/png,image/webp,application/pdf"
                         onChange={(e) => handleFileChange(slot.key, e.target.files?.[0])}
                       />
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
 
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>
-                    <ArrowLeft className="h-4 w-4 mr-1.5" /> Voltar
+                    <ArrowLeft className="h-4 w-4 mr-1.5" />
+                    Voltar
                   </Button>
+
                   <Button className="flex-1" onClick={() => setStep(4)}>
-                    Próximo <ArrowRight className="h-4 w-4 ml-1.5" />
+                    Próximo
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
                   </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* ── ETAPA 4: Confirmação + Envio ── */}
-          {step === 4 && delegacao && selectedSE && (
+          {step === 4 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Confirmação e Envio</CardTitle>
+                <CardTitle>Confirmação e Envio</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Resumo */}
-                <div className="rounded-md bg-muted/50 p-3 space-y-1.5 text-sm">
-                  <p><span className="text-muted-foreground">Escola:</span> {delegacao.institution_name}</p>
-                  <p><span className="text-muted-foreground">Modalidade:</span> {selectedSE.sport_event_name}</p>
-                  <p>
-                    <span className="text-muted-foreground">Sai:</span>{" "}
-                    <span className="font-medium text-amber-700 dark:text-amber-300">
-                      {outAthletes.find((a) => a.participant_id === participantOutId)?.full_name ?? "—"}
-                    </span>
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Entra:</span>{" "}
-                    <span className="font-medium text-emerald-700 dark:text-emerald-300">
-                      {inAthletes.find((a) => a.participant_id === participantInId)?.full_name ?? "—"}
-                    </span>
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Documentos anexados:</span>{" "}
-                    {Object.keys(docs).length} de {DOCUMENT_SLOTS.length}
-                  </p>
-                </div>
 
-                <div className="space-y-1">
-                  <Label>E-mail para receber o protocolo</Label>
-                  <Input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="email@escola.edu.br"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Você receberá o número de protocolo neste endereço assim que a solicitação for registrada.
-                  </p>
+              <CardContent className="space-y-4">
+                <div className="rounded-md bg-muted/50 p-3 space-y-1.5 text-sm">
+                  <p><span className="text-muted-foreground">Escola:</span> {escolaNome}</p>
+                  <p><span className="text-muted-foreground">Tipo:</span> {tipoModalidade}</p>
+                  <p><span className="text-muted-foreground">Modalidade:</span> {modalidadeNome}</p>
+                  {tipoModalidade === "Individual" && <p><span className="text-muted-foreground">Prova:</span> {provaNome}</p>}
+                  <p><span className="text-muted-foreground">Categoria:</span> {categoria}</p>
+                  <p><span className="text-muted-foreground">Naipe:</span> {naipe}</p>
+                  <p><span className="text-muted-foreground">Sai:</span> {atletaSaiNome}</p>
+                  <p><span className="text-muted-foreground">Entra:</span> {atletaEntraNome}</p>
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={() => setStep(3)} disabled={loading || uploading}>
-                    <ArrowLeft className="h-4 w-4 mr-1.5" /> Voltar
+                  <Button variant="outline" className="flex-1" onClick={() => setStep(3)}>
+                    <ArrowLeft className="h-4 w-4 mr-1.5" />
+                    Voltar
                   </Button>
+
                   <Button className="flex-1" onClick={handleSubmit} disabled={loading || uploading}>
                     {(loading || uploading) && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                    {uploading ? "Enviando docs…" : loading ? "Processando…" : "Enviar solicitação"}
+                    Enviar solicitação
                   </Button>
                 </div>
               </CardContent>
             </Card>
           )}
-
-          <p className="text-center text-xs text-muted-foreground">
-            JER Gestão · Jogos Escolares de Roraima 2026
-          </p>
         </div>
       </main>
 
-      {/* Modal de protocolo */}
-      <Dialog open={!!protocol} onOpenChange={(o) => { if (!o) window.location.reload(); }}>
-        <DialogContent className="sm:max-w-sm text-center">
+      <Dialog open={!!protocol} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md text-center">
           <DialogHeader>
             <DialogTitle className="flex flex-col items-center gap-2">
               <CheckCircle2 className="h-10 w-10 text-emerald-500" />
               Solicitação enviada!
             </DialogTitle>
+
             <DialogDescription className="space-y-3 pt-2">
-              <span className="block text-sm">Seu número de protocolo:</span>
-              <span className="block text-2xl font-bold tracking-widest text-foreground font-mono">
+              <span className="block text-sm">Número do protocolo:</span>
+
+              <span className="block text-2xl font-bold tracking-widest font-mono">
                 {protocol}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                Um e-mail foi enviado para <strong>{contactEmail}</strong> com este protocolo.
-                Sua solicitação será analisada pela comissão técnica do JER.
               </span>
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="justify-center">
-            <Button onClick={() => window.location.reload()}>
-              Nova solicitação
+
+          <DialogFooter className="flex flex-col sm:flex-col gap-2">
+            <Button
+              onClick={() => {
+                setProtocol(null);
+                limparDadosSubstituicao();
+                setStep(2);
+              }}
+            >
+              Nova substituição da mesma escola
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setProtocol(null);
+                setMostrarVoucher(true);
+              }}
+            >
+              Finalizar e ver comprovante
+            </Button>
+
+            <Button variant="ghost" onClick={() => window.location.reload()}>
+              Nova solicitação do zero
             </Button>
           </DialogFooter>
         </DialogContent>
