@@ -48,11 +48,30 @@ const DOCUMENT_SLOTS = [
   { key: "oficio_substituicao", label: "Ofício de substituição" },
 ];
 
+const MUNICIPIOS_RR = [
+  "Alto Alegre",
+  "Amajari",
+  "Boa Vista",
+  "Bonfim",
+  "Cantá",
+  "Caracaraí",
+  "Caroebe",
+  "Iracema",
+  "Mucajaí",
+  "Normandia",
+  "Pacaraima",
+  "Rorainópolis",
+  "São João da Baliza",
+  "São Luiz",
+  "Uiramutã",
+];
+
 type Step = 1 | 2 | 3 | 4;
 
 type SolicitacaoFeita = {
   protocolo: string;
   escola: string;
+  municipio: string;
   tipo: string;
   modalidade: string;
   prova: string;
@@ -73,9 +92,8 @@ export default function SubstituicaoSolicitarPage() {
   const [events, setEvents] = useState<{ event_id: string; event_name: string }[]>([]);
   const [eventsLoaded, setEventsLoaded] = useState(false);
   const [eventId, setEventId] = useState("");
-  const [stages, setStages] = useState<{ stage_id: string; stage_name: string }[]>([]);
-  const [stageId, setStageId] = useState("");
 
+  const [municipio, setMunicipio] = useState("");
   const [escolaNome, setEscolaNome] = useState("");
   const [responsavelNome, setResponsavelNome] = useState("");
   const [responsavelTelefone, setResponsavelTelefone] = useState("");
@@ -134,24 +152,17 @@ export default function SubstituicaoSolicitarPage() {
 
   const handleEventChange = async (eid: string) => {
     setEventId(eid);
-    setStageId("");
-    setStages([]);
-
-    const { data, error } = await (supabase as any).rpc("substituicao_buscar_etapas", {
-      p_event_id: eid,
-    });
-
-    if (error) {
-      toast.error("Não foi possível carregar as etapas.");
-      return;
-    }
-
-    setStages((data ?? []) as any[]);
+    setMunicipio("");
   };
 
   const handleIdentificar = () => {
-    if (!eventId || !stageId || !escolaNome || !responsavelNome || !responsavelTelefone || !responsavelEmail) {
+    if (!eventId || !municipio || !escolaNome || !responsavelNome || !responsavelTelefone || !responsavelEmail) {
       toast.error("Preencha todos os dados.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(responsavelEmail)) {
+      toast.error("Informe um e-mail válido.");
       return;
     }
 
@@ -183,16 +194,18 @@ export default function SubstituicaoSolicitarPage() {
         .from("substitution-docs")
         .upload(path, file, { upsert: true });
 
-      if (error) toast.error(`Erro no upload de ${key}`);
-      else paths[key] = path;
+      if (error) {
+        toast.error(`Erro no upload de ${key}`);
+      } else {
+        paths[key] = path;
+      }
     }
 
     setUploading(false);
     setDocPaths(paths);
     return paths;
   };
-
-  const handleSubmit = async () => {
+    const handleSubmit = async () => {
     if (
       !tipoModalidade ||
       !modalidadeNome ||
@@ -222,7 +235,8 @@ export default function SubstituicaoSolicitarPage() {
     const { data, error } = await supabase.functions.invoke("submit-substitution-public", {
       body: {
         event_id: eventId,
-        stage_id: stageId,
+        stage_id: null,
+        municipio_nome: municipio,
         escola_nome_digitada: escolaNome.trim(),
         tipo_modalidade: tipoModalidade,
         modalidade_nome_digitada: modalidadeNome.trim(),
@@ -265,6 +279,7 @@ export default function SubstituicaoSolicitarPage() {
       {
         protocolo,
         escola: escolaNome,
+        municipio,
         tipo: tipoModalidade,
         modalidade: modalidadeNome,
         prova: provaNome,
@@ -284,7 +299,9 @@ export default function SubstituicaoSolicitarPage() {
     return (
       <div className="min-h-screen bg-muted/30 flex flex-col">
         <header className="bg-background border-b border-border px-6 py-4">
-          <div className="font-bold text-lg">JER Gestão — Comprovante de Substituições</div>
+          <div className="font-bold text-lg">
+            JER Gestão — Comprovante de Substituições
+          </div>
         </header>
 
         <main className="flex-1 flex justify-center p-4 md:p-8">
@@ -296,6 +313,7 @@ export default function SubstituicaoSolicitarPage() {
 
               <CardContent className="space-y-4">
                 <div className="rounded-md bg-muted/50 p-4 text-sm space-y-1">
+                  <p><strong>Município:</strong> {municipio}</p>
                   <p><strong>Escola:</strong> {escolaNome}</p>
                   <p><strong>Responsável:</strong> {responsavelNome}</p>
                   <p><strong>Telefone:</strong> {responsavelTelefone}</p>
@@ -307,9 +325,14 @@ export default function SubstituicaoSolicitarPage() {
                     <div key={s.protocolo} className="border rounded-md p-4 text-sm space-y-1">
                       <p className="font-bold">Substituição {index + 1}</p>
                       <p><strong>Protocolo:</strong> {s.protocolo}</p>
+                      <p><strong>Município:</strong> {s.municipio}</p>
                       <p><strong>Tipo:</strong> {s.tipo}</p>
                       <p><strong>Modalidade:</strong> {s.modalidade}</p>
-                      {s.tipo === "Individual" && <p><strong>Prova:</strong> {s.prova}</p>}
+
+                      {s.tipo === "Individual" && (
+                        <p><strong>Prova:</strong> {s.prova}</p>
+                      )}
+
                       <p><strong>Categoria:</strong> {s.categoria}</p>
                       <p><strong>Naipe:</strong> {s.naipe}</p>
                       <p><strong>Sai:</strong> {s.atletaSai}</p>
@@ -318,12 +341,26 @@ export default function SubstituicaoSolicitarPage() {
                   ))}
                 </div>
 
-                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-sm leading-relaxed">
-                  Informamos que a retirada dos crachás dos participantes dos municípios de Boa Vista
-                  (área urbana e rural) ocorrerá durante o período de credenciamento, nos dias
-                  <strong> 24 e 26/06/2026</strong>. Quanto aos demais municípios, a retirada dos crachás
-                  será realizada na data de chegada à capital, prevista para o dia
-                  <strong> 02/07/2026</strong>.
+                <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-5 text-sm leading-relaxed space-y-3">
+                  <div className="text-base font-bold text-emerald-400">
+                    *CONFIRMADO O PROCEDIMENTO DE SUBSTITUIÇÃO*
+                  </div>
+
+                  <p>
+                    Entraremos em contato para aprovação final dos dados.
+                  </p>
+
+                  <p>
+                    Informamos que a retirada dos crachás dos participantes dos municípios de
+                    Boa Vista (escola da capital) ocorrerá durante o período de credenciamento,
+                    nos dias <strong>24 e 26/06/2026</strong>.
+                  </p>
+
+                  <p>
+                    Quanto aos demais municípios e Boa Vista (rural), a retirada dos crachás
+                    será realizada na data de chegada à capital, prevista para o dia
+                    <strong> 02/07/2026</strong>.
+                  </p>
                 </div>
 
                 <div className="flex gap-2 print:hidden">
@@ -332,7 +369,11 @@ export default function SubstituicaoSolicitarPage() {
                     Imprimir / Salvar PDF
                   </Button>
 
-                  <Button variant="outline" className="flex-1" onClick={() => window.location.reload()}>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => window.location.reload()}
+                  >
                     Nova solicitação do zero
                   </Button>
                 </div>
@@ -348,7 +389,9 @@ export default function SubstituicaoSolicitarPage() {
     <div className="min-h-screen bg-muted/30 flex flex-col">
       <header className="bg-background border-b border-border px-6 py-4 flex items-center gap-3">
         <div className="font-bold text-lg tracking-tight">JER Gestão</div>
-        <span className="text-muted-foreground text-sm">— Solicitação de Substituição</span>
+        <span className="text-muted-foreground text-sm">
+          — Solicitação de Substituição
+        </span>
       </header>
 
       <main className="flex-1 flex items-start justify-center p-4 md:p-8">
@@ -363,7 +406,11 @@ export default function SubstituicaoSolicitarPage() {
                 <div key={s} className="flex items-center gap-1 flex-1">
                   <div
                     className={`flex items-center gap-1.5 text-xs font-medium ${
-                      active ? "text-primary" : done ? "text-emerald-600" : "text-muted-foreground"
+                      active
+                        ? "text-primary"
+                        : done
+                        ? "text-emerald-600"
+                        : "text-muted-foreground"
                     }`}
                   >
                     <span
@@ -381,7 +428,9 @@ export default function SubstituicaoSolicitarPage() {
                     <span className="hidden sm:inline">{label}</span>
                   </div>
 
-                  {i < stepLabel.length - 1 && <div className="flex-1 h-px bg-border mx-1" />}
+                  {i < stepLabel.length - 1 && (
+                    <div className="flex-1 h-px bg-border mx-1" />
+                  )}
                 </div>
               );
             })}
@@ -396,6 +445,7 @@ export default function SubstituicaoSolicitarPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1">
                   <Label>Evento</Label>
+
                   <Select
                     value={eventId}
                     onValueChange={handleEventChange}
@@ -418,40 +468,61 @@ export default function SubstituicaoSolicitarPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label>Etapa</Label>
-                  <Select value={stageId} onValueChange={setStageId} disabled={!eventId}>
+                  <Label>Município</Label>
+
+                  <Select value={municipio} onValueChange={setMunicipio} disabled={!eventId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a etapa" />
+                      <SelectValue placeholder="Selecione o município" />
                     </SelectTrigger>
 
                     <SelectContent>
-                      {stages.map((s) => (
-                        <SelectItem key={s.stage_id} value={s.stage_id}>
-                          {s.stage_name}
+                      {MUNICIPIOS_RR.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-1">
+                                <div className="space-y-1">
                   <Label>Escola</Label>
-                  <Input value={escolaNome} onChange={(e) => setEscolaNome(e.target.value)} placeholder="Digite o nome da escola" />
+
+                  <Input
+                    value={escolaNome}
+                    onChange={(e) => setEscolaNome(e.target.value)}
+                    placeholder="Digite o nome da escola"
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Label>Professor responsável</Label>
-                  <Input value={responsavelNome} onChange={(e) => setResponsavelNome(e.target.value)} placeholder="Digite o nome" />
+
+                  <Input
+                    value={responsavelNome}
+                    onChange={(e) => setResponsavelNome(e.target.value)}
+                    placeholder="Digite o nome"
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Label>Telefone</Label>
-                  <Input value={responsavelTelefone} onChange={(e) => setResponsavelTelefone(e.target.value)} placeholder="(95) 99999-9999" />
+
+                  <Input
+                    value={responsavelTelefone}
+                    onChange={(e) => setResponsavelTelefone(e.target.value)}
+                    placeholder="(95) 99999-9999"
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Label>E-mail</Label>
-                  <Input type="email" value={responsavelEmail} onChange={(e) => setResponsavelEmail(e.target.value)} placeholder="email@escola.com" />
+
+                  <Input
+                    type="email"
+                    value={responsavelEmail}
+                    onChange={(e) => setResponsavelEmail(e.target.value)}
+                    placeholder="email@escola.com"
+                  />
                 </div>
 
                 <Button className="w-full" onClick={handleIdentificar}>
@@ -466,7 +537,9 @@ export default function SubstituicaoSolicitarPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Dados da Substituição</CardTitle>
-                <div className="pt-1">
+
+                <div className="pt-1 flex flex-wrap gap-2">
+                  <Badge variant="outline">{municipio}</Badge>
                   <Badge variant="outline">{escolaNome}</Badge>
                 </div>
               </CardHeader>
@@ -474,6 +547,7 @@ export default function SubstituicaoSolicitarPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-1">
                   <Label>Tipo da modalidade</Label>
+
                   <Select
                     value={tipoModalidade}
                     onValueChange={(value) => {
@@ -494,18 +568,29 @@ export default function SubstituicaoSolicitarPage() {
 
                 <div className="space-y-1">
                   <Label>Modalidade</Label>
-                  <Input value={modalidadeNome} onChange={(e) => setModalidadeNome(e.target.value)} placeholder="Ex.: Atletismo, Futsal..." />
+
+                  <Input
+                    value={modalidadeNome}
+                    onChange={(e) => setModalidadeNome(e.target.value)}
+                    placeholder="Ex.: Atletismo, Futsal..."
+                  />
                 </div>
 
                 {tipoModalidade === "Individual" && (
                   <div className="space-y-1">
                     <Label>Nome da prova</Label>
-                    <Input value={provaNome} onChange={(e) => setProvaNome(e.target.value)} placeholder="100m rasos, salto..." />
+
+                    <Input
+                      value={provaNome}
+                      onChange={(e) => setProvaNome(e.target.value)}
+                      placeholder="100m rasos, salto..."
+                    />
                   </div>
                 )}
 
                 <div className="space-y-1">
                   <Label>Categoria</Label>
+
                   <Select value={categoria} onValueChange={setCategoria}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
@@ -520,6 +605,7 @@ export default function SubstituicaoSolicitarPage() {
 
                 <div className="space-y-1">
                   <Label>Naipe</Label>
+
                   <Select value={naipe} onValueChange={setNaipe}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione" />
@@ -534,16 +620,27 @@ export default function SubstituicaoSolicitarPage() {
 
                 <div className="space-y-1">
                   <Label>Atleta que sai</Label>
-                  <Input value={atletaSaiNome} onChange={(e) => setAtletaSaiNome(e.target.value)} placeholder="Digite o nome" />
+
+                  <Input
+                    value={atletaSaiNome}
+                    onChange={(e) => setAtletaSaiNome(e.target.value)}
+                    placeholder="Digite o nome"
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Label>Atleta que entra</Label>
-                  <Input value={atletaEntraNome} onChange={(e) => setAtletaEntraNome(e.target.value)} placeholder="Digite o nome" />
+
+                  <Input
+                    value={atletaEntraNome}
+                    onChange={(e) => setAtletaEntraNome(e.target.value)}
+                    placeholder="Digite o nome"
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Label>Motivo</Label>
+
                   <Select value={reasonCode} onValueChange={setReasonCode}>
                     <SelectTrigger>
                       <SelectValue />
@@ -561,7 +658,12 @@ export default function SubstituicaoSolicitarPage() {
 
                 <div className="space-y-1">
                   <Label>Observações</Label>
-                  <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
+
+                  <Textarea
+                    rows={2}
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
                 </div>
 
                 <div className="flex gap-2">
@@ -587,27 +689,47 @@ export default function SubstituicaoSolicitarPage() {
 
               <CardContent className="space-y-4">
                 {DOCUMENT_SLOTS.map((slot) => (
-                  <div key={slot.key} className="flex items-center gap-3 rounded-md border border-border/60 px-3 py-3">
+                  <div
+                    key={slot.key}
+                    className="flex items-center gap-3 rounded-md border border-border/60 px-3 py-3"
+                  >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{slot.label}</p>
 
                       {docs[slot.key] ? (
-                        <p className="text-xs text-emerald-500 truncate mt-1">{docs[slot.key].name}</p>
+                        <p className="text-xs text-emerald-500 truncate mt-1">
+                          {docs[slot.key].name}
+                        </p>
                       ) : (
-                        <p className="text-xs text-muted-foreground mt-1">Nenhum arquivo selecionado</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Nenhum arquivo selecionado
+                        </p>
                       )}
                     </div>
 
                     <div className="flex items-center gap-3">
                       {docs[slot.key] && (
-                        <button type="button" className="flex items-center gap-1 text-xs text-blue-500 hover:underline" onClick={() => previewFile(docs[slot.key])}>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                          onClick={() => previewFile(docs[slot.key])}
+                        >
                           <Eye className="h-4 w-4" />
                           Ver
                         </button>
                       )}
 
-                      <button type="button" className="flex items-center gap-1 text-xs text-primary hover:underline" onClick={() => fileRefs.current[slot.key]?.click()}>
-                        {docs[slot.key] ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Upload className="h-4 w-4" />}
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                        onClick={() => fileRefs.current[slot.key]?.click()}
+                      >
+                        {docs[slot.key] ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+
                         {docs[slot.key] ? "Alterar" : "Selecionar"}
                       </button>
 
@@ -628,7 +750,9 @@ export default function SubstituicaoSolicitarPage() {
                               return novo;
                             });
 
-                            if (fileRefs.current[slot.key]) fileRefs.current[slot.key]!.value = "";
+                            if (fileRefs.current[slot.key]) {
+                              fileRefs.current[slot.key]!.value = "";
+                            }
                           }}
                         >
                           <X className="h-4 w-4" />
@@ -672,10 +796,15 @@ export default function SubstituicaoSolicitarPage() {
 
               <CardContent className="space-y-4">
                 <div className="rounded-md bg-muted/50 p-3 space-y-1.5 text-sm">
+                  <p><span className="text-muted-foreground">Município:</span> {municipio}</p>
                   <p><span className="text-muted-foreground">Escola:</span> {escolaNome}</p>
                   <p><span className="text-muted-foreground">Tipo:</span> {tipoModalidade}</p>
                   <p><span className="text-muted-foreground">Modalidade:</span> {modalidadeNome}</p>
-                  {tipoModalidade === "Individual" && <p><span className="text-muted-foreground">Prova:</span> {provaNome}</p>}
+
+                  {tipoModalidade === "Individual" && (
+                    <p><span className="text-muted-foreground">Prova:</span> {provaNome}</p>
+                  )}
+
                   <p><span className="text-muted-foreground">Categoria:</span> {categoria}</p>
                   <p><span className="text-muted-foreground">Naipe:</span> {naipe}</p>
                   <p><span className="text-muted-foreground">Sai:</span> {atletaSaiNome}</p>
@@ -689,7 +818,9 @@ export default function SubstituicaoSolicitarPage() {
                   </Button>
 
                   <Button className="flex-1" onClick={handleSubmit} disabled={loading || uploading}>
-                    {(loading || uploading) && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+                    {(loading || uploading) && (
+                      <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    )}
                     Enviar solicitação
                   </Button>
                 </div>
