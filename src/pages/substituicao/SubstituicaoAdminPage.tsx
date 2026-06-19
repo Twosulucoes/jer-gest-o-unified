@@ -104,12 +104,7 @@ export default function SubstituicoesPage() {
     queryFn: async () => {
       let q = (supabase as any)
         .from("substitutions")
-        .select(
-          `
-          *,
-          substitution_documents(*)
-        `
-        )
+        .select("*")
         .eq("event_id", eventId)
         .order("requested_at", { ascending: false });
 
@@ -121,7 +116,26 @@ export default function SubstituicoesPage() {
 
       if (error) throw error;
 
-      return (data ?? []) as any[];
+      const enriched = await Promise.all(
+        (data ?? []).map(async (item: any) => {
+          const { data: docs, error: docsError } = await (supabase as any)
+            .from("substitution_documents")
+            .select("*")
+            .eq("substitution_id", item.id)
+            .order("created_at", { ascending: true });
+
+          if (docsError) {
+            console.error("Erro ao buscar documentos:", docsError);
+          }
+
+          return {
+            ...item,
+            substitution_documents: docs ?? [],
+          };
+        })
+      );
+
+      return enriched;
     },
   });
 
@@ -342,6 +356,7 @@ export default function SubstituicoesPage() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Sai</TableHead>
                 <TableHead>Entra</TableHead>
+                <TableHead>Docs</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -351,7 +366,7 @@ export default function SubstituicoesPage() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={10}>
+                    <TableCell colSpan={11}>
                       <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
@@ -359,7 +374,7 @@ export default function SubstituicoesPage() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-12 text-muted-foreground"
                   >
                     Nenhuma substituição encontrada.
@@ -371,6 +386,8 @@ export default function SubstituicoesPage() {
                     label: r.status,
                     tone: "outline" as const,
                   };
+
+                  const docsCount = r.substitution_documents?.length ?? 0;
 
                   return (
                     <TableRow key={r.id}>
@@ -421,6 +438,12 @@ export default function SubstituicoesPage() {
 
                       <TableCell className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
                         {r.athlete_in_name_text ?? "—"}
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge variant={docsCount > 0 ? "default" : "outline"}>
+                          {docsCount}
+                        </Badge>
                       </TableCell>
 
                       <TableCell>
@@ -615,7 +638,15 @@ export default function SubstituicoesPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(doc.file_url, "_blank")}
+                          onClick={() => {
+                            if (doc.file_url) {
+                              window.open(doc.file_url, "_blank");
+                            } else if (doc.storage_path) {
+                              toast.error("Documento sem URL pública.");
+                            } else {
+                              toast.error("Arquivo não encontrado.");
+                            }
+                          }}
                         >
                           <Download className="h-3 w-3 mr-1" />
                           Abrir
