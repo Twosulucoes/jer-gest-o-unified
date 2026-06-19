@@ -34,6 +34,7 @@ serve(async (req) => {
     const {
       event_id,
       stage_id,
+      municipio_nome,
 
       escola_nome_digitada,
       tipo_modalidade,
@@ -57,7 +58,7 @@ serve(async (req) => {
 
     if (
       !event_id ||
-      !stage_id ||
+      !municipio_nome ||
       !escola_nome_digitada ||
       !tipo_modalidade ||
       !modalidade_nome_digitada ||
@@ -69,14 +70,17 @@ serve(async (req) => {
       !responsavel_telefone ||
       !contact_email
     ) {
-      return json({ ok: false, error: "TESTE NOVO FUNCIONANDO" }, 400);
+      return json({ ok: false, error: "Campos obrigatórios faltando." }, 400);
     }
 
     if (tipo_modalidade === "Individual" && !prova_nome_digitada) {
-      return json({
-        ok: false,
-        error: "Informe o nome da prova para modalidade individual.",
-      }, 400);
+      return json(
+        {
+          ok: false,
+          error: "Informe o nome da prova para modalidade individual.",
+        },
+        400
+      );
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email)) {
@@ -87,10 +91,13 @@ serve(async (req) => {
       atleta_sai_nome.trim().toLowerCase() ===
       atleta_entra_nome.trim().toLowerCase()
     ) {
-      return json({
-        ok: false,
-        error: "O atleta que entra deve ser diferente do atleta que sai.",
-      }, 400);
+      return json(
+        {
+          ok: false,
+          error: "O atleta que entra deve ser diferente do atleta que sai.",
+        },
+        400
+      );
     }
 
     const protocolNumber = gerarProtocolo();
@@ -99,7 +106,8 @@ serve(async (req) => {
       .from("substitutions")
       .insert({
         event_id,
-        event_stage_id: stage_id,
+        event_stage_id: stage_id || null,
+        municipio_text: municipio_nome,
 
         delegation_id: null,
         sport_event_id: null,
@@ -118,9 +126,7 @@ serve(async (req) => {
         modality_type_text: tipo_modalidade,
         modality_name_text: modalidade_nome_digitada.trim(),
         proof_name_text:
-          tipo_modalidade === "Individual"
-            ? prova_nome_digitada.trim()
-            : null,
+          tipo_modalidade === "Individual" ? prova_nome_digitada.trim() : null,
         category_text: categoria,
         gender_text: naipe,
         athlete_out_name_text: atleta_sai_nome.trim(),
@@ -132,12 +138,14 @@ serve(async (req) => {
       .single();
 
     if (insErr) {
-      return json({
-        ok: false,
-        error: insErr.message,
-        detalhe:
-          "Provavelmente faltam colunas novas na tabela substitutions.",
-      }, 500);
+      return json(
+        {
+          ok: false,
+          error: insErr.message,
+          detalhe: "Erro ao inserir substituição.",
+        },
+        500
+      );
     }
 
     const substitutionId: string = inserted.id;
@@ -145,11 +153,19 @@ serve(async (req) => {
 
     const docEntries = Object.entries(doc_paths as Record<string, string>);
 
+    console.log("DOCUMENTOS RECEBIDOS:", docEntries);
+
     for (const [docKey, tempPath] of docEntries) {
       if (!tempPath) continue;
 
       const ext = tempPath.split(".").pop() ?? "bin";
       const finalPath = `${substitutionId}/${docKey}.${ext}`;
+
+      console.log("PROCESSANDO DOC:", {
+        docKey,
+        tempPath,
+        finalPath,
+      });
 
       const { data: fileData, error: dlErr } = await db.storage
         .from("substitution-docs")
@@ -173,13 +189,25 @@ serve(async (req) => {
         .from("substitution-docs")
         .getPublicUrl(finalPath);
 
-      await db.from("substitution_documents").insert({
-        substitution_id: substitutionId,
-        document_type: docKey,
-        storage_path: finalPath,
-        file_url: urlData?.publicUrl ?? null,
-        status: "pending",
-      });
+      const { error: docInsertErr } = await db
+        .from("substitution_documents")
+        .insert({
+          substitution_id: substitutionId,
+          document_type: docKey,
+          storage_path: finalPath,
+          file_url: urlData?.publicUrl ?? null,
+          status: "pending",
+        });
+
+      if (docInsertErr) {
+        console.error("Erro ao inserir documento:", docInsertErr);
+      } else {
+        console.log("DOCUMENTO INSERIDO:", {
+          substitution_id: substitutionId,
+          document_type: docKey,
+          storage_path: finalPath,
+        });
+      }
 
       await db.storage.from("substitution-docs").remove([tempPath]);
     }
@@ -202,9 +230,12 @@ serve(async (req) => {
   } catch (err) {
     console.error("Unexpected error:", err);
 
-    return json({
-      ok: false,
-      error: String(err),
-    }, 500);
+    return json(
+      {
+        ok: false,
+        error: String(err),
+      },
+      500
+    );
   }
 });
