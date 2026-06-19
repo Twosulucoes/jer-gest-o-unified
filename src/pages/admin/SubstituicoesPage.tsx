@@ -665,33 +665,33 @@ export default function SubstituicoesPage() {
                 </div>
 
                 {selected.substitution_documents?.length > 0 ? (
-                  <div className="space-y-2">
-                    {selected.substitution_documents.map((doc: any) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
-                      >
-                        <div>
-                          <p className="font-medium">
-                            {DOC_LABEL[doc.document_type] ?? doc.document_type}
-                          </p>
+<div className="space-y-2">
+  {selected.substitution_documents.map((doc: any) => (
+    <div
+      key={doc.id}
+      className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
+    >
+      <div>
+        <p className="font-medium">
+          {DOC_LABEL[doc.document_type] ?? doc.document_type}
+        </p>
 
-                          <p className="text-xs text-muted-foreground">
-                            {doc.status ?? "pending"}
-                          </p>
-                        </div>
+        <p className="text-xs text-muted-foreground">
+          {doc.status ?? "pending"}
+        </p>
+      </div>
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedDoc(doc)}
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          Ver
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setSelectedDoc(doc)}
+      >
+        <Eye className="h-3 w-3 mr-1" />
+        Ver
+      </Button>
+    </div>
+  ))}
+</div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Nenhum documento encontrado.
