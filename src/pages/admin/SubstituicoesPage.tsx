@@ -671,58 +671,111 @@ export default function SubstituicoesPage() {
         open={!!selectedDoc}
         onOpenChange={(open) => !open && setSelectedDoc(null)}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedDoc
-                ? DOC_LABEL[selectedDoc.document_type] ?? selectedDoc.document_type
-                : "Documento"}
-            </DialogTitle>
+<Dialog
+  open={!!selectedDoc}
+  onOpenChange={(open) => !open && setSelectedDoc(null)}
+>
+  <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle>
+        {selectedDoc
+          ? DOC_LABEL[selectedDoc.document_type] ??
+            selectedDoc.document_type
+          : "Documento"}
+      </DialogTitle>
 
-            <DialogDescription>
-              Visualize ou baixe o documento anexado.
-            </DialogDescription>
-          </DialogHeader>
+      <DialogDescription>
+        Visualize ou baixe o documento anexado.
+      </DialogDescription>
+    </DialogHeader>
 
-          {selectedDoc?.file_url ? (
-            <div className="space-y-4">
-              {selectedDoc.file_url.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+    {selectedDoc?.storage_path ? (
+      (() => {
+        const fileUrl = `${
+          import.meta.env.VITE_SUPABASE_URL
+        }/storage/v1/object/public/substitution-docs/${
+          selectedDoc.storage_path
+        }`;
+
+        const isImage = selectedDoc.storage_path.match(
+          /\.(png|jpg|jpeg|webp)$/i
+        );
+
+        const isPdf = selectedDoc.storage_path.match(/\.pdf$/i);
+
+        return (
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/20 p-2">
+              {isImage ? (
                 <img
-                  src={selectedDoc.file_url}
+                  src={fileUrl}
                   alt="Documento anexado"
-                  className="max-h-[65vh] w-full object-contain rounded-md border bg-white"
+                  className="max-h-[70vh] w-full object-contain rounded-md bg-white"
+                />
+              ) : isPdf ? (
+                <iframe
+                  src={fileUrl}
+                  className="w-full h-[75vh] rounded-md border bg-white"
+                  title="Documento PDF"
                 />
               ) : (
-                <iframe
-                  src={selectedDoc.file_url}
-                  className="w-full h-[65vh] rounded-md border"
-                  title="Documento anexado"
-                />
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+
+                  <p className="font-medium">
+                    Pré-visualização indisponível
+                  </p>
+
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Clique abaixo para abrir ou baixar o arquivo.
+                  </p>
+                </div>
               )}
-
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  onClick={() => window.open(selectedDoc.file_url, "_blank")}
-                >
-                  Abrir em nova aba
-                </Button>
-
-                <Button variant="outline" className="flex-1" asChild>
-                  <a href={selectedDoc.file_url} download target="_blank" rel="noreferrer">
-                    <Download className="h-4 w-4 mr-1.5" />
-                    Baixar documento
-                  </a>
-                </Button>
-              </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Documento sem URL disponível.
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            <div className="flex flex-col md:flex-row gap-2">
+              <Button
+                className="flex-1"
+                onClick={() => window.open(fileUrl, "_blank")}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Abrir em nova aba
+              </Button>
+
+              <Button
+                variant="outline"
+                className="flex-1"
+                asChild
+              >
+                <a
+                  href={fileUrl}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Baixar documento
+                </a>
+              </Button>
+            </div>
+          </div>
+        );
+      })()
+    ) : (
+      <div className="flex flex-col items-center justify-center py-10 text-center">
+        <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+
+        <p className="font-medium">
+          Documento sem arquivo disponível
+        </p>
+
+        <p className="text-sm text-muted-foreground mt-1">
+          O documento ainda não foi enviado corretamente.
+        </p>
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
 
       <AlertDialog
         open={!!pendingDecision}
