@@ -116,24 +116,39 @@ export default function SubstituicoesPage() {
 
       if (error) throw error;
 
-      const enriched = await Promise.all(
-        (data ?? []).map(async (item: any) => {
-          const { data: docs, error: docsError } = await (supabase as any)
-            .from("substitution_documents")
-            .select("*")
-            .eq("substitution_id", item.id)
-            .order("created_at", { ascending: true });
+      const substitutions = data ?? [];
+      const ids = substitutions.map((s: any) => s.id);
 
-          if (docsError) {
-            console.error("Erro ao buscar documentos:", docsError);
-          }
+      if (ids.length === 0) {
+        return [];
+      }
 
-          return {
-            ...item,
-            substitution_documents: docs ?? [],
-          };
-        })
-      );
+      const { data: docs, error: docsError } = await (supabase as any)
+        .from("substitution_documents")
+        .select("*")
+        .in("substitution_id", ids)
+        .order("created_at", { ascending: true });
+
+      if (docsError) {
+        console.error("Erro ao buscar documentos:", docsError);
+      }
+
+      const docsMap = new Map<string, any[]>();
+
+      (docs ?? []).forEach((doc: any) => {
+        if (!docsMap.has(doc.substitution_id)) {
+          docsMap.set(doc.substitution_id, []);
+        }
+
+        docsMap.get(doc.substitution_id)?.push(doc);
+      });
+
+      const enriched = substitutions.map((item: any) => ({
+        ...item,
+        substitution_documents: docsMap.get(item.id) ?? [],
+      }));
+
+      console.log("SUBSTITUIÇÕES COM DOCUMENTOS:", enriched);
 
       return enriched;
     },
@@ -641,8 +656,6 @@ export default function SubstituicoesPage() {
                           onClick={() => {
                             if (doc.file_url) {
                               window.open(doc.file_url, "_blank");
-                            } else if (doc.storage_path) {
-                              toast.error("Documento sem URL pública.");
                             } else {
                               toast.error("Arquivo não encontrado.");
                             }
@@ -688,9 +701,7 @@ export default function SubstituicoesPage() {
 
           {pendingDecision?.action === "reject" && (
             <div className="space-y-1 py-2">
-              <label className="text-xs font-medium">
-                Observação opcional
-              </label>
+              <label className="text-xs font-medium">Observação opcional</label>
 
               <Input
                 value={rejectionNotes}
