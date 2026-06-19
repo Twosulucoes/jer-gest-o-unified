@@ -37,6 +37,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -104,12 +105,7 @@ export default function SubstituicoesPage() {
     queryFn: async () => {
       let q = (supabase as any)
         .from("substitutions")
-        .select(
-          `
-          *,
-          substitution_documents(*)
-        `
-        )
+        .select("*")
         .eq("event_id", eventId)
         .order("requested_at", { ascending: false });
 
@@ -121,7 +117,35 @@ export default function SubstituicoesPage() {
 
       if (error) throw error;
 
-      return (data ?? []) as any[];
+      const substitutions = data ?? [];
+      const ids = substitutions.map((s: any) => s.id);
+
+      if (ids.length === 0) return [];
+
+      const { data: docs, error: docsError } = await (supabase as any)
+        .from("substitution_documents")
+        .select("*")
+        .in("substitution_id", ids)
+        .order("created_at", { ascending: true });
+
+      if (docsError) {
+        console.error("Erro ao buscar documentos:", docsError);
+      }
+
+      const docsMap = new Map<string, any[]>();
+
+      (docs ?? []).forEach((doc: any) => {
+        if (!docsMap.has(doc.substitution_id)) {
+          docsMap.set(doc.substitution_id, []);
+        }
+
+        docsMap.get(doc.substitution_id)?.push(doc);
+      });
+
+      return substitutions.map((item: any) => ({
+        ...item,
+        substitution_documents: docsMap.get(item.id) ?? [],
+      }));
     },
   });
 
@@ -236,9 +260,7 @@ export default function SubstituicoesPage() {
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any)
         .from("substitutions")
-        .update({
-          status: "executed",
-        })
+        .update({ status: "executed" })
         .eq("id", id)
         .eq("status", "approved");
 
@@ -277,7 +299,6 @@ export default function SubstituicoesPage() {
 
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-
                   {municipios.map((m) => (
                     <SelectItem key={m} value={m}>
                       {m}
@@ -299,7 +320,6 @@ export default function SubstituicoesPage() {
 
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-
                   {Object.entries(STATUS_LABEL).map(([k, v]) => (
                     <SelectItem key={k} value={k}>
                       {v.label}
@@ -342,6 +362,7 @@ export default function SubstituicoesPage() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Sai</TableHead>
                 <TableHead>Entra</TableHead>
+                <TableHead>Docs</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -351,7 +372,7 @@ export default function SubstituicoesPage() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={10}>
+                    <TableCell colSpan={11}>
                       <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
@@ -359,7 +380,7 @@ export default function SubstituicoesPage() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-12 text-muted-foreground"
                   >
                     Nenhuma substituição encontrada.
@@ -371,6 +392,8 @@ export default function SubstituicoesPage() {
                     label: r.status,
                     tone: "outline" as const,
                   };
+
+                  const docsCount = r.substitution_documents?.length ?? 0;
 
                   return (
                     <TableRow key={r.id}>
@@ -396,11 +419,9 @@ export default function SubstituicoesPage() {
                         <div className="font-medium">
                           {r.modality_name_text ?? "—"}
                         </div>
-
                         <div className="text-[10px] text-muted-foreground">
                           {r.modality_type_text ?? "—"}
                         </div>
-
                         {r.proof_name_text && (
                           <div className="text-[10px] text-amber-600">
                             {r.proof_name_text}
@@ -421,6 +442,12 @@ export default function SubstituicoesPage() {
 
                       <TableCell className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
                         {r.athlete_in_name_text ?? "—"}
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge variant={docsCount > 0 ? "default" : "outline"}>
+                          {docsCount}
+                        </Badge>
                       </TableCell>
 
                       <TableCell>
@@ -483,7 +510,8 @@ export default function SubstituicoesPage() {
                             </Button>
                           )}
 
-                          {(r.status === "requested" || r.status === "approved") &&
+                          {(r.status === "requested" ||
+                            r.status === "approved") &&
                             canDecide && (
                               <Button
                                 size="sm"
@@ -516,6 +544,10 @@ export default function SubstituicoesPage() {
             <DialogTitle>
               Solicitação {selected?.protocol_number ?? ""}
             </DialogTitle>
+
+            <DialogDescription>
+              Visualização completa dos dados e documentos anexados.
+            </DialogDescription>
           </DialogHeader>
 
           {selected && (
@@ -615,7 +647,13 @@ export default function SubstituicoesPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(doc.file_url, "_blank")}
+                          onClick={() => {
+                            if (doc.file_url) {
+                              window.open(doc.file_url, "_blank");
+                            } else {
+                              toast.error("Arquivo não encontrado.");
+                            }
+                          }}
                         >
                           <Download className="h-3 w-3 mr-1" />
                           Abrir
@@ -657,9 +695,7 @@ export default function SubstituicoesPage() {
 
           {pendingDecision?.action === "reject" && (
             <div className="space-y-1 py-2">
-              <label className="text-xs font-medium">
-                Observação opcional
-              </label>
+              <label className="text-xs font-medium">Observação opcional</label>
 
               <Input
                 value={rejectionNotes}
