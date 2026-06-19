@@ -368,7 +368,7 @@ export default function SubstituicoesPage() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Sai</TableHead>
                 <TableHead>Entra</TableHead>
-                <TableHead>Docs</TableHead>
+                <TableHead>Dsaasocs</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
