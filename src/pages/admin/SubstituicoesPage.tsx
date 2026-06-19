@@ -667,10 +667,6 @@ export default function SubstituicoesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={!!selectedDoc}
-        onOpenChange={(open) => !open && setSelectedDoc(null)}
-      >
 <Dialog
   open={!!selectedDoc}
   onOpenChange={(open) => !open && setSelectedDoc(null)}
