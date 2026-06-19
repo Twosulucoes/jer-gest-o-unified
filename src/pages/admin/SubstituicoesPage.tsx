@@ -93,6 +93,7 @@ export default function SubstituicoesPage() {
   const [municipioFilter, setMunicipioFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
   const [pendingDecision, setPendingDecision] = useState<{
     id: string;
     action: "reject" | "cancel";
@@ -647,16 +648,10 @@ export default function SubstituicoesPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            if (doc.file_url) {
-                              window.open(doc.file_url, "_blank");
-                            } else {
-                              toast.error("Arquivo não encontrado.");
-                            }
-                          }}
+                          onClick={() => setSelectedDoc(doc)}
                         >
-                          <Download className="h-3 w-3 mr-1" />
-                          Abrir
+                          <Eye className="h-3 w-3 mr-1" />
+                          Ver
                         </Button>
                       </div>
                     ))}
@@ -668,6 +663,63 @@ export default function SubstituicoesPage() {
                 )}
               </div>
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!selectedDoc}
+        onOpenChange={(open) => !open && setSelectedDoc(null)}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDoc
+                ? DOC_LABEL[selectedDoc.document_type] ?? selectedDoc.document_type
+                : "Documento"}
+            </DialogTitle>
+
+            <DialogDescription>
+              Visualize ou baixe o documento anexado.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedDoc?.file_url ? (
+            <div className="space-y-4">
+              {selectedDoc.file_url.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+                <img
+                  src={selectedDoc.file_url}
+                  alt="Documento anexado"
+                  className="max-h-[65vh] w-full object-contain rounded-md border bg-white"
+                />
+              ) : (
+                <iframe
+                  src={selectedDoc.file_url}
+                  className="w-full h-[65vh] rounded-md border"
+                  title="Documento anexado"
+                />
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => window.open(selectedDoc.file_url, "_blank")}
+                >
+                  Abrir em nova aba
+                </Button>
+
+                <Button variant="outline" className="flex-1" asChild>
+                  <a href={selectedDoc.file_url} download target="_blank" rel="noreferrer">
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Baixar documento
+                  </a>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Documento sem URL disponível.
+            </p>
           )}
         </DialogContent>
       </Dialog>
