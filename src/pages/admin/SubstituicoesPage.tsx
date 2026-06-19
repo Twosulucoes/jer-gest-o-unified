@@ -94,10 +94,12 @@ export default function SubstituicoesPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+
   const [pendingDecision, setPendingDecision] = useState<{
     id: string;
     action: "reject" | "cancel";
   } | null>(null);
+
   const [rejectionNotes, setRejectionNotes] = useState("");
 
   const { data: rows = [], isLoading } = useQuery({
@@ -280,6 +282,7 @@ export default function SubstituicoesPage() {
         <h1 className="font-heading text-2xl font-bold text-foreground">
           Gestão de Substituições
         </h1>
+
         <p className="text-sm text-muted-foreground mt-1">
           Visualize, confira documentos, aprove ou rejeite solicitações públicas.
         </p>
@@ -300,6 +303,7 @@ export default function SubstituicoesPage() {
 
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
+
                   {municipios.map((m) => (
                     <SelectItem key={m} value={m}>
                       {m}
@@ -321,6 +325,7 @@ export default function SubstituicoesPage() {
 
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
+
                   {Object.entries(STATUS_LABEL).map(([k, v]) => (
                     <SelectItem key={k} value={k}>
                       {v.label}
@@ -420,9 +425,11 @@ export default function SubstituicoesPage() {
                         <div className="font-medium">
                           {r.modality_name_text ?? "—"}
                         </div>
+
                         <div className="text-[10px] text-muted-foreground">
                           {r.modality_type_text ?? "—"}
                         </div>
+
                         {r.proof_name_text && (
                           <div className="text-[10px] text-amber-600">
                             {r.proof_name_text}
@@ -432,6 +439,7 @@ export default function SubstituicoesPage() {
 
                       <TableCell className="text-xs">
                         <div>{r.category_text ?? "—"}</div>
+
                         <div className="text-[10px] text-muted-foreground">
                           {r.gender_text ?? "—"}
                         </div>
@@ -539,7 +547,10 @@ export default function SubstituicoesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => !open && setSelected(null)}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -556,29 +567,42 @@ export default function SubstituicoesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="rounded-md border p-3">
                   <p className="text-xs text-muted-foreground">Município</p>
-                  <p className="font-medium">{selected.municipio_text ?? "—"}</p>
+                  <p className="font-medium">
+                    {selected.municipio_text ?? "—"}
+                  </p>
                 </div>
 
                 <div className="rounded-md border p-3">
                   <p className="text-xs text-muted-foreground">Escola</p>
-                  <p className="font-medium">{selected.school_name_text ?? "—"}</p>
+                  <p className="font-medium">
+                    {selected.school_name_text ?? "—"}
+                  </p>
                 </div>
 
                 <div className="rounded-md border p-3">
                   <p className="text-xs text-muted-foreground">Responsável</p>
-                  <p className="font-medium">{selected.requester_name ?? "—"}</p>
+                  <p className="font-medium">
+                    {selected.requester_name ?? "—"}
+                  </p>
                 </div>
 
                 <div className="rounded-md border p-3">
                   <p className="text-xs text-muted-foreground">Contato</p>
-                  <p className="font-medium">{selected.requester_phone ?? "—"}</p>
+                  <p className="font-medium">
+                    {selected.requester_phone ?? "—"}
+                  </p>
                   <p className="text-xs">{selected.contact_email ?? "—"}</p>
                 </div>
 
                 <div className="rounded-md border p-3">
                   <p className="text-xs text-muted-foreground">Modalidade</p>
-                  <p className="font-medium">{selected.modality_name_text ?? "—"}</p>
-                  <p className="text-xs">{selected.modality_type_text ?? "—"}</p>
+                  <p className="font-medium">
+                    {selected.modality_name_text ?? "—"}
+                  </p>
+                  <p className="text-xs">
+                    {selected.modality_type_text ?? "—"}
+                  </p>
+
                   {selected.proof_name_text && (
                     <p className="text-xs text-amber-600">
                       Prova: {selected.proof_name_text}
@@ -587,21 +611,31 @@ export default function SubstituicoesPage() {
                 </div>
 
                 <div className="rounded-md border p-3">
-                  <p className="text-xs text-muted-foreground">Categoria / Naipe</p>
+                  <p className="text-xs text-muted-foreground">
+                    Categoria / Naipe
+                  </p>
+
                   <p className="font-medium">
-                    {selected.category_text ?? "—"} · {selected.gender_text ?? "—"}
+                    {selected.category_text ?? "—"} ·{" "}
+                    {selected.gender_text ?? "—"}
                   </p>
                 </div>
 
                 <div className="rounded-md border p-3">
-                  <p className="text-xs text-muted-foreground">Atleta que sai</p>
+                  <p className="text-xs text-muted-foreground">
+                    Atleta que sai
+                  </p>
+
                   <p className="font-medium text-amber-700 dark:text-amber-300">
                     {selected.athlete_out_name_text ?? "—"}
                   </p>
                 </div>
 
                 <div className="rounded-md border p-3">
-                  <p className="text-xs text-muted-foreground">Atleta que entra</p>
+                  <p className="text-xs text-muted-foreground">
+                    Atleta que entra
+                  </p>
+
                   <p className="font-medium text-emerald-700 dark:text-emerald-300">
                     {selected.athlete_in_name_text ?? "—"}
                   </p>
@@ -610,6 +644,7 @@ export default function SubstituicoesPage() {
 
               <div className="rounded-md border p-3 text-sm">
                 <p className="text-xs text-muted-foreground">Motivo</p>
+
                 <p className="font-medium">
                   {selected.reason_code
                     ? REASON_LABEL[selected.reason_code] ?? selected.reason_code
@@ -640,6 +675,7 @@ export default function SubstituicoesPage() {
                           <p className="font-medium">
                             {DOC_LABEL[doc.document_type] ?? doc.document_type}
                           </p>
+
                           <p className="text-xs text-muted-foreground">
                             {doc.status ?? "pending"}
                           </p>
@@ -667,111 +703,93 @@ export default function SubstituicoesPage() {
         </DialogContent>
       </Dialog>
 
-<Dialog
-  open={!!selectedDoc}
-  onOpenChange={(open) => !open && setSelectedDoc(null)}
->
-  <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
-    <DialogHeader>
-      <DialogTitle>
-        {selectedDoc
-          ? DOC_LABEL[selectedDoc.document_type] ??
-            selectedDoc.document_type
-          : "Documento"}
-      </DialogTitle>
+      <Dialog
+        open={!!selectedDoc}
+        onOpenChange={(open) => !open && setSelectedDoc(null)}
+      >
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedDoc
+                ? DOC_LABEL[selectedDoc.document_type] ??
+                  selectedDoc.document_type
+                : "Documento"}
+            </DialogTitle>
 
-      <DialogDescription>
-        Visualize ou baixe o documento anexado.
-      </DialogDescription>
-    </DialogHeader>
+            <DialogDescription>
+              Visualize e baixe o documento anexado.
+            </DialogDescription>
+          </DialogHeader>
 
-    {selectedDoc?.storage_path ? (
-      (() => {
-        const fileUrl = `${
-          import.meta.env.VITE_SUPABASE_URL
-        }/storage/v1/object/public/substitution-docs/${
-          selectedDoc.storage_path
-        }`;
+          {selectedDoc?.storage_path ? (
+            (() => {
+              const fileUrl = `${
+                import.meta.env.VITE_SUPABASE_URL
+              }/storage/v1/object/public/substitution-docs/${
+                selectedDoc.storage_path
+              }`;
 
-        const isImage = selectedDoc.storage_path.match(
-          /\.(png|jpg|jpeg|webp)$/i
-        );
+              const fileName =
+                selectedDoc.storage_path.split("/").pop() || "documento";
 
-        const isPdf = selectedDoc.storage_path.match(/\.pdf$/i);
+              const isImage = /\.(png|jpg|jpeg|webp)$/i.test(
+                selectedDoc.storage_path
+              );
 
-        return (
-          <div className="space-y-4">
-            <div className="rounded-lg border bg-muted/20 p-2">
-              {isImage ? (
-                <img
-                  src={fileUrl}
-                  alt="Documento anexado"
-                  className="max-h-[70vh] w-full object-contain rounded-md bg-white"
-                />
-              ) : isPdf ? (
-                <iframe
-                  src={fileUrl}
-                  className="w-full h-[75vh] rounded-md border bg-white"
-                  title="Documento PDF"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+              const isPdf = /\.pdf$/i.test(selectedDoc.storage_path);
 
-                  <p className="font-medium">
-                    Pré-visualização indisponível
-                  </p>
+              return (
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-muted/20 p-2">
+                    {isImage ? (
+                      <img
+                        src={fileUrl}
+                        alt="Documento anexado"
+                        className="max-h-[70vh] w-full object-contain rounded-md bg-white"
+                      />
+                    ) : isPdf ? (
+                      <iframe
+                        src={fileUrl}
+                        className="w-full h-[75vh] rounded-md border bg-white"
+                        title="Documento PDF"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <FileText className="h-16 w-16 text-muted-foreground mb-4" />
 
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Clique abaixo para abrir ou baixar o arquivo.
-                  </p>
+                        <p className="font-medium">
+                          Pré-visualização indisponível
+                        </p>
+
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Esse tipo de arquivo não pode ser visualizado aqui.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button variant="outline" className="w-full" asChild>
+                    <a href={fileUrl} download={fileName}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Baixar documento
+                    </a>
+                  </Button>
                 </div>
-              )}
+              );
+            })()
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+
+              <p className="font-medium">Documento sem arquivo disponível</p>
+
+              <p className="text-sm text-muted-foreground mt-1">
+                O documento ainda não foi enviado corretamente.
+              </p>
             </div>
-
-            <div className="flex flex-col md:flex-row gap-2">
-              <Button
-                className="flex-1"
-                onClick={() => window.open(fileUrl, "_blank")}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Abrir em nova aba
-              </Button>
-
-              <Button
-                variant="outline"
-                className="flex-1"
-                asChild
-              >
-                <a
-                  href={fileUrl}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Baixar documento
-                </a>
-              </Button>
-            </div>
-          </div>
-        );
-      })()
-    ) : (
-      <div className="flex flex-col items-center justify-center py-10 text-center">
-        <FileText className="h-12 w-12 text-muted-foreground mb-3" />
-
-        <p className="font-medium">
-          Documento sem arquivo disponível
-        </p>
-
-        <p className="text-sm text-muted-foreground mt-1">
-          O documento ainda não foi enviado corretamente.
-        </p>
-      </div>
-    )}
-  </DialogContent>
-</Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!pendingDecision}
@@ -796,7 +814,9 @@ export default function SubstituicoesPage() {
 
           {pendingDecision?.action === "reject" && (
             <div className="space-y-1 py-2">
-              <label className="text-xs font-medium">Observação opcional</label>
+              <label className="text-xs font-medium">
+                Observação opcional
+              </label>
 
               <Input
                 value={rejectionNotes}
