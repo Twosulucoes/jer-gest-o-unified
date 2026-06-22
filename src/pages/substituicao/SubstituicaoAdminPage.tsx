@@ -37,6 +37,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -262,9 +263,7 @@ export default function SubstituicoesPage() {
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any)
         .from("substitutions")
-        .update({
-          status: "executed",
-        })
+        .update({ status: "executed" })
         .eq("id", id)
         .eq("status", "approved");
 
@@ -283,6 +282,7 @@ export default function SubstituicoesPage() {
         <h1 className="font-heading text-2xl font-bold text-foreground">
           Gestão de Substituições
         </h1>
+
         <p className="text-sm text-muted-foreground mt-1">
           Visualize, confira documentos, aprove ou rejeite solicitações públicas.
         </p>
@@ -303,6 +303,7 @@ export default function SubstituicoesPage() {
 
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
+
                   {municipios.map((m) => (
                     <SelectItem key={m} value={m}>
                       {m}
@@ -324,6 +325,7 @@ export default function SubstituicoesPage() {
 
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
+
                   {Object.entries(STATUS_LABEL).map(([k, v]) => (
                     <SelectItem key={k} value={k}>
                       {v.label}
@@ -437,6 +439,7 @@ export default function SubstituicoesPage() {
 
                       <TableCell className="text-xs">
                         <div>{r.category_text ?? "—"}</div>
+
                         <div className="text-[10px] text-muted-foreground">
                           {r.gender_text ?? "—"}
                         </div>
@@ -553,6 +556,10 @@ export default function SubstituicoesPage() {
             <DialogTitle>
               Solicitação {selected?.protocol_number ?? ""}
             </DialogTitle>
+
+            <DialogDescription>
+              Visualização completa dos dados e documentos anexados.
+            </DialogDescription>
           </DialogHeader>
 
           {selected && (
@@ -581,7 +588,9 @@ export default function SubstituicoesPage() {
 
                 <div className="rounded-md border p-3">
                   <p className="text-xs text-muted-foreground">Modalidade</p>
-                  <p className="font-medium">{selected.modality_name_text ?? "—"}</p>
+                  <p className="font-medium">
+                    {selected.modality_name_text ?? "—"}
+                  </p>
                   <p className="text-xs">{selected.modality_type_text ?? "—"}</p>
 
                   {selected.proof_name_text && (
@@ -592,7 +601,9 @@ export default function SubstituicoesPage() {
                 </div>
 
                 <div className="rounded-md border p-3">
-                  <p className="text-xs text-muted-foreground">Categoria / Naipe</p>
+                  <p className="text-xs text-muted-foreground">
+                    Categoria / Naipe
+                  </p>
                   <p className="font-medium">
                     {selected.category_text ?? "—"} · {selected.gender_text ?? "—"}
                   </p>
@@ -606,7 +617,9 @@ export default function SubstituicoesPage() {
                 </div>
 
                 <div className="rounded-md border p-3">
-                  <p className="text-xs text-muted-foreground">Atleta que entra</p>
+                  <p className="text-xs text-muted-foreground">
+                    Atleta que entra
+                  </p>
                   <p className="font-medium text-emerald-700 dark:text-emerald-300">
                     {selected.athlete_in_name_text ?? "—"}
                   </p>
@@ -684,6 +697,10 @@ export default function SubstituicoesPage() {
                   selectedDoc.document_type
                 : "Documento"}
             </DialogTitle>
+
+            <DialogDescription>
+              Visualize e baixe o documento anexado.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedDoc?.file_url ? (
@@ -711,7 +728,9 @@ export default function SubstituicoesPage() {
                     ) : (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-                        <p className="font-medium">Pré-visualização indisponível</p>
+                        <p className="font-medium">
+                          Pré-visualização indisponível
+                        </p>
                         <p className="text-sm text-muted-foreground mt-1">
                           Esse tipo de arquivo não pode ser visualizado aqui.
                         </p>
@@ -732,6 +751,9 @@ export default function SubstituicoesPage() {
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mb-3" />
               <p className="font-medium">Documento sem arquivo disponível</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                O documento ainda não foi enviado corretamente.
+              </p>
             </div>
           )}
         </DialogContent>
