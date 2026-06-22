@@ -50,7 +50,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
- AlertDialogContent,
+  AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
@@ -211,231 +211,227 @@ export default function SubstituicoesPage() {
     });
   }, [rows, search, municipioFilter]);
 
-  const approveMut = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
-        .from("substitutions")
-        .update({
-          status: "approved",
-          approved_by: user?.id,
-          approved_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .eq("status", "requested");
-
-      if (error) throw error;
-    },
-
-    onSuccess: () => {
-      toast.success("Substituição aprovada");
-
-      qc.invalidateQueries({
-        queryKey: ["substitutions-admin"],
-      });
-    },
-
-    onError: (e: Error) => {
-      toast.error(`Erro: ${e.message}`);
-    },
-  });
-
-  const rejectMut = useMutation({
-    mutationFn: async ({
-      id,
-      notes,
-    }: {
-      id: string;
-      notes: string;
-    }) => {
-      const { error } = await (supabase as any)
-        .from("substitutions")
-        .update({
-          status: "rejected",
-          rejected_by: user?.id,
-          rejected_at: new Date().toISOString(),
-          rejection_notes: notes || null,
-        })
-        .eq("id", id)
-        .eq("status", "requested");
-
-      if (error) throw error;
-    },
-
-    onSuccess: () => {
-      toast.success("Substituição rejeitada");
-
-      qc.invalidateQueries({
-        queryKey: ["substitutions-admin"],
-      });
-    },
-
-    onError: (e: Error) => {
-      toast.error(`Erro: ${e.message}`);
-    },
-  });
-
-  const cancelMut = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
-        .from("substitutions")
-        .update({
-          status: "cancelled",
-          rejected_by: user?.id,
-          rejected_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-        .in("status", ["requested", "approved"]);
-
-      if (error) throw error;
-    },
-
-    onSuccess: () => {
-      toast.success("Substituição cancelada");
-
-      qc.invalidateQueries({
-        queryKey: ["substitutions-admin"],
-      });
-    },
-
-    onError: (e: Error) => {
-      toast.error(`Erro: ${e.message}`);
-    },
-  });
-
-  const executeMut = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
-        .from("substitutions")
-        .update({
-          status: "executed",
-        })
-        .eq("id", id)
-        .eq("status", "approved");
-
-      if (error) throw error;
-    },
-
-    onSuccess: () => {
-      toast.success("Substituição marcada como executada");
-
-      qc.invalidateQueries({
-        queryKey: ["substitutions-admin"],
-      });
-    },
-
-    onError: (e: Error) => {
-      toast.error(`Erro ao executar: ${e.message}`);
-    },
-  });
-
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">
-          Gestão de Substituições
-        </h1>
-
-        <p className="text-sm text-muted-foreground mt-1">
-          Visualize, confira documentos, aprove ou rejeite solicitações públicas.
-        </p>
-      </div>
-
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium uppercase text-muted-foreground">
-                Município
-              </label>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Protocolo</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Município</TableHead>
+                <TableHead>Escola</TableHead>
+                <TableHead>Modalidade</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Sai</TableHead>
+                <TableHead>Entra</TableHead>
+                <TableHead>Docs</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
 
-              <Select
-                value={municipioFilter}
-                onValueChange={setMunicipioFilter}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
+            <TableBody>
+              {filtered.map((r) => {
+                const status = STATUS_LABEL[r.status] ?? {
+                  label: r.status,
+                  tone: "outline" as const,
+                };
 
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                const docsCount =
+                  r.substitution_documents?.length ?? 0;
 
-                  {municipios.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-xs font-medium whitespace-nowrap">
+                      {r.protocol_number ?? "—"}
+                    </TableCell>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium uppercase text-muted-foreground">
-                Status
-              </label>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {r.requested_at
+                        ? format(
+                            new Date(r.requested_at),
+                            "dd/MM/yyyy HH:mm"
+                          )
+                        : "—"}
+                    </TableCell>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                    <TableCell className="text-xs">
+                      {r.municipio_text ?? "—"}
+                    </TableCell>
 
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                    <TableCell className="text-xs">
+                      {r.school_name_text ?? "—"}
+                    </TableCell>
 
-                  {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>
-                      {v.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                    <TableCell className="text-xs">
+                      <div className="font-medium">
+                        {r.modality_name_text ?? "—"}
+                      </div>
 
-            <div className="md:col-span-2 space-y-1">
-              <label className="text-xs font-medium uppercase text-muted-foreground">
-                Busca
-              </label>
+                      <div className="text-[10px] text-muted-foreground">
+                        {r.modality_type_text ?? "—"}
+                      </div>
+                    </TableCell>
 
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <TableCell className="text-xs">
+                      <div>{r.category_text ?? "—"}</div>
 
-                <Input
-                  placeholder="Protocolo, escola, atleta..."
-                  className="pl-9"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {r.gender_text ?? "—"}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-xs font-medium text-amber-700">
+                      {r.athlete_out_name_text ?? "—"}
+                    </TableCell>
+
+                    <TableCell className="text-xs font-medium text-emerald-700">
+                      {r.athlete_in_name_text ?? "—"}
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge
+                        variant={
+                          docsCount > 0 ? "default" : "outline"
+                        }
+                      >
+                        {docsCount}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge variant={status.tone}>
+                        {status.label}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelected(r)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Ver
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* resto da tabela continua igual */}
+      {/* MODAL PRINCIPAL */}
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) =>
+          !open && setSelected(null)
+        }
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Solicitação{" "}
+              {selected?.protocol_number ?? ""}
+            </DialogTitle>
+          </DialogHeader>
 
+          {selected && (
+            <div className="space-y-5">
+              {/* DOCUMENTOS */}
+              <div className="rounded-md border p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="h-4 w-4" />
+
+                  <p className="font-medium text-sm">
+                    Documentos anexados
+                  </p>
+                </div>
+
+                {selected?.substitution_documents?.length >
+                0 ? (
+                  <div className="space-y-2">
+                    {selected.substitution_documents.map(
+                      (doc: any) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2 text-sm"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              {DOC_LABEL[
+                                doc.document_type
+                              ] ?? doc.document_type}
+                            </p>
+
+                            <p className="text-xs text-muted-foreground">
+                              {doc.status ?? "pending"}
+                            </p>
+                          </div>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setSelectedDoc(doc)
+                            }
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            Ver
+                          </Button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum documento encontrado.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL VISUALIZADOR */}
       <Dialog
         open={!!selectedDoc}
-        onOpenChange={(open) => !open && setSelectedDoc(null)}
+        onOpenChange={(open) =>
+          !open && setSelectedDoc(null)
+        }
       >
         <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedDoc
-                ? DOC_LABEL[selectedDoc.document_type] ??
-                  selectedDoc.document_type
+                ? DOC_LABEL[
+                    selectedDoc.document_type
+                  ] ?? selectedDoc.document_type
                 : "Documento"}
             </DialogTitle>
           </DialogHeader>
 
           {selectedDoc?.file_url ? (
             (() => {
-              const fileUrl = selectedDoc.file_url;
+              const fileUrl =
+                selectedDoc.file_url;
 
               const fileName =
-                fileUrl.split("/").pop() || "documento";
+                fileUrl.split("/").pop() ||
+                "documento";
 
-              const isImage = /\.(png|jpg|jpeg|webp)$/i.test(fileUrl);
+              const isImage =
+                /\.(png|jpg|jpeg|webp)$/i.test(
+                  fileUrl
+                );
 
-              const isPdf = /\.pdf$/i.test(fileUrl);
+              const isPdf =
+                /\.pdf$/i.test(fileUrl);
 
               return (
                 <div className="space-y-4">
@@ -459,16 +455,19 @@ export default function SubstituicoesPage() {
                         <p className="font-medium">
                           Pré-visualização indisponível
                         </p>
-
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Esse tipo de arquivo não pode ser visualizado aqui.
-                        </p>
                       </div>
                     )}
                   </div>
 
-                  <Button variant="outline" className="w-full" asChild>
-                    <a href={fileUrl} download={fileName}>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    asChild
+                  >
+                    <a
+                      href={fileUrl}
+                      download={fileName}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Baixar documento
                     </a>
@@ -487,60 +486,6 @@ export default function SubstituicoesPage() {
           )}
         </DialogContent>
       </Dialog>
-
-      <AlertDialog
-        open={!!pendingDecision}
-        onOpenChange={(open) => {
-          if (!open) setPendingDecision(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {pendingDecision?.action === "reject" &&
-                "Rejeitar substituição"}
-
-              {pendingDecision?.action === "cancel" &&
-                "Cancelar substituição"}
-            </AlertDialogTitle>
-
-            <AlertDialogDescription>
-              {pendingDecision?.action === "reject" &&
-                "A substituição será marcada como rejeitada."}
-
-              {pendingDecision?.action === "cancel" &&
-                "A substituição será marcada como cancelada."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              Voltar
-            </AlertDialogCancel>
-
-            <AlertDialogAction
-              onClick={() => {
-                if (!pendingDecision) return;
-
-                if (pendingDecision.action === "reject") {
-                  rejectMut.mutate({
-                    id: pendingDecision.id,
-                    notes: rejectionNotes,
-                  });
-                }
-
-                if (pendingDecision.action === "cancel") {
-                  cancelMut.mutate(pendingDecision.id);
-                }
-
-                setPendingDecision(null);
-              }}
-            >
-              Confirmar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
