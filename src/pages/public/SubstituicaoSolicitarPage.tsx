@@ -33,6 +33,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+const DATA_ENCERRAMENTO = new Date("2026-06-24T00:00:00-04:00");
+
 const REASON_OPTIONS = [
   { value: "lesao", label: "Lesão" },
   { value: "desistencia", label: "Desistência" },
@@ -113,6 +115,8 @@ export default function SubstituicaoSolicitarPage() {
   const [docPaths, setDocPaths] = useState<Record<string, string>>({});
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  const encerrado = new Date() >= DATA_ENCERRAMENTO;
+
   const limparDadosSubstituicao = () => {
     setTipoModalidade("");
     setModalidadeNome("");
@@ -156,7 +160,14 @@ export default function SubstituicaoSolicitarPage() {
   };
 
   const handleIdentificar = () => {
-    if (!eventId || !municipio || !escolaNome || !responsavelNome || !responsavelTelefone || !responsavelEmail) {
+    if (
+      !eventId ||
+      !municipio ||
+      !escolaNome ||
+      !responsavelNome ||
+      !responsavelTelefone ||
+      !responsavelEmail
+    ) {
       toast.error("Preencha todos os dados.");
       return;
     }
@@ -205,7 +216,13 @@ export default function SubstituicaoSolicitarPage() {
     setDocPaths(paths);
     return paths;
   };
-    const handleSubmit = async () => {
+
+  const handleSubmit = async () => {
+    if (encerrado) {
+      toast.error("O prazo para solicitação de substituições foi encerrado.");
+      return;
+    }
+
     if (
       !tipoModalidade ||
       !modalidadeNome ||
@@ -294,6 +311,39 @@ export default function SubstituicaoSolicitarPage() {
   };
 
   const stepLabel = ["Identificação", "Substituição", "Documentos", "Enviar"];
+
+  if (encerrado) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex flex-col">
+        <header className="bg-background border-b border-border px-6 py-4 flex items-center gap-3">
+          <div className="font-bold text-lg tracking-tight">JER Gestão</div>
+          <span className="text-muted-foreground text-sm">
+            — Solicitação de Substituição
+          </span>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4 md:p-8">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <CardTitle className="text-center text-red-500">
+                Período encerrado
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="text-center space-y-3">
+              <p className="font-medium">
+                O prazo para solicitação de substituições foi encerrado.
+              </p>
+
+              <p className="text-sm text-muted-foreground">
+                Encerramento em 24/06/2026 às 00:00.
+              </p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   if (mostrarVoucher) {
     return (
@@ -484,7 +534,8 @@ export default function SubstituicaoSolicitarPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                                <div className="space-y-1">
+
+                <div className="space-y-1">
                   <Label>Escola</Label>
 
                   <Input
