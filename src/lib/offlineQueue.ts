@@ -6,8 +6,12 @@ const SYNC_LOCK_TIMEOUT = 5 * 60 * 1000; // 5 min
 function acquireSyncLock(): boolean {
   const raw = localStorage.getItem(SYNC_LOCK_KEY);
   if (raw) {
-    const { ts } = JSON.parse(raw) as { ts: number };
-    if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+    try {
+      const { ts } = JSON.parse(raw) as { ts: number };
+      if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+    } catch {
+      // Corrupted lock data — remove and proceed to acquire
+    }
   }
   localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ ts: Date.now() }));
   return true;
@@ -46,7 +50,12 @@ export const OFFLINE_QUEUE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const getOfflineQueue = (): OfflineQueueItem[] => {
   const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored) as OfflineQueueItem[];
+  } catch {
+    return [];
+  }
 };
 
 export const purgeExpiredOfflineItems = (
@@ -157,27 +166,33 @@ let isSyncing = false;
 
 export const syncOfflineQueue = async () => {
   if (isSyncing || !navigator.onLine) return { success: false, count: 0 };
-  if (!acquireSyncLock()) return { success: false, count: 0 };
 
   resetStuckSyncingItems();
+
+  if (!acquireSyncLock()) return { success: false, count: 0 };
+
   purgeExpiredOfflineItems();
 
   const queue = getOfflineQueue();
   const pending = queue.filter(item => item.status === "pending" || item.status === "failed");
-  
-  if (pending.length === 0) return { success: true, count: 0 };
+
+  if (pending.length === 0) {
+    releaseSyncLock();
+    return { success: true, count: 0 };
+  }
 
   isSyncing = true;
   let successCount = 0;
   let errorCount = 0;
-  const updatedQueue = [...queue];
 
   for (const item of pending) {
-    const idx = updatedQueue.findIndex(i => i.id === item.id);
+    // Re-read fresh from localStorage before each status update
+    const currentQueue = getOfflineQueue();
+    const idx = currentQueue.findIndex(i => i.id === item.id);
     if (idx === -1) continue;
-    
-    updatedQueue[idx].status = "syncing";
-    saveOfflineQueue(updatedQueue);
+
+    currentQueue[idx].status = "syncing";
+    saveOfflineQueue(currentQueue);
 
     try {
       if (item.module === "alimentacao") {

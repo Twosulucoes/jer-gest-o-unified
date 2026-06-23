@@ -193,8 +193,11 @@ export default function AlimentacaoListaConsumosPage() {
     return t.slice(0, 5);
   }
 
-  const now = new Date().toISOString();
-  const activeWindowId = windows.find(w => w.start_time <= now && w.end_time >= now)?.id;
+  const nowTime = (() => {
+    const d = new Date();
+    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  })();
+  const activeWindowId = windows.find(w => fmtTime(w.start_time) <= nowTime && fmtTime(w.end_time) >= nowTime)?.id;
 
   const delegations = useMemo(() => {
     const m = new Map<string, string>();
@@ -264,10 +267,23 @@ export default function AlimentacaoListaConsumosPage() {
       ? { guardian_name: contactName.trim(), guardian_phone: digits }
       : { coach_name: contactName.trim(), coach_phone: digits };
 
-    const { error } = await supabase
+    // guardian_name/guardian_phone/coach_name/coach_phone live on `people`, not `participants`
+    const { data: participant, error: lookupError } = await supabase
       .from("participants")
-      .update(updateData as any)
-      .eq("id", contactModal.participant_id);
+      .select("person_id")
+      .eq("id", contactModal.participant_id)
+      .single();
+
+    if (lookupError || !participant?.person_id) {
+      toast.error("Erro ao localizar participante");
+      setSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("people")
+      .update(updateData)
+      .eq("id", participant.person_id);
 
     if (error) { toast.error("Erro ao salvar contato"); setSaving(false); return; }
 
@@ -340,10 +356,12 @@ export default function AlimentacaoListaConsumosPage() {
             <SelectTrigger className="text-xs h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="atleta">Atleta</SelectItem>
-              <SelectItem value="tecnico">Técnico</SelectItem>
-              <SelectItem value="arbitro">Árbitro</SelectItem>
-              <SelectItem value="outro">Outro</SelectItem>
+              <SelectItem value="athlete">Atleta</SelectItem>
+              <SelectItem value="coach">Técnico</SelectItem>
+              <SelectItem value="referee">Árbitro</SelectItem>
+              <SelectItem value="staff">Staff</SelectItem>
+              <SelectItem value="head_of_delegation">Chefe Deleg.</SelectItem>
+              <SelectItem value="other">Outro</SelectItem>
               <SelectItem value="voucher_nominal">Voucher Nominal</SelectItem>
               <SelectItem value="voucher_anonimo">Voucher Anônimo</SelectItem>
             </SelectContent>

@@ -93,7 +93,7 @@ export default function AlimentacaoDashboardPage() {
       if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
         q = q.in("participant_id", Array.from(stageParticipantIds));
       }
-      const { data, error } = await q;
+      const { data, error } = await q.limit(10000);
       if (error) throw error;
       return data;
     },
@@ -188,7 +188,7 @@ export default function AlimentacaoDashboardPage() {
       result = result.filter((c) => participantDelegationMap.get(c.participant_id) === filterDelegation);
     }
     return result;
-  }, [consumptions, filterMealType, filterDelegation, mealWindows, participantDelegationMap]);
+  }, [consumptions, filterMealType, filterDelegation, mealWindows, participantDelegationMap, isStageScoped, stageParticipantIds]);
 
   // Stats per meal window
   const windowStats = useMemo(() => {
@@ -239,11 +239,14 @@ export default function AlimentacaoDashboardPage() {
     () => new Set(filteredConsumptions.map((c) => c.participant_id)),
     [filteredConsumptions]
   );
-  const zeroConsumptionCount = Math.max(0, totalParticipants - consumingParticipantIds.size);
+  const noFiltersActive = filterDelegation === "all" && filterMealType === "all";
+  const zeroConsumptionCount = noFiltersActive
+    ? Math.max(0, totalParticipants - consumingParticipantIds.size)
+    : 0;
 
   useStageModuleKpis([
     { label: "Consumos hoje", value: filteredConsumptions.length, tone: "primary" },
-    ...(zeroConsumptionCount > 0
+    ...(noFiltersActive && zeroConsumptionCount > 0
       ? [{ label: "Sem refeição", value: zeroConsumptionCount, tone: "danger" as const }]
       : []),
   ]);
@@ -365,7 +368,7 @@ export default function AlimentacaoDashboardPage() {
                 </CardContent>
               </Card>
             ))}
-            {zeroConsumptionCount > 0 && (
+            {noFiltersActive && zeroConsumptionCount > 0 && (
               <Card className="border-destructive/50">
                 <CardContent className="pt-4 text-center">
                   <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-destructive" />

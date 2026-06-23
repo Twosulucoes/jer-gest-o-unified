@@ -31,8 +31,12 @@ const SYNC_LOCK_TIMEOUT = 5 * 60 * 1000;
 function acquireLock(): boolean {
   const raw = localStorage.getItem(SYNC_LOCK_KEY);
   if (raw) {
-    const { ts } = JSON.parse(raw) as { ts: number };
-    if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+    try {
+      const { ts } = JSON.parse(raw) as { ts: number };
+      if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return false;
+    } catch {
+      // Corrupted lock data — remove and proceed to acquire
+    }
   }
   localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ ts: Date.now() }));
   return true;
@@ -108,12 +112,17 @@ export async function syncIncidentQueue(): Promise<{
   if (isSyncing || typeof navigator === "undefined" || !navigator.onLine) {
     return { synced: 0, failed: 0 };
   }
-  if (!acquireLock()) return { synced: 0, failed: 0 };
+
   resetStuckItems();
+
+  if (!acquireLock()) return { synced: 0, failed: 0 };
   const pending = getIncidentQueue().filter(
     (i) => i.status === "pending" || i.status === "failed",
   );
-  if (pending.length === 0) return { synced: 0, failed: 0 };
+  if (pending.length === 0) {
+    releaseLock();
+    return { synced: 0, failed: 0 };
+  }
 
   isSyncing = true;
   let synced = 0;

@@ -116,9 +116,8 @@ export default function AlimentacaoJanelasPage() {
       if (error) throw error;
       if (!updated) throw new Error("Falha ao atualizar: nenhuma linha afetada — verifique suas permissões.");
 
-      // Sync rules
-      await (supabase as any).from("meal_window_eligibility").delete().eq("meal_window_id", id);
-      
+      // Sync eligibility rules safely: only delete when we have replacements ready,
+      // and if the insert fails after delete, log the error without losing the window update.
       if (v.restrict_eligibility && v.eligibility_rules && v.eligibility_rules.length > 0) {
         const rulesPayload = v.eligibility_rules.map(r => ({
           meal_window_id: id,
@@ -126,8 +125,15 @@ export default function AlimentacaoJanelasPage() {
           participant_type_value: r.participant_type_value,
           reference_id: r.reference_id
         }));
+        await (supabase as any).from("meal_window_eligibility").delete().eq("meal_window_id", id);
         const { error: rulesError } = await (supabase as any).from("meal_window_eligibility").insert(rulesPayload);
-        if (rulesError) throw rulesError;
+        if (rulesError) {
+          console.error("Failed to insert eligibility rules after delete:", rulesError);
+          toast.error("Janela atualizada, mas regras de elegibilidade falharam ao salvar: " + rulesError.message);
+        }
+      } else {
+        // Eligibility is off or no rules provided — safe to clear all rules
+        await (supabase as any).from("meal_window_eligibility").delete().eq("meal_window_id", id);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["meal_windows"] }); toast.success("Janela atualizada"); setDialogOpen(false); setEditing(null); },
