@@ -446,6 +446,20 @@ export default function SubstituicaoSolicitarPage() {
 
       <main className="flex-1 flex items-start justify-center p-4 md:p-8">
         <div className="w-full max-w-xl space-y-6">
+          <Card className="border-amber-500/40 bg-amber-500/10">
+  <CardContent className="py-4">
+    <div className="text-sm text-amber-200 space-y-1">
+      <p className="font-semibold">
+        Atenção: prazo para substituições
+      </p>
+
+      <p>
+        O sistema ficará disponível até
+        <strong> 24/06/2026 às 00:00</strong>.
+      </p>
+    </div>
+  </CardContent>
+</Card>
           <div className="flex items-center gap-1">
             {stepLabel.map((label, i) => {
               const s = (i + 1) as Step;
