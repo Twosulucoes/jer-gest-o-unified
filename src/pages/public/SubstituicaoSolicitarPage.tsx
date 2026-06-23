@@ -336,7 +336,7 @@ export default function SubstituicaoSolicitarPage() {
               </p>
 
               <p className="text-sm text-muted-foreground">
-                Encerramento em 24/06/2026 às 00:00.
+                Encerramento em 23/06/2026 às 23:59.
               </p>
             </CardContent>
           </Card>
