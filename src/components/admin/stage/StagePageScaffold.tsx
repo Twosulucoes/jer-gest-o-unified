@@ -4,7 +4,7 @@ import {
   AlertTriangle, ClipboardList, FileBarChart,
   LayoutDashboard, ListChecks, GitBranch, Users, CalendarClock, Layers,
   ScanLine, KeyRound, ChartBar, Navigation, Route, Settings, Filter,
-  ShieldCheck, ArrowLeftRight,
+  ShieldCheck, ArrowLeftRight, MapPin, Calculator, UserX, BarChart2, Clock,
 } from "lucide-react";
 import { StageMiniDash, type StageMiniDashKpi } from "./StageMiniDash";
 import { StageModuleTabs, type StageTabItem } from "./StageModuleTabs";
@@ -71,9 +71,15 @@ const MODULES: ModuleConfig[] = [
       { label: "Visão geral", to: "alimentacao", icon: <UtensilsCrossed className="h-3.5 w-3.5" />, end: true, roles: FOOD_ROLES },
       { label: "Tipos", to: "alimentacao/tipos", icon: <UtensilsCrossed className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
       { label: "Janelas", to: "alimentacao/janelas", icon: <CalendarClock className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
+      { label: "Locais", to: "alimentacao/locais", icon: <MapPin className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
+      { label: "Padrões", to: "alimentacao/padroes", icon: <Clock className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
       { label: "Consumo", to: "alimentacao/consumo", icon: <ClipboardList className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
+      { label: "Previsão", to: "alimentacao/previsao", icon: <Calculator className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
       { label: "Dashboard", to: "alimentacao/dashboard", icon: <LayoutDashboard className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
+      { label: "Divergências", to: "alimentacao/divergencias", icon: <UserX className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
       { label: "Relatórios", to: "alimentacao/relatorios", icon: <FileBarChart className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
+      { label: "Análise", to: "alimentacao/relatorios/consumo", icon: <BarChart2 className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
+      { label: "Auditoria", to: "alimentacao/auditoria", icon: <ShieldCheck className="h-3.5 w-3.5" />, roles: FOOD_ROLES },
     ],
   },
   {
