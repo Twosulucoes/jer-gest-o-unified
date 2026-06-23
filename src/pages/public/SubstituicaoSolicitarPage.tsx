@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const DATA_ENCERRAMENTO = new Date("2026-06-24T00:00:00-04:00");
+const DATA_ENCERRAMENTO = new Date("2026-06-23T23:59:00-04:00");
 
 const REASON_OPTIONS = [
   { value: "lesao", label: "Lesão" },
