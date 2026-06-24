@@ -163,8 +163,8 @@ export default function AlimentacaoRelatoriosPage() {
         ...c,
         source_type: "unlinked",
         participants: null,
-        display_name: `QR não vinculado: ${c.qr_code}`,
-        display_delegation: "QR não vinculado",
+display_name: `Consumo avulso: ${c.qr_code}`,
+display_delegation: "Não informado",
         display_method: c.method || "qr_scan",
         qr_code: c.qr_code,
       }));
@@ -195,7 +195,7 @@ export default function AlimentacaoRelatoriosPage() {
     const delName = c.display_delegation || "Sem delegação";
     totalByDelegation.set(delName, (totalByDelegation.get(delName) || 0) + 1);
 
-    const sourceName = c.source_type === "unlinked" ? "QR não vinculados" : "Vinculados";
+    const sourceName = c.source_type === "unlinked" ? "Consumos avulsos" : "Vinculados";
     totalBySource.set(sourceName, (totalBySource.get(sourceName) || 0) + 1);
   });
 
@@ -206,7 +206,7 @@ export default function AlimentacaoRelatoriosPage() {
 
     for (const c of consumptions) {
       rows.push([
-        `"${c.source_type === "unlinked" ? "QR NÃO VINCULADO" : "VINCULADO"}"`,
+        `"${c.source_type === "unlinked" ? "CONSUMO AVULSO" : "VINCULADO"}"`,
         `"${c.display_name || ""}"`,
         `"${c.display_delegation || ""}"`,
         `"${c.meal_windows?.label || c.meal_windows?.meal_types?.name || ""}"`,
