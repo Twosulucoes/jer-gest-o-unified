@@ -12,7 +12,6 @@ import {
   Search,
   Loader2,
   User,
-  UserPlus,
   ChevronsUpDown,
   Lock,
   ListChecks,
@@ -169,8 +168,6 @@ export default function AlimentacaoScanPage() {
   const [manualSearching, setManualSearching] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [notFoundQr, setNotFoundQr] = useState<string | null>(null);
-
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -526,7 +523,6 @@ export default function AlimentacaoScanPage() {
         message: getSystemMessage("ERR_SESSION_EXPIRED", lang),
         source: "qr",
       });
-      setNotFoundQr(null);
       recordOutcome("error");
       return;
     }
@@ -540,7 +536,6 @@ export default function AlimentacaoScanPage() {
         source: "qr",
       });
 
-      setNotFoundQr(null);
       toast.error("Offline", { description: msg });
       recordOutcome("error");
       reopenIfContinuous();
@@ -565,7 +560,6 @@ export default function AlimentacaoScanPage() {
         source: "qr",
       });
 
-      setNotFoundQr(null);
       toast.error("Consumo duplicado", { description: qrCode });
       recordOutcome("error");
       void recordIncident("DUPLICATE");
@@ -592,8 +586,7 @@ export default function AlimentacaoScanPage() {
           source: "qr",
         });
 
-        setNotFoundQr(null);
-        toast.error("Consumo duplicado", { description: qrCode });
+          toast.error("Consumo duplicado", { description: qrCode });
         recordOutcome("error");
         reopenIfContinuous();
         return;
@@ -610,7 +603,6 @@ export default function AlimentacaoScanPage() {
       message: successMsg,
     });
 
-    setNotFoundQr(null);
     toast.success(successMsg);
     recordOutcome("ok");
 
@@ -644,7 +636,6 @@ export default function AlimentacaoScanPage() {
         ok: false,
         message: getSystemMessage("ERR_SESSION_EXPIRED", lang),
       });
-      setNotFoundQr(null);
       recordOutcome("error");
       return;
     }
@@ -669,8 +660,7 @@ export default function AlimentacaoScanPage() {
         } nesta janela.`;
 
         setResult({ ok: false, message: dedupMsg, source: resultSource });
-        setNotFoundQr(null);
-
+  
         toast.info(dedupMsg, {
           description: "Aguarde a sincronização para evitar duplicidade.",
         });
@@ -691,7 +681,6 @@ export default function AlimentacaoScanPage() {
         restrictions: foodRestrictions || undefined,
       });
 
-      setNotFoundQr(null);
 
       toast.info("Registrado offline. Sincronize quando houver internet.");
       recordOutcome("ok");
@@ -714,8 +703,7 @@ export default function AlimentacaoScanPage() {
       if (!enrolled) {
         const msg = "Participante não está inscrito nesta etapa.";
         setResult({ ok: false, message: msg, source: resultSource });
-        setNotFoundQr(null);
-        toast.error(msg);
+          toast.error(msg);
         recordOutcome("error");
         reopenIfContinuous();
         return;
@@ -765,7 +753,6 @@ export default function AlimentacaoScanPage() {
       }
 
       setResult({ ok: false, message: msg, source: resultSource });
-      setNotFoundQr(null);
       toast.error(msg);
       recordOutcome("error");
       void recordIncident(incidentType, participantId);
@@ -791,7 +778,6 @@ export default function AlimentacaoScanPage() {
       restrictions: foodRestrictions || undefined,
     });
 
-    setNotFoundQr(null);
 
     toast.success(successMsg);
     recordOutcome("ok");
@@ -834,8 +820,7 @@ export default function AlimentacaoScanPage() {
       let method: "qr_scan" | "voucher" = "qr_scan";
 
       if (isVoucherQr(val)) {
-        setNotFoundQr(null);
-
+  
         if (!isOnline()) {
           addToVoucherQueue(val, "meals", windowId, userId || "", "Portador de Voucher");
 
@@ -871,8 +856,7 @@ export default function AlimentacaoScanPage() {
           }
 
           setResult({ ok: false, message: `${msg.text}${extra}`, source: "qr" });
-          setNotFoundQr(null);
-
+    
           toast.error(`${msg.text}${extra}`);
           recordOutcome("error");
 
@@ -900,8 +884,7 @@ export default function AlimentacaoScanPage() {
           full_name: voucher.person_name || "Portador de Voucher",
         } as any);
 
-        setNotFoundQr(null);
-
+  
         toast.success(msg.text);
         recordOutcome("ok");
 
@@ -967,7 +950,6 @@ export default function AlimentacaoScanPage() {
         return;
       }
 
-      setNotFoundQr(null);
 
       const { data: partData, error: partError } = await (supabase as any)
         .from("participants")
@@ -1020,8 +1002,7 @@ export default function AlimentacaoScanPage() {
           message: getSystemMessage("ERR_UNKNOWN", lang),
           source: "qr",
         });
-        setNotFoundQr(null);
-        recordOutcome("error");
+          recordOutcome("error");
         return;
       }
 
@@ -1038,7 +1019,6 @@ export default function AlimentacaoScanPage() {
         message: `${getSystemMessage("ERR_UNKNOWN", lang)}: ${getErrorMessage(err)}`,
       });
 
-      setNotFoundQr(null);
       recordOutcome("error");
     } finally {
       setIsSubmitting(false);
@@ -1103,7 +1083,6 @@ export default function AlimentacaoScanPage() {
 
     setManualQuery("");
     setManualHits([]);
-    setNotFoundQr(null);
     setIsSubmitting(true);
 
     try {
@@ -1474,26 +1453,6 @@ export default function AlimentacaoScanPage() {
                 <p className="mt-0.5 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
                   Restrição: {result.restrictions}
                 </p>
-              )}
-              {!result.ok && notFoundQr && (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="mt-2 h-8 w-full gap-2 text-xs"
-                  variant="module"
-                  onClick={() =>
-                    navigate("/pwa/credenciamento/vincular", {
-                      state: {
-                        qrCode: notFoundQr,
-                        origem: "alimentacao",
-                        motivo: "QR não encontrado na leitura da alimentação",
-                      },
-                    })
-                  }
-                >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  Cadastrar / vincular substituto
-                </Button>
               )}
             </div>
           </div>
