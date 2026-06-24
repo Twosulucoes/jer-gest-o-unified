@@ -581,7 +581,7 @@ export default function AlimentacaoRelatoriosPage() {
           </div>
 
           <div className="w-52">
-            <label className="text-xs font-medium mb-1 block">Tipo de refeição</label>
+            <label className="text-xs font-medium mb-1 block">Tifffpo de refeição</label>
             <Select value={mealTypeFilter} onValueChange={setMealTypeFilter}>
               <SelectTrigger>
                 <SelectValue />
