@@ -213,6 +213,35 @@ export default function AlimentacaoScanPage() {
     setTelemetry(bumpScanTelemetry(MODULE, outcome, userId));
   };
 
+  async function getUnlinkedCountForWindow(currentWindowId: string) {
+    const { count } = await (supabase as any)
+      .from("meal_consumptions_unlinked")
+      .select("*", { count: "exact", head: true })
+      .eq("meal_window_id", currentWindowId);
+
+    return count || 0;
+  }
+
+  async function getUnlinkedCountToday(onlyMine = false) {
+    const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+
+    let q = (supabase as any)
+      .from("meal_consumptions_unlinked")
+      .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
+        count: "exact",
+        head: true,
+      })
+      .eq("meal_windows.event_id", activeEventId)
+      .gte("consumed_at", startIso)
+      .lt("consumed_at", endIsoExclusive);
+
+    if (stageId) q = q.eq("meal_windows.event_stage_id", stageId);
+    if (onlyMine && userId) q = q.eq("registered_by", userId);
+
+    const { count } = await q;
+    return count || 0;
+  }
+
   useEffect(() => {
     (async () => {
       const cached = readMealWindowsCache<any>(activeEventId, stageId);
@@ -279,12 +308,13 @@ export default function AlimentacaoScanPage() {
         .select("*", { count: "exact", head: true })
         .eq("meal_window_id", windowId);
 
-      setConsumptionCount(count || 0);
+      const unlinked = await getUnlinkedCountForWindow(windowId);
+      setConsumptionCount((count || 0) + unlinked);
     };
 
     void fetchCount();
 
-    const channel = supabase
+    const channel1 = supabase
       .channel(`meal_consumptions_${windowId}`)
       .on(
         "postgres_changes",
@@ -294,14 +324,27 @@ export default function AlimentacaoScanPage() {
           table: "meal_consumptions",
           filter: `meal_window_id=eq.${windowId}`,
         },
-        () => {
-          void fetchCount();
+        () => void fetchCount(),
+      )
+      .subscribe();
+
+    const channel2 = supabase
+      .channel(`meal_consumptions_unlinked_${windowId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "meal_consumptions_unlinked",
+          filter: `meal_window_id=eq.${windowId}`,
         },
+        () => void fetchCount(),
       )
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(channel1);
+      void supabase.removeChannel(channel2);
     };
   }, [windowId]);
 
@@ -326,7 +369,9 @@ export default function AlimentacaoScanPage() {
       if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
 
       const { count } = await consumoQ;
-      if (!cancelled) setTotalToday(count || 0);
+      const unlinked = await getUnlinkedCountToday(false);
+
+      if (!cancelled) setTotalToday((count || 0) + unlinked);
     })();
 
     return () => {
@@ -359,7 +404,9 @@ export default function AlimentacaoScanPage() {
       if (stageId) q = q.eq("meal_windows.event_stage_id", stageId);
 
       const { count } = await q;
-      if (!cancelled) setMyConsumptionCount(count || 0);
+      const unlinked = await getUnlinkedCountToday(true);
+
+      if (!cancelled) setMyConsumptionCount((count || 0) + unlinked);
     })();
 
     return () => {
@@ -462,6 +509,119 @@ export default function AlimentacaoScanPage() {
     },
     [windowId],
   );
+
+  async function registerMealConsumptionUnlinked(qrCode: string) {
+    if (!windowId) {
+      toast.error(getSystemMessage("ERR_WINDOW_REQUIRED", lang));
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user.id) {
+      setResult({
+        ok: false,
+        message: getSystemMessage("ERR_SESSION_EXPIRED", lang),
+        source: "qr",
+      });
+      setNotFoundQr(null);
+      recordOutcome("error");
+      return;
+    }
+
+    if (!isOnline()) {
+      const msg = `Sem internet. QR não vinculado não pode ser confirmado no relatório agora: ${qrCode}`;
+
+      setResult({
+        ok: false,
+        message: msg,
+        source: "qr",
+      });
+
+      setNotFoundQr(null);
+      toast.error("Offline", { description: msg });
+      recordOutcome("error");
+      reopenIfContinuous();
+      return;
+    }
+
+    const { data: already, error: alreadyError } = await (supabase as any)
+      .from("meal_consumptions_unlinked")
+      .select("id")
+      .eq("meal_window_id", windowId)
+      .eq("qr_code", qrCode)
+      .maybeSingle();
+
+    if (alreadyError) throw alreadyError;
+
+    if (already) {
+      const msg = `QR JÁ CONSUMIU ESTA REFEIÇÃO: ${qrCode}`;
+
+      setResult({
+        ok: false,
+        message: msg,
+        source: "qr",
+      });
+
+      setNotFoundQr(null);
+      toast.error("Consumo duplicado", { description: qrCode });
+      recordOutcome("error");
+      void recordIncident("DUPLICATE");
+      reopenIfContinuous();
+      return;
+    }
+
+    const { error } = await (supabase as any)
+      .from("meal_consumptions_unlinked")
+      .insert({
+        qr_code: qrCode,
+        meal_window_id: windowId,
+        method: "qr_scan",
+        registered_by: session.user.id,
+      });
+
+    if (error) {
+      if ((error as any).code === "23505") {
+        const msg = `QR JÁ CONSUMIU ESTA REFEIÇÃO: ${qrCode}`;
+
+        setResult({
+          ok: false,
+          message: msg,
+          source: "qr",
+        });
+
+        setNotFoundQr(null);
+        toast.error("Consumo duplicado", { description: qrCode });
+        recordOutcome("error");
+        reopenIfContinuous();
+        return;
+      }
+
+      throw error;
+    }
+
+    const successMsg = `LIBERADO — QR NÃO VINCULADO: ${qrCode}`;
+
+    setResult({
+      ok: true,
+      source: "qr",
+      message: successMsg,
+    });
+
+    setNotFoundQr(null);
+    toast.success(successMsg);
+    recordOutcome("ok");
+
+    if (navigator.vibrate) navigator.vibrate(200);
+
+    setConsumptionCount((v) => v + 1);
+    setTotalToday((v) => v + 1);
+    setMyConsumptionCount((v) => v + 1);
+
+    reopenIfContinuous();
+  }
 
   async function registerMealConsumption(
     participantId: string,
@@ -751,7 +911,6 @@ export default function AlimentacaoScanPage() {
         return;
       }
 
-      // --- Offline: usa cache local de participantes ---
       if (!isOnline()) {
         const cached = lookupQr(val);
 
@@ -764,12 +923,7 @@ export default function AlimentacaoScanPage() {
         }
 
         if (cached.state === "nao_cadastrado") {
-          const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);
-          setNotFoundQr(val);
-          setResult({ ok: false, message: `${errorMsg} Código lido: ${val}`, source: "qr" });
-          toast.error(errorMsg);
-          recordOutcome("error");
-          void recordIncident("OTHER");
+          await registerMealConsumptionUnlinked(val);
           return;
         }
 
@@ -782,7 +936,6 @@ export default function AlimentacaoScanPage() {
           return;
         }
 
-        // credenciado offline — verifica elegibilidade via cache
         const cachedEntry = cached.entry;
 
         if (!cachedEntry.is_active) {
@@ -807,23 +960,10 @@ export default function AlimentacaoScanPage() {
         return;
       }
 
-      // --- Online: resolve credencial via rede ---
       const resolved = await resolveQrCredential(val, { eventId: activeEventId });
 
       if (!resolved) {
-        const errorMsg = getSystemMessage("ERR_NOT_FOUND", lang);
-
-        setNotFoundQr(val);
-
-        setResult({
-          ok: false,
-          message: `${errorMsg} Código lido: ${val}`,
-          source: "qr",
-        });
-
-        toast.error(errorMsg);
-        recordOutcome("error");
-        void recordIncident("OTHER");
+        await registerMealConsumptionUnlinked(val);
         return;
       }
 
@@ -1012,7 +1152,6 @@ export default function AlimentacaoScanPage() {
       isWindowNearNow(w.start_time, w.end_time, w.service_date),
     );
     return near.length > 0 ? near : windows;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [windows]);
 
   const currentWindow = useMemo(
@@ -1027,26 +1166,21 @@ export default function AlimentacaoScanPage() {
   const isJanelaAtiva = currentStatus === "ativa";
 
   const janelaSheetItems = useMemo(
-  () =>
-    visibleWindows.map((w) => ({
-      id: w.id,
-
-      nome: w.meal_type?.name || "Refeição",
-
-      local:
-        w.label ||
-        w.meal_locations?.name ||
-        w.location ||
-        "Local não informado",
-
-      inicio: w.start_time.slice(0, 5),
-
-      fim: w.end_time.slice(0, 5),
-
-      status: statusForWindow(w, now),
-    })),
-  [visibleWindows, now],
-);
+    () =>
+      visibleWindows.map((w) => ({
+        id: w.id,
+        nome: w.meal_type?.name || "Refeição",
+        local:
+          w.label ||
+          w.meal_locations?.name ||
+          w.location ||
+          "Local não informado",
+        inicio: w.start_time.slice(0, 5),
+        fim: w.end_time.slice(0, 5),
+        status: statusForWindow(w, now),
+      })),
+    [visibleWindows, now],
+  );
 
   const hiddenWindowCount = windows.length - visibleWindows.length;
 
