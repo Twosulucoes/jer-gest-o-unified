@@ -1484,7 +1484,7 @@ export default function AlimentacaoScanPage() {
           >
             <ListChecks className="h-4 w-4 text-module shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-bold leading-tight truncate">Lista consumos</p>
+              <p className="text-xs font-bold leading-tight truncate">Lista conssssumos</p>
               <p className="text-[10px] text-muted-foreground">Histórico do dia</p>
             </div>
           </button>
