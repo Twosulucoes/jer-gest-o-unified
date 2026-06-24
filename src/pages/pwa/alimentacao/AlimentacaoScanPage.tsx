@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
@@ -145,7 +144,10 @@ export default function AlimentacaoScanPage() {
   const [janelaSheetOpen, setJanelaSheetOpen] = useState(false);
   const [online, setOnline] = useState(isOnline());
 
-  const { lookupQr, searchOffline } = useParticipantStatusCache({ eventId: activeEventId, online });
+  const { lookupQr, searchOffline } = useParticipantStatusCache({
+    eventId: activeEventId,
+    online,
+  });
 
   const [prefs, setPrefs] = useState<ScanPreferences>(() =>
     loadScanPreferences(MODULE, userId),
@@ -183,8 +185,10 @@ export default function AlimentacaoScanPage() {
   useEffect(() => {
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
@@ -425,6 +429,7 @@ export default function AlimentacaoScanPage() {
 
     if (!online) {
       const results = searchOffline(debouncedManual);
+
       setManualHits(
         results.map((e) => ({
           participant_id: e.participant_id,
@@ -438,6 +443,7 @@ export default function AlimentacaoScanPage() {
           left_event_at: null,
         })),
       );
+
       setManualSearching(false);
       return;
     }
@@ -586,7 +592,7 @@ export default function AlimentacaoScanPage() {
           source: "qr",
         });
 
-          toast.error("Consumo duplicado", { description: qrCode });
+        toast.error("Consumo duplicado", { description: qrCode });
         recordOutcome("error");
         reopenIfContinuous();
         return;
@@ -660,7 +666,7 @@ export default function AlimentacaoScanPage() {
         } nesta janela.`;
 
         setResult({ ok: false, message: dedupMsg, source: resultSource });
-  
+
         toast.info(dedupMsg, {
           description: "Aguarde a sincronização para evitar duplicidade.",
         });
@@ -681,7 +687,6 @@ export default function AlimentacaoScanPage() {
         restrictions: foodRestrictions || undefined,
       });
 
-
       toast.info("Registrado offline. Sincronize quando houver internet.");
       recordOutcome("ok");
 
@@ -701,21 +706,22 @@ export default function AlimentacaoScanPage() {
         .maybeSingle();
 
       if (!enrolled) {
-        const msg = "Participante não está inscrito nesta etapa.";
-        setResult({ ok: false, message: msg, source: resultSource });
-          toast.error(msg);
-        recordOutcome("error");
-        reopenIfContinuous();
-        return;
+        console.warn(
+          "Participante não está inscrito nesta etapa, mas o consumo será registrado:",
+          participantId,
+        );
       }
     }
 
-    const { data: rpcResult, error: rpcError } = await supabase.rpc("record_meal_consumption", {
-      p_participant_id: participantId,
-      p_meal_window_id: windowId,
-      p_method: method,
-      p_registered_by: session.user.id,
-    });
+    const { data: rpcResult, error: rpcError } = await supabase.rpc(
+      "record_meal_consumption",
+      {
+        p_participant_id: participantId,
+        p_meal_window_id: windowId,
+        p_method: method,
+        p_registered_by: session.user.id,
+      },
+    );
 
     if (rpcError) {
       void recordIncident("OTHER", participantId);
@@ -743,7 +749,7 @@ export default function AlimentacaoScanPage() {
           msg = "Fora do horário desta janela de refeição.";
           break;
         case "NOT_ELIGIBLE":
-          msg = "Participante sem direito a esta refeição (restrição de elegibilidade).";
+          msg = "Participante sem direito a esta refeição.";
           break;
         case "NOT_ENROLLED_IN_STAGE":
           msg = "Participante não está inscrito nesta etapa.";
@@ -778,7 +784,6 @@ export default function AlimentacaoScanPage() {
       restrictions: foodRestrictions || undefined,
     });
 
-
     toast.success(successMsg);
     recordOutcome("ok");
 
@@ -794,6 +799,7 @@ export default function AlimentacaoScanPage() {
     setScannerOpen(false);
 
     let val = rawValue.trim();
+
     if (!val) {
       setIsSubmitting(false);
       return;
@@ -820,11 +826,19 @@ export default function AlimentacaoScanPage() {
       let method: "qr_scan" | "voucher" = "qr_scan";
 
       if (isVoucherQr(val)) {
-  
         if (!isOnline()) {
-          addToVoucherQueue(val, "meals", windowId, userId || "", "Portador de Voucher");
+          addToVoucherQueue(
+            val,
+            "meals",
+            windowId,
+            userId || "",
+            "Portador de Voucher",
+          );
 
-          const successMsg = `Voucher registrado offline: ${val.replace("voucher:", "")}`;
+          const successMsg = `Voucher registrado offline: ${val.replace(
+            "voucher:",
+            "",
+          )}`;
 
           setResult({
             ok: true,
@@ -856,13 +870,16 @@ export default function AlimentacaoScanPage() {
           }
 
           setResult({ ok: false, message: `${msg.text}${extra}`, source: "qr" });
-    
+
           toast.error(`${msg.text}${extra}`);
           recordOutcome("error");
 
           let incType = "VOUCHER_INVALID";
 
-          if (voucher?.reason === "already_used_here" || voucher?.reason === "already_used") {
+          if (
+            voucher?.reason === "already_used_here" ||
+            voucher?.reason === "already_used"
+          ) {
             incType = "VOUCHER_ALREADY_USED";
           } else if (voucher?.reason === "expired") {
             incType = "VOUCHER_EXPIRED";
@@ -884,7 +901,6 @@ export default function AlimentacaoScanPage() {
           full_name: voucher.person_name || "Portador de Voucher",
         } as any);
 
-  
         toast.success(msg.text);
         recordOutcome("ok");
 
@@ -898,7 +914,9 @@ export default function AlimentacaoScanPage() {
         const cached = lookupQr(val);
 
         if (cached.state === "sem_cache") {
-          const msg = "Sem conexão e cache indisponível. Abra o módulo com internet primeiro para baixar os dados.";
+          const msg =
+            "Sem conexão e cache indisponível. Abra o módulo com internet primeiro para baixar os dados.";
+
           setResult({ ok: false, message: msg, source: "qr" });
           toast.error("Cache indisponível", { description: msg });
           recordOutcome("error");
@@ -911,11 +929,13 @@ export default function AlimentacaoScanPage() {
         }
 
         if (cached.state === "nao_credenciado") {
-          const msg = "Participante não possui credencial ativa (Aguardando Credenciamento)";
-          setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg, { description: "Encaminhe o atleta para a secretaria." });
-          recordOutcome("error");
-          void recordIncident("NO_CREDENTIAL", cached.entry.participant_id);
+          await registerMealConsumption(
+            cached.entry.participant_id,
+            cached.entry.full_name,
+            "qr_scan",
+            "qr",
+            null,
+          );
           return;
         }
 
@@ -923,6 +943,7 @@ export default function AlimentacaoScanPage() {
 
         if (!cachedEntry.is_active) {
           const msg = "Participante Inativo ou não encontrado";
+
           setResult({ ok: false, message: msg, source: "qr" });
           toast.error(msg);
           recordOutcome("error");
@@ -931,15 +952,20 @@ export default function AlimentacaoScanPage() {
         }
 
         if (!cachedEntry.needs_meals) {
-          const msg = "Participante não declarou necessidade de alimentação.";
-          setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg);
-          recordOutcome("error");
-          void recordIncident("NEEDS_MEALS_FALSE", cachedEntry.participant_id);
-          return;
+          console.warn(
+            "Participante não declarou alimentação, mas o consumo será registrado:",
+            cachedEntry.participant_id,
+          );
         }
 
-        await registerMealConsumption(cachedEntry.participant_id, cachedEntry.full_name, "qr_scan", "qr", null);
+        await registerMealConsumption(
+          cachedEntry.participant_id,
+          cachedEntry.full_name,
+          "qr_scan",
+          "qr",
+          null,
+        );
+
         return;
       }
 
@@ -949,7 +975,6 @@ export default function AlimentacaoScanPage() {
         await registerMealConsumptionUnlinked(val);
         return;
       }
-
 
       const { data: partData, error: partError } = await (supabase as any)
         .from("participants")
@@ -961,7 +986,6 @@ export default function AlimentacaoScanPage() {
         const msg = "Participante Inativo ou não encontrado";
 
         setResult({ ok: false, message: msg, source: "qr" });
-
         toast.error(msg);
         recordOutcome("error");
         void recordIncident("PARTICIPANT_INACTIVE", resolved.participant_id);
@@ -969,14 +993,21 @@ export default function AlimentacaoScanPage() {
       }
 
       if (!partData.credentialed_at) {
-        const msg = "Participante não possui credencial ativa (Aguardando Credenciamento)";
-
-        setResult({ ok: false, message: msg, source: "qr" });
-
-        toast.error(msg, { description: "Encaminhe o atleta para a secretaria." });
-        recordOutcome("error");
-        void recordIncident("NO_CREDENTIAL", resolved.participant_id);
+        await registerMealConsumption(
+          resolved.participant_id,
+          resolved.full_name,
+          "qr_scan",
+          "qr",
+          foodRestrictions,
+        );
         return;
+      }
+
+      if (partData.needs_meals === false) {
+        console.warn(
+          "Participante não declarou alimentação, mas o consumo será registrado:",
+          resolved.participant_id,
+        );
       }
 
       const winForQr = windows.find((w) => w.id === windowId);
@@ -985,7 +1016,6 @@ export default function AlimentacaoScanPage() {
         const msg = "Participante registrou saída antecipada do evento.";
 
         setResult({ ok: false, message: msg, source: "qr" });
-
         toast.error(msg);
         recordOutcome("error");
         void recordIncident("LEFT_EVENT", resolved.participant_id);
@@ -1002,7 +1032,8 @@ export default function AlimentacaoScanPage() {
           message: getSystemMessage("ERR_UNKNOWN", lang),
           source: "qr",
         });
-          recordOutcome("error");
+
+        recordOutcome("error");
         return;
       }
 
@@ -1025,7 +1056,7 @@ export default function AlimentacaoScanPage() {
     }
   };
 
-  type EligibilityReason = "INACTIVE" | "NEEDS_MEALS_FALSE" | "NO_CREDENTIAL" | "LEFT_EVENT";
+  type EligibilityReason = "INACTIVE" | "LEFT_EVENT";
 
   const evaluateMealEligibility = (
     row: Pick<
@@ -1036,22 +1067,6 @@ export default function AlimentacaoScanPage() {
   ): { ok: true } | { ok: false; reason: EligibilityReason; message: string } => {
     if (row.is_active === false) {
       return { ok: false, reason: "INACTIVE", message: "Participante Inativo." };
-    }
-
-    if (row.needs_meals === false) {
-      return {
-        ok: false,
-        reason: "NEEDS_MEALS_FALSE",
-        message: "Participante não declarou necessidade de alimentação.",
-      };
-    }
-
-    if (!row.credentialed_at) {
-      return {
-        ok: false,
-        reason: "NO_CREDENTIAL",
-        message: "Participante não possui credencial ativa (Aguardando Credenciamento).",
-      };
     }
 
     if (leftEventBlocksWindow(row.left_event_at, serviceDate)) {
@@ -1069,10 +1084,6 @@ export default function AlimentacaoScanPage() {
     switch (reason) {
       case "INACTIVE":
         return "PARTICIPANT_INACTIVE";
-      case "NEEDS_MEALS_FALSE":
-        return "NEEDS_MEALS_FALSE";
-      case "NO_CREDENTIAL":
-        return "NO_CREDENTIAL";
       case "LEFT_EVENT":
         return "LEFT_EVENT";
     }
@@ -1096,19 +1107,22 @@ export default function AlimentacaoScanPage() {
           source: "manual",
         });
 
-        toast.error((verdict as any).message, {
-          description:
-            (verdict as any).reason === "NO_CREDENTIAL"
-              ? "Encaminhe para a secretaria."
-              : undefined,
-        });
-
+        toast.error((verdict as any).message);
         recordOutcome("error");
-        void recordIncident(incidentTypeFor((verdict as any).reason), row.participant_id);
+        void recordIncident(
+          incidentTypeFor((verdict as any).reason),
+          row.participant_id,
+        );
         return;
       }
 
-      await registerMealConsumption(row.participant_id, row.full_name, "manual", "manual", null);
+      await registerMealConsumption(
+        row.participant_id,
+        row.full_name,
+        "manual",
+        "manual",
+        null,
+      );
     } catch (err: unknown) {
       setResult({
         ok: false,
@@ -1190,6 +1204,7 @@ export default function AlimentacaoScanPage() {
                 </p>
               </div>
             </div>
+
             <div className="grid gap-2">
               {stagesOpenToday.map((s) => (
                 <button
@@ -1255,9 +1270,12 @@ export default function AlimentacaoScanPage() {
               >
                 {STATUS_HEADER[currentStatus].label}
               </p>
+
               <p className="mt-0.5 truncate text-base font-extrabold text-foreground">
-                {currentWindow.meal_type?.name || "Refeição"} — {getWindowLocal(currentWindow)}
+                {currentWindow.meal_type?.name || "Refeição"} —{" "}
+                {getWindowLocal(currentWindow)}
               </p>
+
               <p className="mt-0.5 text-xs font-mono font-semibold text-muted-foreground">
                 {currentWindow.start_time.slice(0, 5)}–
                 {currentWindow.end_time.slice(0, 5)}
@@ -1312,6 +1330,7 @@ export default function AlimentacaoScanPage() {
                 <Lock className="h-6 w-6" />
               )}
             </div>
+
             <div className="min-w-0 flex-1">
               <p className="text-base font-extrabold leading-tight">
                 {isSubmitting
@@ -1320,6 +1339,7 @@ export default function AlimentacaoScanPage() {
                     ? "Escanear QR Code"
                     : "Janela não disponível"}
               </p>
+
               <p className="text-[11px] font-medium opacity-80 truncate">
                 {isJanelaAtiva
                   ? `${currentWindow?.meal_type?.name || "Refeição"} · ${getWindowLocal(
@@ -1355,7 +1375,7 @@ export default function AlimentacaoScanPage() {
               onChange={(e) => setManualQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && manualQuery.length >= 8) {
-                  handleScan(manualQuery);
+                  void handleScan(manualQuery);
                 }
               }}
               className="h-11 border-border/80 bg-card/90 pl-10"
@@ -1390,13 +1410,9 @@ export default function AlimentacaoScanPage() {
                     const verdict = evaluateMealEligibility(h, winForBadge?.service_date);
 
                     const badgeLabel = !verdict.ok
-                      ? (verdict as any).reason === "NO_CREDENTIAL"
-                        ? "sem credencial"
-                        : (verdict as any).reason === "NEEDS_MEALS_FALSE"
-                          ? "não precisa alim."
-                          : (verdict as any).reason === "LEFT_EVENT"
-                            ? "saiu do evento"
-                            : "inativo"
+                      ? (verdict as any).reason === "LEFT_EVENT"
+                        ? "saiu do evento"
+                        : "inativo"
                       : null;
 
                     return (
@@ -1447,8 +1463,10 @@ export default function AlimentacaoScanPage() {
             ) : (
               <XCircle className="h-5 w-5 shrink-0 text-destructive" />
             )}
+
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium leading-snug">{result.message}</p>
+
               {result.restrictions && (
                 <p className="mt-0.5 text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400">
                   Restrição: {result.restrictions}
@@ -1473,12 +1491,14 @@ export default function AlimentacaoScanPage() {
 
           <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 cursor-pointer">
             <Settings2 className="h-4 w-4 text-module shrink-0" />
+
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold leading-tight truncate">Modo contínuo</p>
               <p className="text-[10px] text-muted-foreground">
                 {prefs.continuousMode ? "Reabre câmera após scan" : "Desligado"}
               </p>
             </div>
+
             <Switch
               checked={prefs.continuousMode}
               onCheckedChange={(v) => updatePrefs({ ...prefs, continuousMode: v })}
@@ -1536,6 +1556,7 @@ function KpiCard({
       >
         {label}
       </p>
+
       <p
         className={cn(
           "mt-0.5 font-extrabold tabular-nums leading-none",
@@ -1575,6 +1596,7 @@ function SyncStatusLine({ online }: { online: boolean }) {
           {online ? "Sistema online · Sync ativo" : "Offline · dados em fila"}
         </span>
       </div>
+
       <BuildVersionTag />
     </div>
   );
