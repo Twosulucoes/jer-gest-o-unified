@@ -455,7 +455,7 @@ export default function SubstituicaoSolicitarPage() {
 
       <p>
         O sistema ficará disponível até
-        <strong> 24/06/2026 às 00:00</strong>.
+        <strong> 23/06/2026 às 23:59</strong>.
       </p>
     </div>
   </CardContent>
