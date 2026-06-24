@@ -216,11 +216,11 @@ display_delegation: "Não informado",
       ].join(","));
     }
 
-    rows.push("");
-    rows.push("RESUMO GERAL");
-    rows.push(`Vinculados,${linkedConsumptions.length}`);
-    rows.push(`QR não vinculados,${unlinkedConsumptions.length}`);
-    rows.push(`Total,${consumptions.length}`);
+rows.push("");
+rows.push("RESUMO GERAL");
+rows.push(`Credenciais vinculadas,${linkedConsumptions.length}`);
+rows.push(`Leituras avulsas,${unlinkedConsumptions.length}`);
+rows.push(`Total de consumos,${consumptions.length}`);
 
     rows.push("");
     rows.push("TOTAIS POR TIPO");
@@ -239,15 +239,15 @@ display_delegation: "Não informado",
 
     setIsExporting(true);
 
-    try {
-      const summaryData: any[] = [
-        { Categoria: "RESUMO GERAL", Valor: "" },
-        { Categoria: "Vinculados", Valor: linkedConsumptions.length },
-        { Categoria: "QR não vinculados", Valor: unlinkedConsumptions.length },
-        { Categoria: "Total", Valor: consumptions.length },
-        { Categoria: "", Valor: "" },
-        { Categoria: "TOTAIS POR TIPO", Valor: "" },
-      ];
+try {
+  const summaryData: any[] = [
+    { Categoria: "RESUMO GERAL", Valor: "" },
+    { Categoria: "Credenciais vinculadas", Valor: linkedConsumptions.length },
+    { Categoria: "Consumos avulsos", Valor: unlinkedConsumptions.length },
+    { Categoria: "Total de consumos", Valor: consumptions.length },
+    { Categoria: "", Valor: "" },
+    { Categoria: "TOTAIS POR TIPO", Valor: "" },
+  ];
 
       totalByType.forEach((v, k) => summaryData.push({ Categoria: k, Valor: v }));
 
@@ -274,17 +274,17 @@ display_delegation: "Não informado",
         Método: c.display_method || "qr_scan",
       }));
 
-      const detalheData = consumptions.map((c: any) => ({
-        Tipo: c.source_type === "unlinked" ? "QR NÃO VINCULADO" : "VINCULADO",
-        "Participante/QR": c.display_name || "",
-        Delegação: c.display_delegation || "",
-        Refeição: c.meal_windows?.label || c.meal_windows?.meal_types?.name || "",
-        "Data/Hora": c.consumed_at
-          ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm")
-          : "",
-        Método: c.display_method || "scan",
-        QR: c.qr_code || "",
-      }));
+const detalheData = consumptions.map((c: any) => ({
+  Tipo: c.source_type === "unlinked" ? "CONSUMO AVULSO" : "VINCULADO",
+  "Participante/QR": c.display_name || "",
+  Delegação: c.display_delegation || "",
+  Refeição: c.meal_windows?.label || c.meal_windows?.meal_types?.name || "",
+  "Data/Hora": c.consumed_at
+    ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm")
+    : "",
+  Método: c.display_method || "scan",
+  QR: c.qr_code || "",
+}));
 
       const filename = `relatorio_alimentacao_${startDate || "geral"}${
         signature ? "_" + signature : ""
@@ -332,17 +332,17 @@ display_delegation: "Não informado",
       doc.setFontSize(12);
       doc.text("Resumo Geral", 14, 45);
 
-      autoTable(doc, {
-        startY: 50,
-        head: [["Indicador", "Total"]],
-        body: [
-          ["Vinculados", linkedConsumptions.length.toString()],
-          ["QR não vinculados", unlinkedConsumptions.length.toString()],
-          ["Total geral", consumptions.length.toString()],
-        ],
-        theme: "striped",
-        headStyles: { fillColor: [41, 128, 185] },
-      });
+autoTable(doc, {
+  startY: 50,
+  head: [["Indicador", "Total"]],
+  body: [
+    ["Participantes vinculados", linkedConsumptions.length.toString()],
+    ["Consumos avulsos", unlinkedConsumptions.length.toString()],
+    ["Total geral", consumptions.length.toString()],
+  ],
+  theme: "striped",
+  headStyles: { fillColor: [41, 128, 185] },
+});
 
       doc.text("Resumo por Tipo de Refeição", 14, (doc as any).lastAutoTable.finalY + 10);
 
@@ -356,13 +356,15 @@ display_delegation: "Não informado",
 
       doc.text("Detalhamento", 14, (doc as any).lastAutoTable.finalY + 10);
 
-      const detailsTable = consumptions.map((c: any) => [
-        c.source_type === "unlinked" ? "QR NÃO VINCULADO" : "VINCULADO",
-        c.display_name || "",
-        c.display_delegation || "",
-        c.meal_windows?.label || c.meal_windows?.meal_types?.name || "",
-        c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "",
-      ]);
+const detailsTable = consumptions.map((c: any) => [
+  c.source_type === "unlinked" ? "CONSUMO AVULSO" : "VINCULADO",
+  c.display_name || "",
+  c.display_delegation || "",
+  c.meal_windows?.label || c.meal_windows?.meal_types?.name || "",
+  c.consumed_at
+    ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm")
+    : "",
+]);
 
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 15,
@@ -429,15 +431,15 @@ display_delegation: "Não informado",
       windowsMap.forEach((items) => {
         const win = items[0].meal_windows;
 
-        data.push({
-          Janela: win.label || win.meal_types?.name,
-          Data: format(new Date(win.service_date + "T00:00:00"), "dd/MM/yyyy"),
-          Tipo: win.meal_types?.name,
-          "Total Realizado": items.length,
-          Vinculados: items.filter((i: any) => i.source_type === "linked").length,
-          "QR Não Vinculados": items.filter((i: any) => i.source_type === "unlinked").length,
-          Status: "Finalizado",
-        });
+data.push({
+  Janela: win.label || win.meal_types?.name,
+  Data: format(new Date(win.service_date + "T00:00:00"), "dd/MM/yyyy"),
+  Tipo: win.meal_types?.name,
+  "Total Realizado": items.length,
+  Vinculados: items.filter((i: any) => i.source_type === "linked").length,
+  "Consumos Avulsos": items.filter((i: any) => i.source_type === "unlinked").length,
+  Status: "Finalizado",
+});
 
         items.forEach((i: any) => {
           data.push({
@@ -624,12 +626,16 @@ display_delegation: "Não informado",
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-2xl font-bold text-yellow-500">{unlinkedConsumptions.length}</p>
-              <p className="text-xs text-muted-foreground">QR não vinculados</p>
-            </CardContent>
-          </Card>
+<Card>
+  <CardContent className="pt-4 text-center">
+    <p className="text-2xl font-bold text-yellow-500">
+      {unlinkedConsumptions.length}
+    </p>
+    <p className="text-xs text-muted-foreground">
+      Consumos avulsos
+    </p>
+  </CardContent>
+</Card>
 
           {Array.from(totalByType.entries()).slice(0, 1).map(([k, v]) => (
             <Card key={k}>
@@ -677,23 +683,41 @@ display_delegation: "Não informado",
               </TableRow>
             </TableHeader>
 
-            <TableBody>
-              {consumptions.slice(0, 200).map((c: any) => (
-                <TableRow key={`${c.source_type}-${c.id}`}>
-                  <TableCell>
-                    {c.source_type === "unlinked" ? "QR não vinculado" : "Vinculado"}
-                  </TableCell>
-                  <TableCell className="font-medium">{c.display_name || "—"}</TableCell>
-                  <TableCell>{c.display_delegation || "—"}</TableCell>
-                  <TableCell>{c.meal_windows?.label || c.meal_windows?.meal_types?.name || "—"}</TableCell>
-                  <TableCell>
-                    {c.consumed_at ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm") : "—"}
-                  </TableCell>
-                  <TableCell>{c.display_method || "scan"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+<TableBody>
+  {consumptions.slice(0, 200).map((c: any) => (
+    <TableRow key={`${c.source_type}-${c.id}`}>
+      <TableCell>
+        {c.source_type === "unlinked"
+          ? "Consumo avulso"
+          : "Vinculado"}
+      </TableCell>
+
+      <TableCell className="font-medium">
+        {c.display_name || "—"}
+      </TableCell>
+
+      <TableCell>
+        {c.display_delegation || "—"}
+      </TableCell>
+
+      <TableCell>
+        {c.meal_windows?.label ||
+          c.meal_windows?.meal_types?.name ||
+          "—"}
+      </TableCell>
+
+      <TableCell>
+        {c.consumed_at
+          ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm")
+          : "—"}
+      </TableCell>
+
+      <TableCell>
+        {c.display_method || "scan"}
+      </TableCell>
+    </TableRow>
+  ))}
+</TableBody>
 
           {consumptions.length > 200 && (
             <p className="text-xs text-muted-foreground text-center py-2">
