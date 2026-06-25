@@ -148,7 +148,7 @@ const navGroups: NavGroup[] = [
       { label: "Árbitros (Base)", to: "/admin/arbitragem", icon: <Users className="h-4 w-4" />, roles: ["admin", "secretaria", "coordenacao_tecnica"] as AppRole[] },
       { label: "Regras de Pagamento", to: "/admin/arbitragem/config", icon: <Settings className="h-4 w-4" />, roles: ["admin"] as AppRole[] },
       { label: "Apuração / Pagamentos", to: "/admin/arbitragem/relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ["admin", "secretaria"] as AppRole[] },
-      { label: "Protestos (Fila CDE)", to: "/admin/protestos", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "cde"] as AppRole[] },
+      { label: "CDE — Processos", to: "/admin/cde", icon: <Gavel className="h-4 w-4" />, roles: ["admin", "secretaria", "super_admin", "cde"] as AppRole[] },
     ],
   },
   {
@@ -288,10 +288,19 @@ export default function AdminLayout() {
     return item.roles === "all" || item.roles.some((r) => hasRole(r));
   };
 
+  const isCdeOnlyUser =
+    hasRole("cde") &&
+    !hasRole("admin") &&
+    !hasRole("super_admin") &&
+    !hasRole("secretaria") &&
+    !hasRole("coordenacao_tecnica");
+
   const isGroupVisible = (group: NavGroup) => {
-    // Esconde o grupo "Logística Global" se uma etapa estiver selecionada no contexto global
-    // para forçar o uso da navegação interna da etapa, ou vice-versa.
-    // Mas para manter simples agora, apenas filtramos por papéis.
+    // Usuário exclusivo da CDE só vê o grupo onde fica o painel CDE.
+    if (isCdeOnlyUser) {
+      return group.id === "arbitragem";
+    }
+
     if (group.items.some(isItemVisible)) return true;
     if (group.subGroups?.some((sg) => sg.items.some(isItemVisible))) return true;
     return false;
@@ -360,14 +369,16 @@ export default function AdminLayout() {
 
           {/* Event Switcher (Global) */}
           <div className="border-b border-sidebar-border">
-            {!collapsed && <EventSwitcher />}
+            {!collapsed && !isCdeOnlyUser && <EventSwitcher />}
           </div>
 
           {/* Navigation */}
           <nav className={`flex-1 overflow-y-auto py-3 space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
-            {isItemVisible(dashboardItem) && !hasRole("coordenador_modalidade") && (
-              <NavItemLink item={dashboardItem} collapsed={collapsed} onClick={closeSidebar} />
-            )}
+            {isItemVisible(dashboardItem) &&
+              !hasRole("coordenador_modalidade") &&
+              !isCdeOnlyUser && (
+                <NavItemLink item={dashboardItem} collapsed={collapsed} onClick={closeSidebar} />
+              )}
             {isItemVisible(coordDashboardItem) && (
               <NavItemLink item={coordDashboardItem} collapsed={collapsed} onClick={closeSidebar} />
             )}

@@ -94,6 +94,7 @@ const DebugPublicadosPage = lazy(() => import("../pages/admin/DebugPublicadosPag
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
 const LancamentoEventoPage = lazy(() => import("../pages/admin/LancamentoEventoPage"));
+const NotFound = lazy(() => import("../pages/NotFound"));
 
 // Referee specific pages
 const RefereeRemunerationConfigPage = lazy(() => import("../pages/admin/referees/RefereeRemunerationConfigPage"));
@@ -238,8 +239,7 @@ const AtletaPublicProfilePage = lazy(() => import("../pages/public/AtletaPublicP
 const EntregaTecnicaPage = lazy(() => import("../pages/public/EntregaTecnicaPage"));
 const SubstituicaoSolicitarPage = lazy(() => import("../pages/public/SubstituicaoSolicitarPage"));
 const CdeRecursoPage = lazy(() => import("../pages/public/CdeRecursoPage"));
-const NotFound = lazy(() => import("../pages/NotFound"));
-
+const CdeConsultaPage = lazy(() => import("../pages/public/CdeConsultaPage"));
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
     <div className="space-y-4 text-center">
@@ -379,7 +379,50 @@ export const AppRoutes = () => (
         <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>} />
         <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
         <Route path="alertas" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "secretaria", "coordenacao_tecnica"]}><AlertasPage /></ProtectedRoute>} />
-        <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
+<Route
+  path="cde"
+  element={
+    <ProtectedRoute
+      allowedRoles={["admin", "super_admin", "cde"]}
+    >
+      <ProtestosFilaPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="protestos"
+  element={
+    <ProtectedRoute
+      allowedRoles={["admin", "super_admin", "cde"]}
+    >
+      <ProtestosFilaPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="cde/:id"
+  element={
+    <ProtectedRoute
+      allowedRoles={["admin", "super_admin", "cde"]}
+    >
+      <ProtestosFilaPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="protestos/:id"
+  element={
+    <ProtectedRoute
+      allowedRoles={["admin", "super_admin", "cde"]}
+    >
+      <ProtestosFilaPage />
+    </ProtectedRoute>
+  }
+/>
+       <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
         <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
         <Route path="dados" element={<Navigate to="/super/dados" replace />} />
         <Route path="relatorios" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade", "super_admin"]}><RelatoriosHubPage /></ProtectedRoute>} />
@@ -508,8 +551,7 @@ export const AppRoutes = () => (
       <Route path="/substituicao/solicitar" element={<SubstituicaoSolicitarPage />} />
 
       <Route path="/cde/recurso" element={<CdeRecursoPage />} />
-
-      <Route path="*" element={<NotFound />} />
+<Route path="/cde/consulta/:token" element={<CdeConsultaPage />} />      <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
 );
