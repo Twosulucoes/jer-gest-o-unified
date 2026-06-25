@@ -19,9 +19,7 @@ export default function CdeConsultaPage() {
         .eq("public_token", token)
         .maybeSingle();
 
-      if (!error && data) {
-        setCaseData(data);
-      }
+      if (!error && data) setCaseData(data);
 
       setLoading(false);
     }
@@ -54,6 +52,8 @@ export default function CdeConsultaPage() {
       </div>
     );
   }
+
+  const decisaoPublicada = caseData.is_published === true;
 
   return (
     <div className="min-h-screen bg-muted/30 p-4">
@@ -126,12 +126,27 @@ export default function CdeConsultaPage() {
               </div>
             )}
 
-            {caseData.decision_text && (
+            {caseData.status === "decidido" && !decisaoPublicada && (
+              <div className="rounded-lg border p-4 bg-yellow-50">
+                <p className="text-sm font-semibold mb-1">Decisão em processamento</p>
+                <p className="text-sm">
+                  A CDE já registrou julgamento interno, mas a decisão ainda não foi publicada para consulta.
+                </p>
+              </div>
+            )}
+
+            {decisaoPublicada && caseData.decision_text && (
               <div className="rounded-lg border p-4 bg-green-50">
-                <p className="text-sm font-semibold mb-1">Decisão da CDE</p>
+                <p className="text-sm font-semibold mb-1">Decisão publicada da CDE</p>
                 <p className="text-sm whitespace-pre-wrap">
                   {caseData.decision_text}
                 </p>
+
+                {caseData.published_at && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Publicada em: {new Date(caseData.published_at).toLocaleString("pt-BR")}
+                  </p>
+                )}
               </div>
             )}
 

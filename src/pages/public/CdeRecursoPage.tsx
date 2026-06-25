@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Upload, X, FileText } from "lucide-react";
 
 function gerarProtocolo() {
   const ano = new Date().getFullYear();
@@ -26,6 +27,7 @@ export default function CdeRecursoPage() {
 
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState<any>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const [form, setForm] = useState({
     professor_nome: "",
@@ -49,6 +51,26 @@ export default function CdeRecursoPage() {
 
   function update(key: string, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function selecionarArquivos(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files || []);
+
+    const validos = selected.filter((file) => {
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error(`Arquivo muito grande: ${file.name}. Máximo 10MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    setFiles((prev) => [...prev, ...validos].slice(0, 5));
+    e.target.value = "";
+  }
+
+  function removerArquivo(index: number) {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function enviar() {
@@ -93,13 +115,45 @@ export default function CdeRecursoPage() {
         priority: "normal",
       };
 
-const { data, error } = await (supabase as any)
-  .from("cde_cases")
-  .insert(payload)
-  .select("*")
-  .single();
+      const { data, error } = await (supabase as any)
+        .from("cde_cases")
+        .insert(payload)
+        .select("*")
+        .single();
 
       if (error) throw error;
+
+      if (files.length > 0) {
+        for (const file of files) {
+          const ext = file.name.split(".").pop();
+          const cleanName = file.name
+            .replace(/\s+/g, "_")
+            .replace(/[^\w.\-]/g, "");
+
+          const path = `${data.id}/${Date.now()}-${cleanName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("cde-attachments")
+            .upload(path, file, {
+              cacheControl: "3600",
+              upsert: false,
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { error: attachmentError } = await (supabase as any)
+            .from("cde_attachments")
+            .insert({
+              cde_case_id: data.id,
+              file_name: file.name,
+              file_path: path,
+              file_type: file.type || ext || "arquivo",
+              file_size: file.size,
+            });
+
+          if (attachmentError) throw attachmentError;
+        }
+      }
 
       try {
         await supabase.functions.invoke("send-cde-notification", {
@@ -168,95 +222,165 @@ const { data, error } = await (supabase as any)
 
   return (
     <div className="min-h-screen bg-muted/30 p-4">
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="mx-auto max-w-3xl space-y-4">
         <Card>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-6 space-y-5">
             <div>
-              <h1 className="text-2xl font-bold">Recurso CDE</h1>
+              <h1 className="text-3xl font-bold">Recurso CDE</h1>
               <p className="text-sm text-muted-foreground">
                 Comissão Disciplinar Especial — Jogos Escolares
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-3">
-              <Input
-                placeholder="Nome do professor *"
-                value={form.professor_nome}
-                onChange={(e) => update("professor_nome", e.target.value)}
-              />
+            <div className="rounded-lg border bg-background/60 p-4">
+              <p className="text-sm font-semibold">Dados do solicitante</p>
+
+              <div className="grid md:grid-cols-2 gap-3 mt-3">
+                <Input
+                  placeholder="Nome do professor *"
+                  value={form.professor_nome}
+                  onChange={(e) => update("professor_nome", e.target.value)}
+                />
+
+                <Input
+                  placeholder="Email do professor *"
+                  type="email"
+                  value={form.professor_email}
+                  onChange={(e) => update("professor_email", e.target.value)}
+                />
+
+                <Input
+                  placeholder="Telefone"
+                  value={form.professor_telefone}
+                  onChange={(e) => update("professor_telefone", e.target.value)}
+                />
+
+                <Input
+                  placeholder="Escola *"
+                  value={form.escola}
+                  onChange={(e) => update("escola", e.target.value)}
+                />
+
+                <Input
+                  placeholder="Município"
+                  value={form.municipio}
+                  onChange={(e) => update("municipio", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-background/60 p-4">
+              <p className="text-sm font-semibold">Dados da competição</p>
+
+              <div className="grid md:grid-cols-2 gap-3 mt-3">
+                <Input
+                  placeholder="Modalidade *"
+                  value={form.modalidade}
+                  onChange={(e) => update("modalidade", e.target.value)}
+                />
+
+                <Input
+                  placeholder="Categoria ex: 12 a 14"
+                  value={form.categoria}
+                  onChange={(e) => update("categoria", e.target.value)}
+                />
+
+                <Input
+                  placeholder="Naipe"
+                  value={form.naipe}
+                  onChange={(e) => update("naipe", e.target.value)}
+                />
+
+                <Input
+                  placeholder="Tipo do recurso *"
+                  value={form.tipo_recurso}
+                  onChange={(e) => update("tipo_recurso", e.target.value)}
+                />
+              </div>
 
               <Input
-                placeholder="Email do professor *"
-                type="email"
-                value={form.professor_email}
-                onChange={(e) => update("professor_email", e.target.value)}
-              />
-
-              <Input
-                placeholder="Telefone"
-                value={form.professor_telefone}
-                onChange={(e) => update("professor_telefone", e.target.value)}
-              />
-
-              <Input
-                placeholder="Escola *"
-                value={form.escola}
-                onChange={(e) => update("escola", e.target.value)}
-              />
-
-              <Input
-                placeholder="Município"
-                value={form.municipio}
-                onChange={(e) => update("municipio", e.target.value)}
-              />
-
-              <Input
-                placeholder="Modalidade *"
-                value={form.modalidade}
-                onChange={(e) => update("modalidade", e.target.value)}
-              />
-
-              <Input
-                placeholder="Categoria ex: 12 a 14"
-                value={form.categoria}
-                onChange={(e) => update("categoria", e.target.value)}
-              />
-
-              <Input
-                placeholder="Naipe"
-                value={form.naipe}
-                onChange={(e) => update("naipe", e.target.value)}
+                className="mt-3"
+                placeholder="Jogo/partida ex: Escola A x Escola B"
+                value={form.jogo_descricao}
+                onChange={(e) => update("jogo_descricao", e.target.value)}
               />
             </div>
 
-            <Input
-              placeholder="Jogo/partida ex: Escola A x Escola B"
-              value={form.jogo_descricao}
-              onChange={(e) => update("jogo_descricao", e.target.value)}
-            />
+            <div className="rounded-lg border bg-background/60 p-4 space-y-3">
+              <p className="text-sm font-semibold">Descrição do recurso</p>
 
-            <Input
-              placeholder="Tipo do recurso *"
-              value={form.tipo_recurso}
-              onChange={(e) => update("tipo_recurso", e.target.value)}
-            />
+              <Textarea
+                placeholder="Relato do ocorrido *"
+                rows={6}
+                value={form.relato}
+                onChange={(e) => update("relato", e.target.value)}
+              />
 
-            <Textarea
-              placeholder="Relato do ocorrido *"
-              rows={5}
-              value={form.relato}
-              onChange={(e) => update("relato", e.target.value)}
-            />
+              <Textarea
+                placeholder="Pedido do recurso"
+                rows={4}
+                value={form.pedido}
+                onChange={(e) => update("pedido", e.target.value)}
+              />
+            </div>
 
-            <Textarea
-              placeholder="Pedido do recurso"
-              rows={3}
-              value={form.pedido}
-              onChange={(e) => update("pedido", e.target.value)}
-            />
+            <div className="rounded-lg border bg-background/60 p-4 space-y-3">
+              <div>
+                <p className="text-sm font-semibold">Anexos do recurso</p>
+                <p className="text-xs text-muted-foreground">
+                  Envie documentos, prints, súmulas ou fotos. Máximo 5 arquivos, até 10MB cada.
+                </p>
+              </div>
+
+              <label className="flex cursor-pointer items-center justify-center rounded-lg border border-dashed p-6 hover:bg-muted/50">
+                <div className="text-center">
+                  <Upload className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm font-medium">Clique para anexar arquivos</p>
+                  <p className="text-xs text-muted-foreground">
+                    PDF, imagem ou documento
+                  </p>
+                </div>
+
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={selecionarArquivos}
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+                />
+              </label>
+
+              {files.length > 0 && (
+                <div className="space-y-2">
+                  {files.map((file, index) => (
+                    <div
+                      key={`${file.name}-${index}`}
+                      className="flex items-center justify-between rounded-md border bg-background p-2 text-sm"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{file.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {(file.size / 1024 / 1024).toFixed(2)}MB
+                        </span>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removerArquivo(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Button disabled={loading} onClick={enviar} className="w-full">
-              {loading ? "Enviando..." : "Enviar recurso"}
+              {loading ? "Enviando recurso..." : "Enviar recurso"}
             </Button>
           </CardContent>
         </Card>

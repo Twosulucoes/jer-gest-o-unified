@@ -5,6 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+
+import { saveAs } from "file-saver";
+
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  AlignmentType,
+} from "docx";
+
 import {
   Dialog,
   DialogContent,
@@ -19,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Gavel, FileText, Paperclip, RefreshCcw } from "lucide-react";
+import { Gavel, FileText, Paperclip, RefreshCcw, ClipboardList, Clock, CheckCircle2, AlertTriangle, Users, Scale } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -61,6 +73,8 @@ type CdeItem = {
   relato?: string | null;
   pedido?: string | null;
   public_token?: string | null;
+  is_published?: boolean | null;
+  published_at?: string | null;
 
   raw: any;
 };
@@ -83,6 +97,281 @@ function safeDate(date?: string | null) {
   }
 }
 
+function countByStatus(list: CdeItem[], status: string) {
+  return list.filter((item) => item.status === status).length;
+}
+
+function StatCard({
+  title,
+  value,
+  description,
+  icon,
+}: {
+  title: string;
+  value: number;
+  description: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {title}
+          </p>
+          <p className="mt-1 text-3xl font-bold">{value}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        </div>
+
+        <div className="rounded-full bg-primary/10 p-3 text-primary">
+          {icon}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+async function gerarDocumentoDecisao(item: CdeItem) {
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            text: "COMISSÃO DISCIPLINAR ESPECIAL - CDE",
+            heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+          }),
+
+          new Paragraph({
+            text: "JOGOS ESCOLARES DE RORAIMA",
+            alignment: AlignmentType.CENTER,
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `DECISÃO DO PROCESSO Nº ${item.protocolo}`,
+                bold: true,
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            text: `ORIGEM: ${
+              item.origem === "cde_cases"
+                ? "Recurso Público"
+                : "Protesto PWA"
+            }`,
+          }),
+
+          new Paragraph({
+            text: `ESCOLA: ${item.escola || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `MODALIDADE: ${item.modalidade || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `CATEGORIA: ${item.categoria || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `NAIPE: ${item.naipe || "-"}`,
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "RELATO:",
+                bold: true,
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            text: item.relato || "-",
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "PEDIDO:",
+                bold: true,
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            text: item.pedido || "-",
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "DECISÃO:",
+                bold: true,
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            text:
+              item.decision === "deferido"
+                ? "DEFERIDO"
+                : item.decision === "indeferido"
+                ? "INDEFERIDO"
+                : "PARCIALMENTE DEFERIDO",
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "FUNDAMENTAÇÃO:",
+                bold: true,
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            text: item.decision_reason || "-",
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            text: `Boa Vista/RR, ${safeDate(item.published_at || item.created_at)}`,
+            alignment: AlignmentType.RIGHT,
+          }),
+
+          new Paragraph({ text: "" }),
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            text: "__________________________________",
+            alignment: AlignmentType.CENTER,
+          }),
+
+          new Paragraph({
+            text: "PRESIDENTE DA CDE",
+            alignment: AlignmentType.CENTER,
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+
+  saveAs(blob, `DECISAO-${item.protocolo}.docx`);
+}
+
+async function gerarDocumentoRecurso(item: CdeItem) {
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            text: "RECURSO RECEBIDO - CDE",
+            heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            text: `PROTOCOLO: ${item.protocolo}`,
+          }),
+
+          new Paragraph({
+            text: `PROFESSOR: ${item.professor_nome || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `EMAIL: ${item.professor_email || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `TELEFONE: ${item.professor_telefone || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `ESCOLA: ${item.escola || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `MUNICÍPIO: ${item.municipio || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `MODALIDADE: ${item.modalidade || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `CATEGORIA: ${item.categoria || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `NAIPE: ${item.naipe || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `JOGO: ${item.jogo_descricao || "-"}`,
+          }),
+
+          new Paragraph({
+            text: `TIPO DE RECURSO: ${item.tipo_recurso || "-"}`,
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "RELATO:",
+                bold: true,
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            text: item.relato || "-",
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "PEDIDO:",
+                bold: true,
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            text: item.pedido || "-",
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+
+  saveAs(blob, `RECURSO-${item.protocolo}.docx`);
+}
+
 export default function ProtestosFilaPage() {
   const [list, setList] = useState<CdeItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -99,6 +388,39 @@ export default function ProtestosFilaPage() {
     if (!selected?.public_token) return "";
     return `${window.location.origin}/cde/consulta/${selected.public_token}`;
   }, [selected]);
+
+  const dashboard = useMemo(() => {
+    const total = list.length;
+    const recursosPublicos = list.filter((item) => item.origem === "cde_cases").length;
+    const protestosPwa = list.filter((item) => item.origem === "protests").length;
+    const pendentes =
+      countByStatus(list, "pendente") +
+      countByStatus(list, "protocolado") +
+      countByStatus(list, "aguardando_documentos");
+    const emAnalise = countByStatus(list, "em_analise");
+    const decididos = countByStatus(list, "decidido");
+    const arquivados = countByStatus(list, "arquivado");
+
+    return {
+      total,
+      recursosPublicos,
+      protestosPwa,
+      pendentes,
+      emAnalise,
+      decididos,
+      arquivados,
+    };
+  }, [list]);
+
+  const processosPendentes = useMemo(() => {
+    return list.filter((item) =>
+      ["pendente", "protocolado", "aguardando_documentos"].includes(item.status)
+    );
+  }, [list]);
+
+  const ultimosDecididos = useMemo(() => {
+    return list.filter((item) => item.status === "decidido").slice(0, 5);
+  }, [list]);
 
   const load = async () => {
     setLoading(true);
@@ -158,6 +480,8 @@ export default function ProtestosFilaPage() {
             status: c.status || "pendente",
             decision: c.decision || null,
             decision_reason: c.decision_text || null,
+            is_published: c.is_published ?? false,
+            published_at: c.published_at ?? null,
             created_at: c.created_at,
             escola: c.escola,
             municipio: c.municipio,
@@ -207,25 +531,143 @@ export default function ProtestosFilaPage() {
     setAttachments([]);
 
     if (item.origem === "protests") {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("protest_attachments")
         .select("*")
         .eq("protest_id", item.id);
 
-      setAttachments(data ?? []);
+      if (error) {
+        toast({
+          title: "Erro ao carregar anexos",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAttachments(
+        (data ?? []).map((a: any) => ({
+          ...a,
+          bucket: "protestos",
+          path: a.storage_path,
+          name: a.file_name,
+        }))
+      );
+    }
+
+    if (item.origem === "cde_cases") {
+      const { data, error } = await (supabase as any)
+        .from("cde_attachments")
+        .select("*")
+        .eq("cde_case_id", item.id);
+
+      if (error) {
+        toast({
+          title: "Erro ao carregar anexos",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAttachments(
+        (data ?? []).map((a: any) => ({
+          ...a,
+          bucket: "cde-attachments",
+          path: a.file_path,
+          name: a.file_name,
+        }))
+      );
     }
   };
 
-  const downloadFile = async (path: string, name: string) => {
-    const { data } = await supabase.storage
-      .from("protestos")
+  const downloadFile = async (bucket: string, path: string, name: string) => {
+    const { data, error } = await supabase.storage
+      .from(bucket)
       .createSignedUrl(path, 60);
+
+    if (error) {
+      toast({
+        title: "Erro ao abrir anexo",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (data?.signedUrl) {
       const a = document.createElement("a");
       a.href = data.signedUrl;
       a.download = name;
+      a.target = "_blank";
       a.click();
+    }
+  };
+
+  const publishDecision = async () => {
+    if (!selected) return;
+
+    if (selected.origem !== "cde_cases") {
+      toast({
+        title: "Publicação indisponível",
+        description: "A publicação pública está disponível apenas para recursos públicos da CDE.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!decision || !reason.trim()) {
+      toast({
+        title: "Registre a decisão primeiro",
+        description: "Informe a decisão e a fundamentação antes de publicar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const now = new Date().toISOString();
+
+      const { error } = await (supabase as any)
+        .from("cde_cases")
+        .update({
+          status: "decidido",
+          decision: decision || null,
+          decision_text: reason || null,
+          decided_at: now,
+          updated_at: now,
+          is_published: true,
+          published_at: now,
+        })
+        .eq("id", selected.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Decisão publicada",
+        description: "A decisão foi publicada oficialmente para consulta pública.",
+      });
+
+      setSelected((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "decidido",
+              decision: decision || null,
+              decision_reason: reason || null,
+              is_published: true,
+              published_at: now,
+            }
+          : prev
+      );
+
+      load();
+    } catch (e: any) {
+      toast({
+        title: "Erro ao publicar",
+        description: e?.message || "Não foi possível publicar a decisão.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -335,6 +777,157 @@ export default function ProtestosFilaPage() {
         </div>
       </div>
 
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Total de processos"
+          value={dashboard.total}
+          description="Recursos e protestos cadastrados"
+          icon={<ClipboardList className="h-5 w-5" />}
+        />
+
+        <StatCard
+          title="Pendentes"
+          value={dashboard.pendentes}
+          description="Aguardando análise da CDE"
+          icon={<Clock className="h-5 w-5" />}
+        />
+
+        <StatCard
+          title="Em análise"
+          value={dashboard.emAnalise}
+          description="Processos em julgamento"
+          icon={<Scale className="h-5 w-5" />}
+        />
+
+        <StatCard
+          title="Decididos"
+          value={dashboard.decididos}
+          description="Julgamentos finalizados"
+          icon={<CheckCircle2 className="h-5 w-5" />}
+        />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Recursos públicos
+              </p>
+              <p className="text-2xl font-bold">{dashboard.recursosPublicos}</p>
+            </div>
+            <Users className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Protestos PWA
+              </p>
+              <p className="text-2xl font-bold">{dashboard.protestosPwa}</p>
+            </div>
+            <Gavel className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Arquivados
+              </p>
+              <p className="text-2xl font-bold">{dashboard.arquivados}</p>
+            </div>
+            <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Prioridade da CDE</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {processosPendentes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhum processo pendente no momento.
+              </p>
+            ) : (
+              processosPendentes.slice(0, 5).map((item) => (
+                <button
+                  key={`pendente-${item.origem}-${item.id}`}
+                  onClick={() => open(item)}
+                  className="w-full rounded-lg border p-3 text-left transition hover:bg-muted"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-semibold">
+                      {item.protocolo}
+                    </span>
+                    <Badge variant="outline">{statusLabel(item.status)}</Badge>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold">
+                    {item.escola || "—"}
+                    {item.modalidade ? ` — ${item.modalidade}` : ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {safeDate(item.created_at)}
+                  </p>
+                </button>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Últimas decisões</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {ultimosDecididos.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma decisão registrada ainda.
+              </p>
+            ) : (
+              ultimosDecididos.map((item) => (
+                <button
+                  key={`decidido-${item.origem}-${item.id}`}
+                  onClick={() => open(item)}
+                  className="w-full rounded-lg border p-3 text-left transition hover:bg-muted"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-semibold">
+                      {item.protocolo}
+                    </span>
+                    {item.decision && (
+                      <Badge variant="secondary">
+                        {decisionLabel(item.decision)}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm font-semibold">
+                    {item.escola || "—"}
+                    {item.modalidade ? ` — ${item.modalidade}` : ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {safeDate(item.created_at)}
+                  </p>
+                </button>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Fila de processos</h2>
+        <p className="text-sm text-muted-foreground">
+          {list.length} processo(s) encontrado(s)
+        </p>
+      </div>
+
       {list.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
@@ -366,6 +959,12 @@ export default function ProtestosFilaPage() {
                   {p.decision && (
                     <Badge variant="secondary" className="uppercase">
                       {decisionLabel(p.decision)}
+                    </Badge>
+                  )}
+
+                  {p.is_published && (
+                    <Badge className="bg-green-600 hover:bg-green-700">
+                      Publicado
                     </Badge>
                   )}
                 </div>
@@ -416,6 +1015,11 @@ export default function ProtestosFilaPage() {
                   <div>
                     <p className="text-muted-foreground">Status atual</p>
                     <p className="font-semibold">{statusLabel(selected.status)}</p>
+                    {selected.is_published && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Publicado oficialmente em {safeDate(selected.published_at)}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -492,21 +1096,31 @@ export default function ProtestosFilaPage() {
                 </Card>
 
                 {attachments.length > 0 && (
-                  <div>
-                    <p className="text-sm font-semibold mb-2 flex items-center gap-1">
-                      <Paperclip className="h-4 w-4" /> Anexos
-                    </p>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Paperclip className="h-4 w-4" />
+                        Anexos do processo
+                      </CardTitle>
+                    </CardHeader>
 
-                    {attachments.map((a) => (
-                      <button
-                        key={a.id}
-                        onClick={() => downloadFile(a.storage_path, a.file_name)}
-                        className="flex items-center gap-2 text-sm text-primary hover:underline"
-                      >
-                        <FileText className="h-4 w-4" /> {a.file_name}
-                      </button>
-                    ))}
-                  </div>
+                    <CardContent className="space-y-2">
+                      {attachments.map((a) => (
+                        <button
+                          key={a.id}
+                          onClick={() => downloadFile(a.bucket, a.path, a.name)}
+                          className="flex w-full items-center justify-between gap-2 rounded-md border p-3 text-sm hover:bg-muted"
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate">{a.name}</span>
+                          </span>
+
+                          <span className="text-xs text-primary">Abrir/Baixar</span>
+                        </button>
+                      ))}
+                    </CardContent>
+                  </Card>
                 )}
 
                 <div className="border-t pt-4 space-y-3">
@@ -558,13 +1172,39 @@ export default function ProtestosFilaPage() {
                 </div>
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setSelected(null)}>
                   Cancelar
                 </Button>
 
+                <Button
+  variant="outline"
+  onClick={() => gerarDocumentoRecurso(selected)}
+>
+  Baixar recurso
+</Button>
+
+{selected.decision && (
+  <Button
+    variant="outline"
+    onClick={() => gerarDocumentoDecisao(selected)}
+  >
+    Gerar decisão oficial
+  </Button>
+)}
+
+                {selected.origem === "cde_cases" && !selected.is_published && (
+                  <Button
+                    variant="secondary"
+                    onClick={publishDecision}
+                    disabled={!decision || !reason.trim()}
+                  >
+                    Publicar decisão
+                  </Button>
+                )}
+
                 <Button onClick={decide} disabled={saving}>
-                  {saving ? "Salvando..." : "Registrar julgamento"}
+                  {saving ? "Salvando..." : "Salvar julgamento"}
                 </Button>
               </DialogFooter>
             </>
