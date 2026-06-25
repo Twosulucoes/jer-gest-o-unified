@@ -67,9 +67,7 @@ const CompeticaoLancamentoTimeMarkPage = lazy(() => import("../pages/admin/Compe
 const CompeticaoPainelTimeMarkPage = lazy(() => import("../pages/admin/CompeticaoPainelTimeMarkPage"));
 const CompeticaoPainelRankingPage = lazy(() => import("../pages/admin/CompeticaoPainelRankingPage"));
 const CredencialModelosPage = lazy(() => import("../pages/admin/CredencialModelosPage"));
-const GerenciadorCredenciaisPage = lazy(
-  () => import("../pages/admin/GerenciadorCredenciaisPage")
-);
+const GerenciadorCredenciaisPage = lazy(() => import("../pages/admin/GerenciadorCredenciaisPage"));
 const AcessosDelegacoesPage = lazy(() => import("../pages/admin/AcessosDelegacoesPage"));
 const AcessosUsuariosPage = lazy(() => import("../pages/admin/AcessosUsuariosPage"));
 const AcessosPwaAuditPage = lazy(() => import("../pages/admin/AcessosPwaAuditPage"));
@@ -95,7 +93,6 @@ const ClonarLogisticaPage = lazy(() => import("../pages/admin/ClonarLogisticaPag
 const DebugPublicadosPage = lazy(() => import("../pages/admin/DebugPublicadosPage"));
 const StageHomePage = lazy(() => import("../pages/admin/StageHomePage"));
 const StageReportsPage = lazy(() => import("../pages/admin/StageReportsPage"));
-
 const LancamentoEventoPage = lazy(() => import("../pages/admin/LancamentoEventoPage"));
 
 // Referee specific pages
@@ -157,6 +154,7 @@ const AdminAlojamentoEscolasPage = lazy(() => import("../pages/admin/alojamento/
 // Competicao Subpages (Admin)
 const CompeticaoPainelPage = lazy(() => import("../pages/admin/CompeticaoPainelPage"));
 const CompeticaoEquipesPage = lazy(() => import("../pages/admin/CompeticaoEquipesPage"));
+
 // Super Pages
 const SuperDashboardPage = lazy(() => import("../pages/super/SuperDashboardPage"));
 const SuperEventosPage = lazy(() => import("../pages/super/SuperEventosPage"));
@@ -239,6 +237,7 @@ const PublicMedalTablePage = lazy(() => import("../pages/public/PublicMedalTable
 const AtletaPublicProfilePage = lazy(() => import("../pages/public/AtletaPublicProfilePage"));
 const EntregaTecnicaPage = lazy(() => import("../pages/public/EntregaTecnicaPage"));
 const SubstituicaoSolicitarPage = lazy(() => import("../pages/public/SubstituicaoSolicitarPage"));
+const CdeRecursoPage = lazy(() => import("../pages/public/CdeRecursoPage"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 
 const PageLoader = () => (
@@ -290,57 +289,57 @@ export const AppRoutes = () => (
         <Route path="etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><EtapasIndexPage /></ProtectedRoute>} />
         <Route path="etapas/:stageId" element={<Navigate to="/admin/etapas" replace />} />
         <Route path="etapa/:stageId" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "coordenador_modalidade"]}><StageLayout /></ProtectedRoute>}>
-           <Route index element={<StageHomePage />} />
-           <Route path="credenciamento" element={<CredenciamentoPage />} />
-           <Route path="credenciamento-externo" element={<CredenciamentoExternoPage />} />
-           <Route path="validacao-qr" element={<ValidacaoQRPage />} />
-            <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
-            <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
-            <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
-            <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
-            <Route path="competicao/central" element={<CompeticaoCentralPage />} />
-            <Route path="competicao/fases" element={<CompeticaoFasesPage />} />
-            <Route path="competicao/grupos" element={<CompeticaoGruposPage />} />
-            <Route path="competicao/pre-validacao" element={<CompeticaoPreValidacaoPage />} />
-            <Route path="competicao/regras" element={<RegrasPage />} />
-            <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
-            <Route path="competicao/substituicoes" element={<SubstituicoesPage />} />
-            <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
-            <Route path="alojamento" element={<AlojamentoHubPage />} />
-            <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
-            <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
-            <Route path="alojamento/locais" element={<AdminAlojamentoLocaisPage />} />
-            <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
-            <Route path="alojamento/relatorios" element={<AdminAlojamentoRelatoriosPage />} />
-            <Route path="alojamento/divergencias" element={<AdminAlojamentoDivergenciasPage />} />
-            <Route path="alojamento/alocacao-lote" element={<AdminAlojamentoAlocacaoLotePage />} />
-            <Route path="alojamento/colchoes" element={<AdminAlojamentoColchoesPage />} />
-            <Route path="alojamento/escolas" element={<AdminAlojamentoEscolasPage />} />
-            <Route path="alimentacao" element={<AlimentacaoHubPage />} />
-            <Route path="alimentacao/tipos" element={<AdminAlimentacaoTiposPage />} />
-            <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
-            <Route path="alimentacao/consumo" element={<AdminAlimentacaoConsumoPage />} />
-            <Route path="alimentacao/dashboard" element={<AdminAlimentacaoDashboardPage />} />
-            <Route path="alimentacao/relatorios" element={<AdminAlimentacaoRelatoriosPage />} />
-             <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
-             <Route path="alimentacao/locais" element={<AdminAlimentacaoLocaisPage />} />
-             <Route path="alimentacao/padroes" element={<AdminAlimentacaoPadroesPage />} />
-             <Route path="alimentacao/divergencias" element={<AdminAlimentacaoDivergenciasPage />} />
-             <Route path="alimentacao/auditoria" element={<AdminAlimentacaoAuditoriaPage />} />
-             <Route path="alimentacao/relatorios/consumo" element={<AdminAlimentacaoRelatoriosConsumoPage />} />
-            <Route path="transporte" element={<TransporteHubPage />} />
-            <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
-            <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
-            <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
-            <Route path="transporte/relatorios" element={<AdminTransporteRelatoriosPage />} />
-            <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
-           <Route path="ocorrencias" element={<OcorrenciasPage />} />
-           <Route path="pesquisa" element={<PesquisaDashboardPage />} />
-            <Route path="vouchers" element={<VouchersPage />} />
-            <Route path="voucher/validar" element={<VoucherValidarPage />} />
-            <Route path="vouchers/auditoria" element={<VoucherAuditoriaPage />} />
-           <Route path="protestos" element={<ProtestosFilaPage />} />
-           <Route path="relatorios" element={<StageReportsPage />} />
+          <Route index element={<StageHomePage />} />
+          <Route path="credenciamento" element={<CredenciamentoPage />} />
+          <Route path="credenciamento-externo" element={<CredenciamentoExternoPage />} />
+          <Route path="validacao-qr" element={<ValidacaoQRPage />} />
+          <Route path="competicao/partidas-agenda" element={<CompeticaoPartidasAgendaPage />} />
+          <Route path="competicao/resultados" element={<CompeticaoResultadosPage />} />
+          <Route path="competicao/painel" element={<CompeticaoPainelPage />} />
+          <Route path="competicao/equipes" element={<CompeticaoEquipesPage />} />
+          <Route path="competicao/central" element={<CompeticaoCentralPage />} />
+          <Route path="competicao/fases" element={<CompeticaoFasesPage />} />
+          <Route path="competicao/grupos" element={<CompeticaoGruposPage />} />
+          <Route path="competicao/pre-validacao" element={<CompeticaoPreValidacaoPage />} />
+          <Route path="competicao/regras" element={<RegrasPage />} />
+          <Route path="competicao/partida/:matchId" element={<CompeticaoPartidaDetalhePage />} />
+          <Route path="competicao/substituicoes" element={<SubstituicoesPage />} />
+          <Route path="competicao" element={<Navigate to="partidas-agenda" replace />} />
+          <Route path="alojamento" element={<AlojamentoHubPage />} />
+          <Route path="alojamento/ocupacao" element={<AdminAlojamentoOcupacaoPage />} />
+          <Route path="alojamento/unidades" element={<AdminAlojamentoUnidadesPage />} />
+          <Route path="alojamento/locais" element={<AdminAlojamentoLocaisPage />} />
+          <Route path="alojamento/presenca" element={<AdminAlojamentoPresencaPage />} />
+          <Route path="alojamento/relatorios" element={<AdminAlojamentoRelatoriosPage />} />
+          <Route path="alojamento/divergencias" element={<AdminAlojamentoDivergenciasPage />} />
+          <Route path="alojamento/alocacao-lote" element={<AdminAlojamentoAlocacaoLotePage />} />
+          <Route path="alojamento/colchoes" element={<AdminAlojamentoColchoesPage />} />
+          <Route path="alojamento/escolas" element={<AdminAlojamentoEscolasPage />} />
+          <Route path="alimentacao" element={<AlimentacaoHubPage />} />
+          <Route path="alimentacao/tipos" element={<AdminAlimentacaoTiposPage />} />
+          <Route path="alimentacao/janelas" element={<AdminAlimentacaoJanelasPage />} />
+          <Route path="alimentacao/consumo" element={<AdminAlimentacaoConsumoPage />} />
+          <Route path="alimentacao/dashboard" element={<AdminAlimentacaoDashboardPage />} />
+          <Route path="alimentacao/relatorios" element={<AdminAlimentacaoRelatoriosPage />} />
+          <Route path="alimentacao/previsao" element={<AdminAlimentacaoPrevisaoPage />} />
+          <Route path="alimentacao/locais" element={<AdminAlimentacaoLocaisPage />} />
+          <Route path="alimentacao/padroes" element={<AdminAlimentacaoPadroesPage />} />
+          <Route path="alimentacao/divergencias" element={<AdminAlimentacaoDivergenciasPage />} />
+          <Route path="alimentacao/auditoria" element={<AdminAlimentacaoAuditoriaPage />} />
+          <Route path="alimentacao/relatorios/consumo" element={<AdminAlimentacaoRelatoriosConsumoPage />} />
+          <Route path="transporte" element={<TransporteHubPage />} />
+          <Route path="transporte/viagens" element={<AdminTransporteViagensPage />} />
+          <Route path="transporte/rotas" element={<AdminTransporteRotasPage />} />
+          <Route path="transporte/veiculos" element={<AdminTransporteVeiculosPage />} />
+          <Route path="transporte/relatorios" element={<AdminTransporteRelatoriosPage />} />
+          <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
+          <Route path="ocorrencias" element={<OcorrenciasPage />} />
+          <Route path="pesquisa" element={<PesquisaDashboardPage />} />
+          <Route path="vouchers" element={<VouchersPage />} />
+          <Route path="voucher/validar" element={<VoucherValidarPage />} />
+          <Route path="vouchers/auditoria" element={<VoucherAuditoriaPage />} />
+          <Route path="protestos" element={<ProtestosFilaPage />} />
+          <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
 
         <Route path="arbitragem" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><ArbitragemEquipePage /></ProtectedRoute>} />
@@ -365,11 +364,7 @@ export const AppRoutes = () => (
         <Route path="pessoas/duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><DuplicidadesPessoasPage /></ProtectedRoute>} />
         <Route path="pessoas/eventuais" element={<Navigate to="/admin/pessoas?kind=eventual" replace />} />
         <Route path="credenciais/modelos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><CredencialModelosPage /></ProtectedRoute>} />
-        <Route path="credenciais/gerenciador" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}>
-      <GerenciadorCredenciaisPage />
-    </ProtectedRoute>
-  }
-/>
+        <Route path="credenciais/gerenciador" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><GerenciadorCredenciaisPage /></ProtectedRoute>} />
         <Route path="acessos/delegacoes" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosDelegacoesPage /></ProtectedRoute>} />
         <Route path="acessos/usuarios" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><AcessosUsuariosPage /></ProtectedRoute>} />
         <Route path="acessos/pwa" element={<Navigate to="/super/acessos/pwa" replace />} />
@@ -381,8 +376,7 @@ export const AppRoutes = () => (
         <Route path="normalizacao-provas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><NormalizacaoProvasPage /></ProtectedRoute>} />
         <Route path="sistema/diagnostico" element={<ProtectedRoute allowedRoles={["super_admin"]}><SistemaDiagnosticoPage /></ProtectedRoute>} />
         <Route path="sistema/diagnostico/kpi" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><SistemaDiagnosticoKpiPage /></ProtectedRoute>} />
-        <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>}>
-        </Route>
+        <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>} />
         <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
         <Route path="alertas" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "secretaria", "coordenacao_tecnica"]}><AlertasPage /></ProtectedRoute>} />
         <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
@@ -420,12 +414,10 @@ export const AppRoutes = () => (
         <Route path="links/preview/:id" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><LinkPreviewPage /></ProtectedRoute>} />
         <Route path="substituicao" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "coordenacao_tecnica"]}><SubstituicaoPage /></ProtectedRoute>} />
         <Route path="substituicao/admin" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "coordenacao_tecnica"]}><SubstituicaoAdminPage /></ProtectedRoute>} />
-
         <Route path="registros" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><RegistrosPage /></ProtectedRoute>} />
         <Route path="registros/prestacao-contas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><OscAccountabilityModule /></ProtectedRoute>} />
         <Route path="registros/configuracao-osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><ConfigOscPage /></ProtectedRoute>} />
-        
-        {/* Redirecionamentos operacionais */}
+
         <Route path="credenciamento/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="vouchers/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria"]}><RedirectToEtapas /></ProtectedRoute>} />
         <Route path="transporte/*" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "transporte"]}><RedirectToEtapas /></ProtectedRoute>} />
@@ -448,21 +440,18 @@ export const AppRoutes = () => (
         <Route path="alojamento/incidentes/novo" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoNovoIncidentePage /></PwaRouteGuard>} />
         <Route path="alojamento/lista-completa" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoListaCompletaPage /></PwaRouteGuard>} />
         <Route path="alojamento/unidade/:unitId/faltosos" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoUnidadeFaltososPage /></PwaRouteGuard>} />
-
         <Route path="transporte" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
         <Route path="transporte/viagens" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteViagensPage /></PwaRouteGuard>} />
         <Route path="transporte/scan" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteScanPage /></PwaRouteGuard>} />
         <Route path="transporte/embarque/:tripId" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteEmbarquePage /></PwaRouteGuard>} />
         <Route path="transporte/rotas" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteRotasPage /></PwaRouteGuard>} />
         <Route path="transporte/passageiros/:tripId" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransportePassageirosPage /></PwaRouteGuard>} />
-
         <Route path="alimentacao" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
         <Route path="alimentacao/scan" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoScanPage /></PwaRouteGuard>} />
         <Route path="alimentacao/buscar" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoBuscarPage /></PwaRouteGuard>} />
         <Route path="alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoJanelasPage /></PwaRouteGuard>} />
         <Route path="alimentacao/consumos" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
         <Route path="alimentacao/historico" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHistoricoPage /></PwaRouteGuard>} />
-
         <Route path="coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/partidas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidasPage /></PwaRouteGuard>} />
@@ -473,11 +462,9 @@ export const AppRoutes = () => (
         <Route path="coordenacao-tecnica/incidentes" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoIncidentesPage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/incidentes/novo" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoIncidentePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/incidentes/:incidentId" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoIncidentePage /></PwaRouteGuard>} />
-
         <Route path="resultados" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
         <Route path="resultados/partidas" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidasPage /></PwaRouteGuard>} />
         <Route path="resultados/partida/:matchId" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosPartidaFormPage /></PwaRouteGuard>} />
-
         <Route path="delegacao" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
         <Route path="delegacao/participantes" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoParticipantesPage /></PwaRouteGuard>} />
         <Route path="delegacao/agenda" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoAgendaPage /></PwaRouteGuard>} />
@@ -488,32 +475,15 @@ export const AppRoutes = () => (
         <Route path="delegacao/protestos" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestosPage /></PwaRouteGuard>} />
         <Route path="delegacao/protesto/novo" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoNovoPage /></PwaRouteGuard>} />
         <Route path="delegacao/protesto/:id" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoProtestoDetalhePage /></PwaRouteGuard>} />
-
         <Route path="arbitragem" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemHomePage /></PwaRouteGuard>} />
         <Route path="arbitragem/agenda" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemAgendaPage /></PwaRouteGuard>} />
         <Route path="arbitragem/indisponibilidade" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemIndisponibilidadePage /></PwaRouteGuard>} />
         <Route path="arbitragem/perfil" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><RefereePwaProfilePage /></PwaRouteGuard>} />
-       <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
-
-<Route
-  path="credenciamento/vincular"
-  element={<VincularCredencialPage />}
-/>
-
-<Route
-  path="credenciamento/massa"
-  element={<VinculacaoMassaPage />}
-/>
-        
+        <Route path="credenciamento" element={<Navigate to="vincular" replace />} />
+        <Route path="credenciamento/vincular" element={<VincularCredencialPage />} />
+        <Route path="credenciamento/massa" element={<VinculacaoMassaPage />} />
         <Route path="debug" element={<PwaDebugPage />} />
         <Route path="diagnostico/qr" element={<QrDiagnosticoPage />} />
-
-        {/*
-          Wildcard de recuperação por módulo. Captura URLs com lixo
-          (ex: /pwa/alimentacao/<UUID>) e renderiza a home do módulo,
-          em vez de cair no catch-all global e gerar loop de redirect.
-          Rotas específicas acima ainda têm prioridade no React Router v6.
-        */}
         <Route path="alojamento/*" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoHomePage /></PwaRouteGuard>} />
         <Route path="alimentacao/*" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
         <Route path="transporte/*" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
@@ -521,27 +491,24 @@ export const AppRoutes = () => (
         <Route path="delegacao/*" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />
         <Route path="arbitragem/*" element={<PwaRouteGuard allowedRoles={["arbitragem", "admin", "secretaria"]}><ArbitragemHomePage /></PwaRouteGuard>} />
         <Route path="resultados/*" element={<PwaRouteGuard allowedRoles={["admin", "secretaria", "coordenador_modalidade", "arbitragem"]}><ResultadosHomePage /></PwaRouteGuard>} />
-
-        {/* Catch-all for modules not yet explicitly defined or "coming soon" */}
         <Route path=":module" element={<PwaModulePage />} />
         <Route path="*" element={<PwaNotFoundHandler />} />
       </Route>
 
-
-      {/* Pesquisa: login por PIN, sem auth Supabase nem evento/etapa do contexto */}
       <Route path="/pesquisa/login" element={<PesquisaLoginPage />} />
       <Route path="/pesquisa/home" element={<PesquisaHomePage />} />
       <Route path="/pesquisa/nova" element={<PesquisaNovaPage />} />
       <Route path="/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
 
-      {/* Telas públicas desativadas por solicitação do usuário para simplificar o fluxo */}
       <Route path="/resultados-publicos" element={<Navigate to="/login" replace />} />
       <Route path="/public/results" element={<Navigate to="/login" replace />} />
       <Route path="/quadro-medalhas" element={<Navigate to="/login" replace />} />
       <Route path="/atleta/:id" element={<AtletaPublicProfilePage />} />
       <Route path="/entrega-tecnica" element={<EntregaTecnicaPage />} />
       <Route path="/substituicao/solicitar" element={<SubstituicaoSolicitarPage />} />
-      
+
+      <Route path="/cde/recurso" element={<CdeRecursoPage />} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
