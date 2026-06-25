@@ -18,7 +18,7 @@ export default function AccessDeniedPage() {
       </div>
       
       <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
-        Acesso Negado
+        Acesso Negasdo
       </h1>
       
       <p className="mb-8 max-w-md text-muted-foreground">
