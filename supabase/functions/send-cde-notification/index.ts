@@ -4,7 +4,7 @@ const APP_URL = "https://adm.jers.com.br";
 
 const EVOLUTION_API_URL = "http://92.112.176.108:8081";
 const EVOLUTION_API_KEY =
-  "6f042793dc9f2f24f65227ca953727135536c9ca2d246babc9165792f01719f3";
+  "c435ab87-d3aa-47ee-8608-11e33a09322e";
 
 const EVOLUTION_INSTANCE = "jer-cde";
 
@@ -36,10 +36,10 @@ async function sendWhatsApp(number: string, text: string) {
 
   const res = await fetch(`${EVOLUTION_API_URL}/send/text`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${EVOLUTION_API_KEY}`,
-    },
+headers: {
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${EVOLUTION_API_KEY}`,
+},
     body: JSON.stringify({
       instance: EVOLUTION_INSTANCE,
       number: cleanNumber,
