@@ -559,7 +559,7 @@ export default function CdeRecursoPage() {
               </p>
 
               <Textarea
-                placeholder="Descreva detalhadamente o que aconteceu durante a partida *"
+                placeholder="Descreva detalhadamente o que aconteceu. *"
                 rows={6}
                 value={form.relato}
                 onChange={(e) =>
