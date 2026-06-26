@@ -1009,8 +1009,9 @@ export default function ProtestosFilaPage() {
               {loading ? "Carregando..." : "Nenhum processo encontrado."}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
-              <Table>
+<div className="rounded-lg border overflow-hidden">
+  <div className="overflow-auto max-h-[70vh]">
+    <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Protocolo</TableHead>
@@ -1025,7 +1026,7 @@ export default function ProtestosFilaPage() {
                 </TableHeader>
 
                 <TableBody>
-                  {filteredList.map((p) => (
+                  {filteredList.slice(0, 100).map((p) => (
                     <TableRow key={`${p.origem}-${p.id}`}>
                       <TableCell className="font-mono font-semibold">
                         {p.protocolo}
@@ -1086,7 +1087,8 @@ export default function ProtestosFilaPage() {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+  </div>
+</div>
           )}
         </CardContent>
       </Card>
