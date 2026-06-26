@@ -1,34 +1,58 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const CDE_PRESIDENT_EMAIL = Deno.env.get("CDE_PRESIDENT_EMAIL") || "jogosescolaresrr2025@gmail.com";
-const APP_URL = Deno.env.get("APP_URL") || "https://adm.jers.com.br";
+const APP_URL = "https://adm.jers.com.br";
+
+const EVOLUTION_API_URL = "http://92.112.176.108:8081";
+const EVOLUTION_API_KEY =
+  "6f042793dc9f2f24f65227ca953727135536c9ca2d246babc9165792f01719f3";
+const EVOLUTION_INSTANCE = "jer-cde";
+
+const PRESIDENT_PHONE = "5595984135248";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-async function sendEmail(to: string, subject: string, html: string) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
+function normalizePhone(phone: string) {
+  const onlyNumbers = String(phone || "").replace(/\D/g, "");
+
+  if (!onlyNumbers) return "";
+
+  if (onlyNumbers.startsWith("55")) return onlyNumbers;
+
+  return `55${onlyNumbers}`;
+}
+
+async function sendWhatsApp(number: string, text: string) {
+  const cleanNumber = normalizePhone(number);
+
+  if (!cleanNumber) return;
+
+  const res = await fetch(
+    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: EVOLUTION_API_KEY,
+      },
+      body: JSON.stringify({
+        number: cleanNumber,
+        text,
+      }),
     },
-    body: JSON.stringify({
-      from: "CDE JER <onboarding@resend.dev>",
-      to,
-      subject,
-      html,
-    }),
-  });
+  );
+
+  const responseText = await res.text();
 
   if (!res.ok) {
-    throw new Error(await res.text());
+    console.error("Erro Evolution:", responseText);
+    throw new Error(responseText);
   }
 
-  return await res.json();
+  return responseText;
 }
 
 serve(async (req) => {
@@ -40,69 +64,104 @@ serve(async (req) => {
     const body = await req.json();
 
     const {
-      id,
       protocol,
       public_token,
-      professor_email,
       professor_nome,
+      professor_telefone,
       escola,
+      municipio,
       modalidade,
       categoria,
       naipe,
       tipo_recurso,
     } = body;
 
-    if (!protocol || !public_token || !professor_email) {
-      return new Response(JSON.stringify({ error: "Dados obrigatórios ausentes" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!protocol || !public_token) {
+      return new Response(
+        JSON.stringify({ error: "Dados obrigatórios ausentes" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const consultaUrl = `${APP_URL}/cde/consulta/${public_token}`;
-    const adminUrl = `${APP_URL}/admin/cde/${id}`;
+    const adminUrl = `${APP_URL}/admin/cde`;
 
-    await sendEmail(
-      professor_email,
-      `Recurso CDE recebido — ${protocol}`,
-      `
-        <h2>Recurso CDE recebido</h2>
-        <p>Olá, ${professor_nome || "professor(a)"}.</p>
-        <p>Seu recurso foi recebido com sucesso.</p>
-        <p><strong>Protocolo:</strong> ${protocol}</p>
-        <p><strong>Status:</strong> Pendente de análise</p>
-        <p><strong>Escola:</strong> ${escola || "-"}</p>
-        <p><strong>Modalidade:</strong> ${modalidade || "-"}</p>
-        <p>Acompanhe pelo link:</p>
-        <p><a href="${consultaUrl}">${consultaUrl}</a></p>
-        <br/>
-        <p>Comissão Disciplinar Especial — JER</p>
-      `,
-    );
+    if (professor_telefone) {
+      await sendWhatsApp(
+        professor_telefone,
+        `📄 *Recurso protocolado - CDE*
 
-    await sendEmail(
-      CDE_PRESIDENT_EMAIL,
-      `Novo recurso CDE — ${protocol}`,
-      `
-        <h2>Novo recurso CDE recebido</h2>
-        <p><strong>Protocolo:</strong> ${protocol}</p>
-        <p><strong>Professor:</strong> ${professor_nome || "-"}</p>
-        <p><strong>Escola:</strong> ${escola || "-"}</p>
-        <p><strong>Modalidade:</strong> ${modalidade || "-"}</p>
-        <p><strong>Categoria:</strong> ${categoria || "-"}</p>
-        <p><strong>Naipe:</strong> ${naipe || "-"}</p>
-        <p><strong>Tipo:</strong> ${tipo_recurso || "-"}</p>
-        <p>Abrir processo:</p>
-        <p><a href="${adminUrl}">${adminUrl}</a></p>
-      `,
+Olá, ${professor_nome || "professor(a)"}.
+
+Seu recurso foi registrado com sucesso.
+
+📌 *Protocolo:*
+${protocol}
+
+🏫 *Escola:*
+${escola || "-"}
+
+🏆 *Modalidade:*
+${modalidade || "-"}
+
+📂 *Categoria:*
+${categoria || "-"}
+
+👤 *Naipe:*
+${naipe || "-"}
+
+🔎 *Acompanhe pelo link:*
+${consultaUrl}
+
+Comissão Disciplinar Especial — JER`,
+      );
+    }
+
+    await sendWhatsApp(
+      PRESIDENT_PHONE,
+      `🚨 *Novo recurso CDE recebido*
+
+📌 *Protocolo:*
+${protocol}
+
+👨‍🏫 *Professor:*
+${professor_nome || "-"}
+
+🏫 *Escola:*
+${escola || "-"}
+
+📍 *Município:*
+${municipio || "-"}
+
+🏆 *Modalidade:*
+${modalidade || "-"}
+
+📂 *Categoria:*
+${categoria || "-"}
+
+👤 *Naipe:*
+${naipe || "-"}
+
+⚠️ *Tipo:*
+${tipo_recurso || "-"}
+
+🔗 *Abrir painel:*
+${adminUrl}`,
     );
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    console.error(err);
+
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Erro desconhecido" }),
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Erro desconhecido",
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
