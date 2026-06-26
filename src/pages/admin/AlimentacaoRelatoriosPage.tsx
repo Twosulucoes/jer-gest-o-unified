@@ -718,7 +718,8 @@ data.push({
     </TableRow>
   ))}
 </TableBody>
-
+          </Table>
+        
           {consumptions.length > 200 && (
             <p className="text-xs text-muted-foreground text-center py-2">
               Mostrando 200 de {consumptions.length}. Exporte CSV/XLSX para ver todos.
