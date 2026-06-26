@@ -142,9 +142,9 @@ export default function CdeRecursoPage() {
           if (uploadError) throw uploadError;
 
           const { error: attachmentError } = await (supabase as any)
-            .from("cde_attachments")
-            .insert({
-              cde_case_id: data.id,
+.from("cde_attachments")
+.insert({
+  case_id: data.id,
               file_name: file.name,
               file_path: path,
               file_type: file.type || ext || "arquivo",
@@ -164,9 +164,9 @@ export default function CdeRecursoPage() {
       }
 
 await (supabase as any)
-  .from("cde_case_history")
-  .insert({
-    cde_case_id: data.id,
+.from("cde_case_history")
+.insert({
+  case_id: data.id,
     action_type: "created",
     action_label: "Recurso protocolado",
     action_description:
