@@ -271,6 +271,273 @@ async function gerarDocumentoDecisao(item: CdeItem) {
   saveAs(blob, `DECISAO-${item.protocolo}.docx`);
 }
 
+
+function escapeHtml(value?: string | null) {
+  return String(value || "—")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function gerarPdfDecisao(item: CdeItem) {
+  const decisaoTexto =
+    item.decision === "deferido"
+      ? "DEFERIDO"
+      : item.decision === "indeferido"
+      ? "INDEFERIDO"
+      : item.decision === "parcial"
+      ? "PARCIALMENTE DEFERIDO"
+      : "—";
+
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>DECISÃO ${escapeHtml(item.protocolo)}</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 20mm;
+          }
+
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #111827;
+            margin: 0;
+            background: #ffffff;
+            font-size: 12px;
+            line-height: 1.5;
+          }
+
+          .page {
+            width: 100%;
+          }
+
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #111827;
+            padding-bottom: 14px;
+            margin-bottom: 22px;
+          }
+
+          .header h1 {
+            font-size: 18px;
+            margin: 0;
+            letter-spacing: .04em;
+          }
+
+          .header p {
+            margin: 3px 0 0;
+            font-size: 12px;
+          }
+
+          .title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            margin: 18px 0;
+            text-transform: uppercase;
+          }
+
+          .box {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 14px;
+          }
+
+          .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 14px;
+          }
+
+          .label {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            color: #374151;
+          }
+
+          .value {
+            margin-top: 2px;
+            font-size: 12px;
+          }
+
+          .section-title {
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+          }
+
+          .decision {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 800;
+            border: 2px solid #111827;
+            padding: 12px;
+            margin: 14px 0;
+          }
+
+          .signature {
+            margin-top: 56px;
+            text-align: center;
+          }
+
+          .signature-line {
+            width: 280px;
+            margin: 0 auto 6px;
+            border-top: 1px solid #111827;
+          }
+
+          .footer {
+            margin-top: 30px;
+            font-size: 10px;
+            color: #6b7280;
+            text-align: center;
+          }
+
+          @media print {
+            button {
+              display: none;
+            }
+          }
+        </style>
+      </head>
+
+      <body>
+        <div class="page">
+          <div class="header">
+            <h1>COMISSÃO DISCIPLINAR ESPECIAL - CDE</h1>
+            <p>Jogos Escolares de Roraima</p>
+            <p>Decisão oficial de recurso/protesto</p>
+          </div>
+
+          <div class="title">Decisão do Processo nº ${escapeHtml(item.protocolo)}</div>
+
+          <div class="box">
+            <div class="grid">
+              <div>
+                <div class="label">Origem</div>
+                <div class="value">${item.origem === "cde_cases" ? "Recurso Público" : "Protesto PWA"}</div>
+              </div>
+
+              <div>
+                <div class="label">Data</div>
+                <div class="value">${escapeHtml(safeDate(item.published_at || item.created_at))}</div>
+              </div>
+
+              <div>
+                <div class="label">Escola</div>
+                <div class="value">${escapeHtml(item.escola)}</div>
+              </div>
+
+              <div>
+                <div class="label">Município</div>
+                <div class="value">${escapeHtml(item.municipio)}</div>
+              </div>
+
+              <div>
+                <div class="label">Modalidade</div>
+                <div class="value">${escapeHtml(item.modalidade)}</div>
+              </div>
+
+              <div>
+                <div class="label">Categoria / Naipe</div>
+                <div class="value">${escapeHtml(item.categoria)} / ${escapeHtml(item.naipe)}</div>
+              </div>
+
+              <div>
+                <div class="label">Professor</div>
+                <div class="value">${escapeHtml(item.professor_nome)}</div>
+              </div>
+
+              <div>
+                <div class="label">Tipo do recurso</div>
+                <div class="value">${escapeHtml(item.tipo_recurso)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box">
+            <div class="section-title">Relato</div>
+            <div>${escapeHtml(item.relato).replaceAll("\n", "<br />")}</div>
+          </div>
+
+          <div class="decision">${decisaoTexto}</div>
+
+          <div class="box">
+            <div class="section-title">Fundamentação da decisão</div>
+            <div>${escapeHtml(item.decision_reason).replaceAll("\n", "<br />")}</div>
+          </div>
+
+          <p style="text-align:right;">
+            Boa Vista/RR, ${escapeHtml(safeDate(item.published_at || item.created_at))}
+          </p>
+
+          <div class="signature">
+            <div class="signature-line"></div>
+            <strong>PRESIDENTE DA CDE</strong>
+          </div>
+
+          <div class="footer">
+            Documento emitido pelo Sistema JER Gestão — ${escapeHtml(item.protocolo)}
+          </div>
+        </div>
+
+        <script>
+          window.onload = function () {
+            window.focus();
+            window.print();
+          };
+        </script>
+      </body>
+    </html>
+  `;
+
+  const win = window.open("", "_blank", "width=900,height=1200");
+
+  if (!win) {
+    toast({
+      title: "Pop-up bloqueado",
+      description: "Permita pop-ups para gerar o PDF oficial.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
+async function notificarDecisaoPublicada(item: CdeItem, decisao: string, parecer: string) {
+  if (item.origem !== "cde_cases") return;
+
+  const { error } = await supabase.functions.invoke(
+    "send-cde-decision-notification",
+    {
+      body: {
+        protocol: item.protocolo,
+        public_token: item.public_token,
+        professor_nome: item.professor_nome,
+        professor_telefone: item.professor_telefone,
+        status: decisao,
+        parecer,
+      },
+    }
+  );
+
+  if (error) throw error;
+}
+
 async function gerarDocumentoRecurso(item: CdeItem) {
   const doc = new Document({
     sections: [
@@ -678,6 +945,30 @@ export default function ProtestosFilaPage() {
             "A decisão foi publicada oficialmente para consulta pública.",
           created_by: "Presidente CDE",
         });
+
+      try {
+        await notificarDecisaoPublicada(selected, decision, reason);
+
+        await (supabase as any)
+          .from("cde_case_history")
+          .insert({
+            case_id: selected.id,
+            action_type: "notification",
+            action_label: "Professor notificado por WhatsApp",
+            action_description:
+              "O professor foi notificado sobre a publicação da decisão.",
+            created_by: "Sistema",
+          });
+      } catch (notifyError: any) {
+        console.warn("Notificação de decisão não enviada.", notifyError);
+
+        toast({
+          title: "Decisão publicada",
+          description:
+            "A decisão foi publicada, mas a notificação por WhatsApp não foi enviada.",
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Decisão publicada",
@@ -1317,12 +1608,21 @@ export default function ProtestosFilaPage() {
 </Button>
 
 {selected.decision && (
-  <Button
-    variant="outline"
-    onClick={() => gerarDocumentoDecisao(selected)}
-  >
-    Gerar decisão oficial
-  </Button>
+  <>
+    <Button
+      variant="outline"
+      onClick={() => gerarDocumentoDecisao(selected)}
+    >
+      Gerar decisão DOCX
+    </Button>
+
+    <Button
+      variant="outline"
+      onClick={() => gerarPdfDecisao(selected)}
+    >
+      Gerar PDF oficial
+    </Button>
+  </>
 )}
 
                 {selected.origem === "cde_cases" && !selected.is_published && (
