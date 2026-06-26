@@ -28,11 +28,22 @@ function normalizePhone(phone: string) {
 async function sendWhatsApp(number: string, text: string) {
   const cleanNumber = normalizePhone(number);
 
-  if (!cleanNumber) return;
+  if (!cleanNumber) {
+    console.warn("Número vazio. Mensagem não enviada.");
+    return null;
+  }
 
-  const res = await fetch(
+  const endpoints = [
     `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
-    {
+    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
+    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
+    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
+  ];
+
+  let lastError = "";
+
+  for (const url of endpoints) {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,17 +53,20 @@ async function sendWhatsApp(number: string, text: string) {
         number: cleanNumber,
         text,
       }),
-    },
-  );
+    });
 
-  const responseText = await res.text();
+    const responseText = await res.text();
 
-  if (!res.ok) {
-    console.error("Erro Evolution:", responseText);
-    throw new Error(responseText);
+    if (res.ok) {
+      console.log("WhatsApp enviado:", cleanNumber);
+      return responseText;
+    }
+
+    lastError = responseText;
+    console.error("Erro Evolution:", res.status, url, responseText);
   }
 
-  return responseText;
+  throw new Error(lastError || "Erro ao enviar WhatsApp.");
 }
 
 serve(async (req) => {
@@ -89,10 +103,13 @@ serve(async (req) => {
     const consultaUrl = `${APP_URL}/cde/consulta/${public_token}`;
     const adminUrl = `${APP_URL}/admin/cde`;
 
+    const erros: string[] = [];
+
     if (professor_telefone) {
-      await sendWhatsApp(
-        professor_telefone,
-        `📄 *Recurso protocolado - CDE*
+      try {
+        await sendWhatsApp(
+          professor_telefone,
+          `📄 *Recurso protocolado - CDE*
 
 Olá, ${professor_nome || "professor(a)"}.
 
@@ -117,12 +134,18 @@ ${naipe || "-"}
 ${consultaUrl}
 
 Comissão Disciplinar Especial — JER`,
-      );
+        );
+      } catch (e) {
+        erros.push(
+          `Professor: ${e instanceof Error ? e.message : "erro desconhecido"}`,
+        );
+      }
     }
 
-    await sendWhatsApp(
-      PRESIDENT_PHONE,
-      `🚨 *Novo recurso CDE recebido*
+    try {
+      await sendWhatsApp(
+        PRESIDENT_PHONE,
+        `🚨 *Novo recurso CDE recebido*
 
 📌 *Protocolo:*
 ${protocol}
@@ -150,11 +173,22 @@ ${tipo_recurso || "-"}
 
 🔗 *Abrir painel:*
 ${adminUrl}`,
-    );
+      );
+    } catch (e) {
+      erros.push(
+        `Presidente: ${e instanceof Error ? e.message : "erro desconhecido"}`,
+      );
+    }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        ok: erros.length === 0,
+        warnings: erros,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (err) {
     console.error(err);
 
