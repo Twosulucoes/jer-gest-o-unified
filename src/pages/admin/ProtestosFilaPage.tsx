@@ -212,21 +212,6 @@ async function gerarDocumentoDecisao(item: CdeItem) {
           new Paragraph({
             children: [
               new TextRun({
-                text: "PEDIDO:",
-                bold: true,
-              }),
-            ],
-          }),
-
-          new Paragraph({
-            text: item.pedido || "-",
-          }),
-
-          new Paragraph({ text: "" }),
-
-          new Paragraph({
-            children: [
-              new TextRun({
                 text: "DECISÃO:",
                 bold: true,
               }),
@@ -356,21 +341,6 @@ async function gerarDocumentoRecurso(item: CdeItem) {
 
           new Paragraph({
             text: item.relato || "-",
-          }),
-
-          new Paragraph({ text: "" }),
-
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: "PEDIDO:",
-                bold: true,
-              }),
-            ],
-          }),
-
-          new Paragraph({
-            text: item.pedido || "-",
           }),
         ],
       },
@@ -604,7 +574,7 @@ export default function ProtestosFilaPage() {
       const { data, error } = await (supabase as any)
         .from("cde_attachments")
         .select("*")
-        .eq("cde_case_id", item.id);
+        .eq("case_id", item.id);
 
       if (error) {
         toast({
@@ -627,7 +597,7 @@ export default function ProtestosFilaPage() {
       const { data: historyData, error: historyError } = await (supabase as any)
         .from("cde_case_history")
         .select("*")
-        .eq("cde_case_id", item.id)
+        .eq("case_id", item.id)
         .order("created_at", { ascending: false });
 
       if (!historyError) {
@@ -701,7 +671,7 @@ export default function ProtestosFilaPage() {
       await (supabase as any)
         .from("cde_case_history")
         .insert({
-          cde_case_id: selected.id,
+          case_id: selected.id,
           action_type: "publish",
           action_label: "Decisão publicada",
           action_description:
@@ -785,7 +755,7 @@ export default function ProtestosFilaPage() {
         await (supabase as any)
           .from("cde_case_history")
           .insert({
-            cde_case_id: selected.id,
+            case_id: selected.id,
             action_type: "decision",
             action_label: "Julgamento registrado",
             action_description: reason || "Status atualizado pela Comissão Disciplinar Especial.",
@@ -1213,15 +1183,6 @@ export default function ProtestosFilaPage() {
                   </CardHeader>
                   <CardContent className="text-sm whitespace-pre-wrap">
                     {selected.relato || "—"}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Pedido</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm whitespace-pre-wrap">
-                    {selected.pedido || "—"}
                   </CardContent>
                 </Card>
 
