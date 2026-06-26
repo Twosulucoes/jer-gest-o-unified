@@ -47,20 +47,20 @@ const NAIPES = [
 ];
 
 const TIPOS_RECURSO = [
-  "Irregularidade de atleta",
-  "Contestação de resultado",
+  "Problema com atleta",
+  "Problema com resultado",
   "Erro de arbitragem",
   "Conduta antidesportiva",
-  "Descumprimento de regulamento",
+  "Descumprimento das regras",
   "Problema em súmula",
-  "W.O. / ausência de equipe",
+  "Ausência de equipe / W.O.",
   "Pedido de revisão",
-  "Recurso administrativo",
   "Outro",
 ];
 
 function gerarProtocolo() {
   const ano = new Date().getFullYear();
+
   const n = Math.floor(Math.random() * 999999)
     .toString()
     .padStart(6, "0");
@@ -95,7 +95,6 @@ export default function CdeRecursoPage() {
     jogo_descricao: "",
     tipo_recurso: "",
     relato: "",
-    pedido: "",
   });
 
   const consultaUrl = useMemo(() => {
@@ -171,6 +170,7 @@ export default function CdeRecursoPage() {
 
         professor_nome: form.professor_nome.trim(),
         professor_email: form.professor_email.trim(),
+
         professor_telefone:
           form.professor_telefone.trim(),
 
@@ -188,7 +188,6 @@ export default function CdeRecursoPage() {
           form.tipo_recurso.trim(),
 
         relato: form.relato.trim(),
-        pedido: form.pedido.trim(),
 
         status: "pendente",
         priority: "normal",
@@ -293,7 +292,7 @@ export default function CdeRecursoPage() {
         <Card className="max-w-xl w-full">
           <CardContent className="p-6 space-y-4 text-center">
             <h1 className="text-2xl font-bold text-green-600">
-              Recurso enviado com sucesso
+              Recurso protocolado com sucesso
             </h1>
 
             <p className="text-sm text-muted-foreground">
@@ -365,6 +364,18 @@ export default function CdeRecursoPage() {
                 Comissão Disciplinar Especial —
                 Jogos Escolares
               </p>
+
+              <div className="mt-4 rounded-lg border bg-amber-50 p-3 text-sm">
+                <p className="font-medium">
+                  Preencha o recurso com o máximo
+                  de detalhes possíveis.
+                </p>
+
+                <p className="text-muted-foreground mt-1">
+                  Anexe súmulas, fotos, prints ou
+                  documentos que ajudem na análise.
+                </p>
+              </div>
             </div>
 
             <div className="rounded-lg border bg-background/60 p-4">
@@ -531,7 +542,7 @@ export default function CdeRecursoPage() {
 
               <Input
                 className="mt-3"
-                placeholder="Jogo/partida ex: Escola A x Escola B"
+                placeholder="Partida / confronto ex: Escola A x Escola B"
                 value={form.jogo_descricao}
                 onChange={(e) =>
                   update(
@@ -544,28 +555,16 @@ export default function CdeRecursoPage() {
 
             <div className="rounded-lg border bg-background/60 p-4 space-y-3">
               <p className="text-sm font-semibold">
-                Descrição do recurso
+                Relato do ocorrido
               </p>
 
               <Textarea
-                placeholder="Relato do ocorrido *"
+                placeholder="Descreva detalhadamente o que aconteceu durante a partida *"
                 rows={6}
                 value={form.relato}
                 onChange={(e) =>
                   update(
                     "relato",
-                    e.target.value
-                  )
-                }
-              />
-
-              <Textarea
-                placeholder="Pedido do recurso"
-                rows={4}
-                value={form.pedido}
-                onChange={(e) =>
-                  update(
-                    "pedido",
                     e.target.value
                   )
                 }
@@ -653,8 +652,8 @@ export default function CdeRecursoPage() {
               className="w-full"
             >
               {loading
-                ? "Enviando recurso..."
-                : "Enviar recurso"}
+                ? "Protocolando recurso..."
+                : "Protocolar recurso"}
             </Button>
           </CardContent>
         </Card>
