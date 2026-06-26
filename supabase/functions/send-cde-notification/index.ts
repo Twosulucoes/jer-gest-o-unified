@@ -5,6 +5,7 @@ const APP_URL = "https://adm.jers.com.br";
 const EVOLUTION_API_URL = "http://92.112.176.108:8081";
 const EVOLUTION_API_KEY =
   "6f042793dc9f2f24f65227ca953727135536c9ca2d246babc9165792f01719f3";
+
 const EVOLUTION_INSTANCE = "jer-cde";
 
 const PRESIDENT_PHONE = "5595984135248";
@@ -33,40 +34,30 @@ async function sendWhatsApp(number: string, text: string) {
     return null;
   }
 
-  const endpoints = [
-    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
-    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
-    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
-    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
-  ];
+  const res = await fetch(`${EVOLUTION_API_URL}/send/text`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: EVOLUTION_API_KEY,
+    },
+    body: JSON.stringify({
+      instance: EVOLUTION_INSTANCE,
+      number: cleanNumber,
+      text,
+      delay: 1200,
+    }),
+  });
 
-  let lastError = "";
+  const responseText = await res.text();
 
-  for (const url of endpoints) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: EVOLUTION_API_KEY,
-      },
-      body: JSON.stringify({
-        number: cleanNumber,
-        text,
-      }),
-    });
-
-    const responseText = await res.text();
-
-    if (res.ok) {
-      console.log("WhatsApp enviado:", cleanNumber);
-      return responseText;
-    }
-
-    lastError = responseText;
-    console.error("Erro Evolution:", res.status, url, responseText);
+  if (!res.ok) {
+    console.error("Erro Evolution:", res.status, responseText);
+    throw new Error(responseText);
   }
 
-  throw new Error(lastError || "Erro ao enviar WhatsApp.");
+  console.log("WhatsApp enviado:", cleanNumber);
+
+  return responseText;
 }
 
 serve(async (req) => {
