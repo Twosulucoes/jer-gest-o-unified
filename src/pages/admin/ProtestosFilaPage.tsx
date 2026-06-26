@@ -389,6 +389,7 @@ export default function ProtestosFilaPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selected, setSelected] = useState<CdeItem | null>(null);
   const [attachments, setAttachments] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [decision, setDecision] = useState<string>("");
   const [reason, setReason] = useState("");
   const [newStatus, setNewStatus] = useState("decidido");
@@ -572,6 +573,7 @@ export default function ProtestosFilaPage() {
     setReason(item.decision_reason ?? "");
     setNewStatus(item.status || "em_analise");
     setAttachments([]);
+    setHistory([]);
 
     if (item.origem === "protests") {
       const { data, error } = await supabase
@@ -621,6 +623,16 @@ export default function ProtestosFilaPage() {
           name: a.file_name,
         }))
       );
+
+      const { data: historyData, error: historyError } = await (supabase as any)
+        .from("cde_case_history")
+        .select("*")
+        .eq("cde_case_id", item.id)
+        .order("created_at", { ascending: false });
+
+      if (!historyError) {
+        setHistory(historyData || []);
+      }
     }
   };
 
@@ -685,6 +697,17 @@ export default function ProtestosFilaPage() {
         .eq("id", selected.id);
 
       if (error) throw error;
+
+      await (supabase as any)
+        .from("cde_case_history")
+        .insert({
+          cde_case_id: selected.id,
+          action_type: "publish",
+          action_label: "Decisão publicada",
+          action_description:
+            "A decisão foi publicada oficialmente para consulta pública.",
+          created_by: "Presidente CDE",
+        });
 
       toast({
         title: "Decisão publicada",
@@ -758,6 +781,16 @@ export default function ProtestosFilaPage() {
           .eq("id", selected.id);
 
         if (error) throw error;
+
+        await (supabase as any)
+          .from("cde_case_history")
+          .insert({
+            cde_case_id: selected.id,
+            action_type: "decision",
+            action_label: "Julgamento registrado",
+            action_description: reason || "Status atualizado pela Comissão Disciplinar Especial.",
+            created_by: "Presidente CDE",
+          });
       }
 
       toast({ title: "Julgamento registrado" });
@@ -1215,6 +1248,45 @@ export default function ProtestosFilaPage() {
 
                           <span className="text-xs text-primary">Abrir/Baixar</span>
                         </button>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {selected.origem === "cde_cases" && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Histórico do processo</CardTitle>
+                    </CardHeader>
+
+                    <CardContent className="space-y-3">
+                      {history.length === 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          Nenhum histórico registrado.
+                        </p>
+                      )}
+
+                      {history.map((h) => (
+                        <div
+                          key={h.id}
+                          className="border-l-2 border-primary pl-4 py-1"
+                        >
+                          <p className="text-sm font-semibold">
+                            {h.action_label}
+                          </p>
+
+                          {h.action_description && (
+                            <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                              {h.action_description}
+                            </p>
+                          )}
+
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            {safeDate(h.created_at)}
+                            {" • "}
+                            {h.created_by || "Sistema"}
+                          </p>
+                        </div>
                       ))}
                     </CardContent>
                   </Card>
