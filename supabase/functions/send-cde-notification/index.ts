@@ -38,7 +38,7 @@ async function sendWhatsApp(number: string, text: string) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      apikey: EVOLUTION_API_KEY,
+      Authorization: `Bearer ${EVOLUTION_API_KEY}`,
     },
     body: JSON.stringify({
       instance: EVOLUTION_INSTANCE,
