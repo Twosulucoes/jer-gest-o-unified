@@ -16,7 +16,6 @@ import {
   TextRun,
   HeadingLevel,
   AlignmentType,
-  ImageRun,
 } from "docx";
 
 import {
@@ -142,11 +141,6 @@ function StatCard({
       </CardContent>
     </Card>
   );
-}
-
-async function imageToArrayBuffer(src: string) {
-  const res = await fetch(src);
-  return await res.arrayBuffer();
 }
 
 function docLine(label: string, value?: string | null) {
@@ -843,39 +837,10 @@ async function notificarDecisaoPublicada(item: CdeItem, decisao: string, parecer
 }
 
 async function gerarDocumentoRecurso(item: CdeItem) {
-  const [logoJersBuffer, logoIdjuvBuffer] = await Promise.all([
-    imageToArrayBuffer(logoJers),
-    imageToArrayBuffer(logoIdjuv),
-  ]);
-
   const doc = new Document({
     sections: [
       {
         children: [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new ImageRun({
-                data: logoJersBuffer,
-                transformation: { width: 230, height: 88 },
-              }),
-            ],
-          }),
-
-          new Paragraph({ text: "" }),
-
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new ImageRun({
-                data: logoIdjuvBuffer,
-                transformation: { width: 300, height: 96 },
-              }),
-            ],
-          }),
-
-          new Paragraph({ text: "" }),
-
           new Paragraph({
             text: "COMISSÃO DISCIPLINAR ESPECIAL - CDE",
             heading: HeadingLevel.TITLE,
@@ -931,15 +896,12 @@ async function gerarDocumentoRecurso(item: CdeItem) {
           }),
 
           new Paragraph({ text: "" }),
-          new Paragraph({ text: "" }),
-
           new Paragraph({
             text: `Boa Vista/RR, ${safeDate(item.created_at)}`,
             alignment: AlignmentType.RIGHT,
           }),
 
           new Paragraph({ text: "" }),
-
           new Paragraph({
             text: "Emitido eletronicamente pelo Sistema JER Gestão",
             alignment: AlignmentType.CENTER,
@@ -950,7 +912,6 @@ async function gerarDocumentoRecurso(item: CdeItem) {
   });
 
   const blob = await Packer.toBlob(doc);
-
   saveAs(blob, `RECURSO-${item.protocolo}.docx`);
 }
 
