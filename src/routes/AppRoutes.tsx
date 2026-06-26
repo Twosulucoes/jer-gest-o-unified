@@ -311,8 +311,6 @@ export const AppRoutes = () => (
     }
   />
 
-<Route path="/cde/assinar/:token" element={<CdeAssinarPage />} />
-      
   <Route
     path="protestos"
     element={<Navigate to="/admin/cde" replace />}
@@ -545,6 +543,7 @@ export const AppRoutes = () => (
 
       <Route path="/cde/recurso" element={<CdeRecursoPage />} />
       <Route path="/cde/consulta/:token" element={<CdeConsultaPage />} />
+      <Route path="/cde/assinar/:token" element={<CdeAssinarPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
