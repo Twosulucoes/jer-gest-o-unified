@@ -281,7 +281,7 @@ function escapeHtml(value?: string | null) {
     .replaceAll("'", "&#039;");
 }
 
-function gerarPdfDecisao(item: CdeItem) {
+async function gerarPdfDecisao(item: CdeItem) {
   const decisaoTexto =
     item.decision === "deferido"
       ? "DEFERIDO"
@@ -291,33 +291,55 @@ function gerarPdfDecisao(item: CdeItem) {
       ? "PARCIALMENTE DEFERIDO"
       : "—";
 
+  const { data: signatures } = await (supabase as any)
+    .from("cde_decision_signatures")
+    .select("*")
+    .eq("case_id", item.id)
+    .order("signed_at", { ascending: true });
+
+  const assinaturaHtml =
+    signatures && signatures.length > 0
+      ? signatures
+          .map(
+            (s: any) => `
+        <div class="signature-item">
+          <div class="signature-name">${escapeHtml(s.signer_name)}</div>
+          <div class="signature-role">${escapeHtml(s.signer_role)}</div>
+          <div class="signature-date">
+            Assinado eletronicamente em
+            ${escapeHtml(safeDate(s.signed_at))}
+          </div>
+        </div>
+      `
+          )
+          .join("")
+      : `
+        <div class="signature-item">
+          <div class="signature-name">Documento sem assinaturas eletrônicas registradas.</div>
+        </div>
+      `;
+
+  const qrUrl = `${window.location.origin}/cde/consulta/${item.public_token}`;
+
   const html = `
     <!doctype html>
     <html>
       <head>
         <meta charset="utf-8" />
+
         <title>DECISÃO ${escapeHtml(item.protocolo)}</title>
+
         <style>
           @page {
             size: A4;
             margin: 20mm;
           }
 
-          * {
-            box-sizing: border-box;
-          }
-
           body {
             font-family: Arial, Helvetica, sans-serif;
             color: #111827;
-            margin: 0;
-            background: #ffffff;
             font-size: 12px;
             line-height: 1.5;
-          }
-
-          .page {
-            width: 100%;
           }
 
           .header {
@@ -330,20 +352,13 @@ function gerarPdfDecisao(item: CdeItem) {
           .header h1 {
             font-size: 18px;
             margin: 0;
-            letter-spacing: .04em;
-          }
-
-          .header p {
-            margin: 3px 0 0;
-            font-size: 12px;
           }
 
           .title {
             text-align: center;
             font-size: 16px;
-            font-weight: 700;
+            font-weight: bold;
             margin: 18px 0;
-            text-transform: uppercase;
           }
 
           .box {
@@ -353,48 +368,63 @@ function gerarPdfDecisao(item: CdeItem) {
             margin-bottom: 14px;
           }
 
-          .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 14px;
-          }
-
-          .label {
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 10px;
-            color: #374151;
-          }
-
-          .value {
-            margin-top: 2px;
-            font-size: 12px;
-          }
-
           .section-title {
-            font-weight: 700;
+            font-weight: bold;
+            margin-bottom: 8px;
             text-transform: uppercase;
-            margin-bottom: 6px;
           }
 
           .decision {
             text-align: center;
             font-size: 20px;
-            font-weight: 800;
+            font-weight: bold;
             border: 2px solid #111827;
             padding: 12px;
             margin: 14px 0;
           }
 
-          .signature {
-            margin-top: 56px;
+          .signature-area {
+            margin-top: 40px;
+          }
+
+          .signature-item {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+          }
+
+          .signature-name {
+            font-weight: bold;
+            font-size: 14px;
+          }
+
+          .signature-role {
+            margin-top: 4px;
+            color: #374151;
+          }
+
+          .signature-date {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #6b7280;
+          }
+
+          .verify-box {
+            margin-top: 30px;
+            border-top: 1px solid #d1d5db;
+            padding-top: 18px;
             text-align: center;
           }
 
-          .signature-line {
-            width: 280px;
-            margin: 0 auto 6px;
-            border-top: 1px solid #111827;
+          .verify-code {
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 6px;
+          }
+
+          .qr {
+            margin-top: 14px;
           }
 
           .footer {
@@ -403,93 +433,75 @@ function gerarPdfDecisao(item: CdeItem) {
             color: #6b7280;
             text-align: center;
           }
-
-          @media print {
-            button {
-              display: none;
-            }
-          }
         </style>
       </head>
 
       <body>
-        <div class="page">
-          <div class="header">
-            <h1>COMISSÃO DISCIPLINAR ESPECIAL - CDE</h1>
-            <p>Jogos Escolares de Roraima</p>
-            <p>Decisão oficial de recurso/protesto</p>
+        <div class="header">
+          <h1>COMISSÃO DISCIPLINAR ESPECIAL - CDE</h1>
+          <div>Jogos Escolares de Roraima</div>
+        </div>
+
+        <div class="title">
+          DECISÃO DO PROCESSO Nº ${escapeHtml(item.protocolo)}
+        </div>
+
+        <div class="box">
+          <div><strong>Escola:</strong> ${escapeHtml(item.escola)}</div>
+          <div><strong>Modalidade:</strong> ${escapeHtml(item.modalidade)}</div>
+          <div><strong>Categoria:</strong> ${escapeHtml(item.categoria)}</div>
+          <div><strong>Naipe:</strong> ${escapeHtml(item.naipe)}</div>
+        </div>
+
+        <div class="box">
+          <div class="section-title">Relato</div>
+          <div>${escapeHtml(item.relato).replaceAll("\n", "<br/>")}</div>
+        </div>
+
+        <div class="decision">
+          ${decisaoTexto}
+        </div>
+
+        <div class="box">
+          <div class="section-title">Fundamentação</div>
+          <div>${escapeHtml(item.decision_reason).replaceAll("\n", "<br/>")}</div>
+        </div>
+
+        <div class="signature-area">
+          <div class="section-title">
+            ASSINATURAS ELETRÔNICAS
           </div>
 
-          <div class="title">Decisão do Processo nº ${escapeHtml(item.protocolo)}</div>
+          ${assinaturaHtml}
+        </div>
 
-          <div class="box">
-            <div class="grid">
-              <div>
-                <div class="label">Origem</div>
-                <div class="value">${item.origem === "cde_cases" ? "Recurso Público" : "Protesto PWA"}</div>
-              </div>
-
-              <div>
-                <div class="label">Data</div>
-                <div class="value">${escapeHtml(safeDate(item.published_at || item.created_at))}</div>
-              </div>
-
-              <div>
-                <div class="label">Escola</div>
-                <div class="value">${escapeHtml(item.escola)}</div>
-              </div>
-
-              <div>
-                <div class="label">Município</div>
-                <div class="value">${escapeHtml(item.municipio)}</div>
-              </div>
-
-              <div>
-                <div class="label">Modalidade</div>
-                <div class="value">${escapeHtml(item.modalidade)}</div>
-              </div>
-
-              <div>
-                <div class="label">Categoria / Naipe</div>
-                <div class="value">${escapeHtml(item.categoria)} / ${escapeHtml(item.naipe)}</div>
-              </div>
-
-              <div>
-                <div class="label">Professor</div>
-                <div class="value">${escapeHtml(item.professor_nome)}</div>
-              </div>
-
-              <div>
-                <div class="label">Tipo do recurso</div>
-                <div class="value">${escapeHtml(item.tipo_recurso)}</div>
-              </div>
-            </div>
+        <div class="verify-box">
+          <div>
+            Documento assinado eletronicamente pela Comissão Disciplinar Especial.
           </div>
 
-          <div class="box">
-            <div class="section-title">Relato</div>
-            <div>${escapeHtml(item.relato).replaceAll("\n", "<br />")}</div>
+          <div class="verify-code">
+            Código de validação:
+            ${escapeHtml(item.protocolo)}
           </div>
 
-          <div class="decision">${decisaoTexto}</div>
-
-          <div class="box">
-            <div class="section-title">Fundamentação da decisão</div>
-            <div>${escapeHtml(item.decision_reason).replaceAll("\n", "<br />")}</div>
+          <div class="qr">
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                qrUrl
+              )}"
+            />
           </div>
 
-          <p style="text-align:right;">
-            Boa Vista/RR, ${escapeHtml(safeDate(item.published_at || item.created_at))}
-          </p>
-
-          <div class="signature">
-            <div class="signature-line"></div>
-            <strong>PRESIDENTE DA CDE</strong>
+          <div style="margin-top:10px;">
+            Verifique em:
+            <br/>
+            ${escapeHtml(qrUrl)}
           </div>
+        </div>
 
-          <div class="footer">
-            Documento emitido pelo Sistema JER Gestão — ${escapeHtml(item.protocolo)}
-          </div>
+        <div class="footer">
+          Sistema JER Gestão — Comissão Disciplinar Especial
         </div>
 
         <script>
