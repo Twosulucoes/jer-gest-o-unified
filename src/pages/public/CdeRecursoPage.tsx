@@ -107,6 +107,7 @@ export default function CdeRecursoPage() {
     jogo_descricao: "",
     tipo_recurso: "",
     relato: "",
+    fundamentacao: "",
   });
 
   const consultaUrl = useMemo(() => {
@@ -147,7 +148,8 @@ export default function CdeRecursoPage() {
       !form.escola.trim() ||
       !form.modalidade.trim() ||
       !form.tipo_recurso.trim() ||
-      !form.relato.trim()
+      !form.relato.trim() ||
+      !form.fundamentacao.trim()
     ) {
       toast.error("Preencha os campos obrigatórios.");
       return;
@@ -179,6 +181,7 @@ export default function CdeRecursoPage() {
         jogo_descricao: form.jogo_descricao.trim(),
         tipo_recurso: form.tipo_recurso.trim(),
         relato: form.relato.trim(),
+        pedido: form.fundamentacao.trim(),
 
         status: "pendente",
         priority: "normal",
@@ -460,6 +463,32 @@ export default function CdeRecursoPage() {
                 rows={6}
                 value={form.relato}
                 onChange={(e) => update("relato", e.target.value)}
+              />
+            </div>
+
+            <div className="rounded-lg border bg-background/60 p-4 space-y-3">
+              <div>
+                <p className="text-sm font-semibold">Fundamentação do recurso</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Explique qual regra, fato ou documento sustenta o pedido do recurso.
+                </p>
+              </div>
+
+              <div className="rounded-md border bg-blue-50 p-3 text-xs text-blue-950">
+                <p className="font-semibold">Exemplo de fundamentação:</p>
+                <p className="mt-1">
+                  Com fundamento no regulamento geral dos Jogos Escolares de Roraima 2026,
+                  solicitamos a revisão da súmula/resultado, pois há divergência entre o
+                  registro oficial e o ocorrido na partida. Anexamos documentos que comprovam
+                  a solicitação para análise da Comissão Disciplinar Especial.
+                </p>
+              </div>
+
+              <Textarea
+                placeholder="Digite a fundamentação do recurso. *"
+                rows={6}
+                value={form.fundamentacao}
+                onChange={(e) => update("fundamentacao", e.target.value)}
               />
             </div>
 
