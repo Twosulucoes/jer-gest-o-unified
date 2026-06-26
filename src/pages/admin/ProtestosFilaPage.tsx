@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 import { saveAs } from "file-saver";
 
@@ -31,7 +32,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Gavel, FileText, Paperclip, RefreshCcw, ClipboardList, Clock, CheckCircle2, AlertTriangle, Users, Scale } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Gavel, FileText, Paperclip, RefreshCcw, ClipboardList, Clock, CheckCircle2, AlertTriangle, Users, Scale, Search, Eye, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -56,6 +65,7 @@ type CdeItem = {
   origem: "protests" | "cde_cases";
   protocolo: string;
   status: string;
+  priority?: string | null;
   decision?: string | null;
   decision_reason?: string | null;
   created_at?: string | null;
@@ -376,6 +386,7 @@ export default function ProtestosFilaPage() {
   const [list, setList] = useState<CdeItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selected, setSelected] = useState<CdeItem | null>(null);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [decision, setDecision] = useState<string>("");
@@ -400,6 +411,8 @@ export default function ProtestosFilaPage() {
     const emAnalise = countByStatus(list, "em_analise");
     const decididos = countByStatus(list, "decidido");
     const arquivados = countByStatus(list, "arquivado");
+    const urgentes = list.filter((item) => item.priority === "urgente" || item.priority === "alta").length;
+    const publicados = list.filter((item) => item.is_published).length;
 
     return {
       total,
@@ -409,6 +422,8 @@ export default function ProtestosFilaPage() {
       emAnalise,
       decididos,
       arquivados,
+      urgentes,
+      publicados,
     };
   }, [list]);
 
@@ -421,6 +436,32 @@ export default function ProtestosFilaPage() {
   const ultimosDecididos = useMemo(() => {
     return list.filter((item) => item.status === "decidido").slice(0, 5);
   }, [list]);
+
+  const filteredList = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    if (!term) return list;
+
+    return list.filter((item) => {
+      const searchable = [
+        item.protocolo,
+        item.escola,
+        item.municipio,
+        item.modalidade,
+        item.categoria,
+        item.naipe,
+        item.professor_nome,
+        item.tipo_recurso,
+        item.status,
+        item.priority,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(term);
+    });
+  }, [list, searchTerm]);
 
   const load = async () => {
     setLoading(true);
@@ -447,6 +488,7 @@ export default function ProtestosFilaPage() {
             origem: "protests",
             protocolo: p.protocol_number || "SEM-PROTOCOLO",
             status: p.status || "protocolado",
+            priority: p.priority || "normal",
             decision: p.decision,
             decision_reason: p.decision_reason,
             created_at: p.created_at,
@@ -478,6 +520,7 @@ export default function ProtestosFilaPage() {
             origem: "cde_cases",
             protocolo: c.protocol || "SEM-PROTOCOLO",
             status: c.status || "pendente",
+            priority: c.priority || "normal",
             decision: c.decision || null,
             decision_reason: c.decision_text || null,
             is_published: c.is_published ?? false,
@@ -737,9 +780,9 @@ export default function ProtestosFilaPage() {
         <div className="flex items-center gap-2">
           <Gavel className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">CDE — Fila Disciplinar</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Comissão Disciplinar Especial</h1>
             <p className="text-sm text-muted-foreground">
-              Protestos, recursos públicos e julgamentos da Comissão Disciplinar Especial.
+              Gestão de protestos, recursos e decisões oficiais dos Jogos Escolares.
             </p>
           </div>
         </div>
@@ -777,7 +820,7 @@ export default function ProtestosFilaPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         <StatCard
           title="Total de processos"
           value={dashboard.total}
@@ -804,6 +847,20 @@ export default function ProtestosFilaPage() {
           value={dashboard.decididos}
           description="Julgamentos finalizados"
           icon={<CheckCircle2 className="h-5 w-5" />}
+        />
+
+        <StatCard
+          title="Urgentes"
+          value={dashboard.urgentes}
+          description="Prioridade alta"
+          icon={<AlertTriangle className="h-5 w-5" />}
+        />
+
+        <StatCard
+          title="Publicados"
+          value={dashboard.publicados}
+          description="Decisões públicas"
+          icon={<Send className="h-5 w-5" />}
         />
       </div>
 
@@ -921,75 +978,115 @@ export default function ProtestosFilaPage() {
         </Card>
       </div>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">Fila de processos</h2>
-        <p className="text-sm text-muted-foreground">
-          {list.length} processo(s) encontrado(s)
-        </p>
-      </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle className="text-lg">Fila de processos</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {filteredList.length} de {list.length} processo(s) encontrado(s)
+              </p>
+            </div>
 
-      {list.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">
-            {loading ? "Carregando..." : "Nenhum processo encontrado."}
-          </CardContent>
-        </Card>
-      )}
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar protocolo, escola, modalidade..."
+                className="pl-9"
+              />
+            </div>
+          </div>
+        </CardHeader>
 
-      <div className="grid gap-3">
-        {list.map((p) => (
-          <Card
-            key={`${p.origem}-${p.id}`}
-            className="cursor-pointer hover:shadow-md"
-            onClick={() => open(p)}
-          >
-            <CardContent className="p-4 flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-sm font-semibold">
-                    {p.protocolo}
-                  </span>
+        <CardContent>
+          {filteredList.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              {loading ? "Carregando..." : "Nenhum processo encontrado."}
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Protocolo</TableHead>
+                    <TableHead>Origem</TableHead>
+                    <TableHead>Escola</TableHead>
+                    <TableHead>Modalidade</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
 
-                  <Badge>{statusLabel(p.status)}</Badge>
+                <TableBody>
+                  {filteredList.map((p) => (
+                    <TableRow key={`${p.origem}-${p.id}`}>
+                      <TableCell className="font-mono font-semibold">
+                        {p.protocolo}
+                      </TableCell>
 
-                  <Badge variant="outline">
-                    {p.origem === "cde_cases" ? "Recurso público" : "Protesto PWA"}
-                  </Badge>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {p.origem === "cde_cases" ? "Recurso público" : "Protesto PWA"}
+                        </Badge>
+                      </TableCell>
 
-                  {p.decision && (
-                    <Badge variant="secondary" className="uppercase">
-                      {decisionLabel(p.decision)}
-                    </Badge>
-                  )}
+                      <TableCell className="font-medium">
+                        {p.escola || "—"}
+                      </TableCell>
 
-                  {p.is_published && (
-                    <Badge className="bg-green-600 hover:bg-green-700">
-                      Publicado
-                    </Badge>
-                  )}
-                </div>
+                      <TableCell>
+                        <div className="space-y-0.5">
+                          <p>{p.modalidade || "—"}</p>
+                          {(p.categoria || p.naipe) && (
+                            <p className="text-xs text-muted-foreground">
+                              {p.categoria || "—"} / {p.naipe || "—"}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
 
-                <p className="text-sm">
-                  <strong>{p.escola ?? "—"}</strong>
-                  {p.modalidade ? ` — ${p.modalidade}` : ""}
-                  {p.categoria ? ` — ${p.categoria}` : ""}
-                  {p.naipe ? ` — ${p.naipe}` : ""}
-                </p>
+                      <TableCell>
+                        <Badge>{statusLabel(p.status)}</Badge>
+                      </TableCell>
 
-                {p.jogo_descricao && (
-                  <p className="text-xs text-muted-foreground">
-                    {p.jogo_descricao}
-                  </p>
-                )}
+                      <TableCell>
+                        <Badge
+                          variant={
+                            p.priority === "urgente" || p.priority === "alta"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {p.priority || "normal"}
+                        </Badge>
+                      </TableCell>
 
-                <p className="text-xs text-muted-foreground">
-                  Protocolado em {safeDate(p.created_at)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {safeDate(p.created_at)}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => open(p)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Abrir
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
