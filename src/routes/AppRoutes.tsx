@@ -280,15 +280,40 @@ export const AppRoutes = () => (
         <Route path="debug-publicados" element={<DebugPublicadosPage />} />
       </Route>
 
-      <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-<Route
-  index
+    <Route
+  path="/admin"
   element={
     <ProtectedRoute>
-      <Navigate to="/admin/cde" replace />
+      <AdminLayout />
     </ProtectedRoute>
   }
-/>        <Route path="coordenador-modalidade" element={<ProtectedRoute allowedRoles={["coordenador_modalidade"]}><CoordenadorModalidadeDashboard /></ProtectedRoute>} />
+>
+  <Route
+    index
+    element={
+      <ProtectedRoute>
+        <Navigate to="/admin/cde" replace />
+      </ProtectedRoute>
+    }
+  />
+
+  <Route
+    path="cde"
+    element={
+      <ProtectedRoute
+        allowedRoles={["admin", "super_admin", "cde"]}
+      >
+        <ProtestosFilaPage />
+      </ProtectedRoute>
+    }
+  />
+
+  <Route
+    path="protestos"
+    element={<Navigate to="/admin/cde" replace />}
+  />
+
+      <Route path="coordenador-modalidade" element={<ProtectedRoute allowedRoles={["coordenador_modalidade"]}><CoordenadorModalidadeDashboard /></ProtectedRoute>} />
         <Route path="ajuda/chamados" element={<AjudaChamadosPage />} />
         <Route path="eventos" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventosPage /></ProtectedRoute>} />
         <Route path="eventos/etapas" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica"]}><EventStagesPage /></ProtectedRoute>} />
@@ -344,7 +369,7 @@ export const AppRoutes = () => (
           <Route path="vouchers" element={<VouchersPage />} />
           <Route path="voucher/validar" element={<VoucherValidarPage />} />
           <Route path="vouchers/auditoria" element={<VoucherAuditoriaPage />} />
-          <Route path="protestos" element={<ProtestosFilaPage />} />
+        
           <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
 
@@ -385,49 +410,6 @@ export const AppRoutes = () => (
         <Route path="monitoramento-db" element={<ProtectedRoute allowedRoles={["super_admin", "admin"]}><DatabaseMonitoringPage /></ProtectedRoute>} />
         <Route path="pwa-status" element={<ProtectedRoute allowedRoles={["super_admin", "admin", "secretaria"]}><PwaStatusPage /></ProtectedRoute>} />
         <Route path="alertas" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "secretaria", "coordenacao_tecnica"]}><AlertasPage /></ProtectedRoute>} />
-<Route
-  path="cde"
-  element={
-    <ProtectedRoute
-      allowedRoles={["admin", "super_admin", "cde"]}
-    >
-      <ProtestosFilaPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="protestos"
-  element={
-    <ProtectedRoute
-      allowedRoles={["admin", "super_admin", "cde"]}
-    >
-      <ProtestosFilaPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="cde/:id"
-  element={
-    <ProtectedRoute
-      allowedRoles={["admin", "super_admin", "cde"]}
-    >
-      <ProtestosFilaPage />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="protestos/:id"
-  element={
-    <ProtectedRoute
-      allowedRoles={["admin", "super_admin", "cde"]}
-    >
-      <ProtestosFilaPage />
-    </ProtectedRoute>
-  }
-/>
        <Route path="sistema/debug-pwa" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><PwaDebugPage /></ProtectedRoute>} />
         <Route path="sistema/debug-qr" element={<ProtectedRoute allowedRoles={["admin", "super_admin"]}><QrDiagnosticoPage /></ProtectedRoute>} />
         <Route path="dados" element={<Navigate to="/super/dados" replace />} />
@@ -557,7 +539,8 @@ export const AppRoutes = () => (
       <Route path="/substituicao/solicitar" element={<SubstituicaoSolicitarPage />} />
 
       <Route path="/cde/recurso" element={<CdeRecursoPage />} />
-<Route path="/cde/consulta/:token" element={<CdeConsultaPage />} />      <Route path="*" element={<NotFound />} />
+      <Route path="/cde/consulta/:token" element={<CdeConsultaPage />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
 );
