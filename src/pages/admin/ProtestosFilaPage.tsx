@@ -44,6 +44,8 @@ import { Gavel, FileText, Paperclip, RefreshCcw, ClipboardList, Clock, CheckCirc
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import logoJers from "@/assets/jers-2026.png";
+import logoIdjuv from "@/assets/idjuv.png";
 
 const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente" },
@@ -302,206 +304,474 @@ async function gerarPdfDecisao(item: CdeItem) {
       ? signatures
           .map(
             (s: any) => `
-        <div class="signature-item">
-          <div class="signature-name">${escapeHtml(s.signer_name)}</div>
-          <div class="signature-role">${escapeHtml(s.signer_role)}</div>
-          <div class="signature-date">
-            Assinado eletronicamente em
-            ${escapeHtml(safeDate(s.signed_at))}
-          </div>
-        </div>
-      `
+              <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-name">${escapeHtml(s.signer_name)}</div>
+                <div class="signature-role">${escapeHtml(s.signer_role)}</div>
+                <div class="signature-date">
+                  Documento assinado eletronicamente em ${escapeHtml(
+                    safeDate(s.signed_at)
+                  )}
+                </div>
+              </div>
+            `
           )
           .join("")
       : `
-        <div class="signature-item">
-          <div class="signature-name">Documento sem assinaturas eletrônicas registradas.</div>
+        <div class="signature-empty">
+          Documento sem assinaturas eletrônicas registradas até o momento da emissão.
         </div>
       `;
 
-  const qrUrl = `${window.location.origin}/cde/consulta/${item.public_token}`;
+  const qrUrl = item.public_token
+    ? `${window.location.origin}/cde/consulta/${item.public_token}`
+    : window.location.origin;
 
   const html = `
     <!doctype html>
     <html>
       <head>
         <meta charset="utf-8" />
-
         <title>DECISÃO ${escapeHtml(item.protocolo)}</title>
 
         <style>
           @page {
             size: A4;
-            margin: 20mm;
+            margin: 17mm;
+          }
+
+          * {
+            box-sizing: border-box;
           }
 
           body {
             font-family: Arial, Helvetica, sans-serif;
-            color: #111827;
+            color: #0f172a;
+            margin: 0;
+            background: #ffffff;
             font-size: 12px;
             line-height: 1.5;
           }
 
+          .page {
+            position: relative;
+            width: 100%;
+          }
+
+          .watermark {
+            position: fixed;
+            top: 38%;
+            left: 8%;
+            transform: rotate(-28deg);
+            font-size: 95px;
+            font-weight: 900;
+            color: #0f172a;
+            opacity: 0.035;
+            z-index: 0;
+            pointer-events: none;
+            white-space: nowrap;
+          }
+
+          .content {
+            position: relative;
+            z-index: 1;
+          }
+
           .header {
-            text-align: center;
-            border-bottom: 2px solid #111827;
-            padding-bottom: 14px;
-            margin-bottom: 22px;
-          }
-
-          .header h1 {
-            font-size: 18px;
-            margin: 0;
-          }
-
-          .title {
-            text-align: center;
-            font-size: 16px;
-            font-weight: bold;
-            margin: 18px 0;
-          }
-
-          .box {
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 14px;
-          }
-
-          .section-title {
-            font-weight: bold;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-          }
-
-          .decision {
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            border: 2px solid #111827;
-            padding: 12px;
-            margin: 14px 0;
-          }
-
-          .signature-area {
-            margin-top: 40px;
-          }
-
-          .signature-item {
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
             margin-bottom: 12px;
           }
 
+          .logo-jers {
+            width: 145px;
+            max-height: 86px;
+            object-fit: contain;
+          }
+
+          .logo-idjuv {
+            width: 125px;
+            max-height: 75px;
+            object-fit: contain;
+          }
+
+          .header-center {
+            flex: 1;
+            text-align: center;
+          }
+
+          .titulo {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            color: #0f172a;
+            text-transform: uppercase;
+          }
+
+          .subtitulo {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #334155;
+            text-transform: uppercase;
+          }
+
+          .linha-header {
+            height: 4px;
+            width: 100%;
+            background: linear-gradient(to right, #005baa, #0ea5e9, #16a34a, #facc15);
+            border-radius: 999px;
+            margin-bottom: 20px;
+          }
+
+          .processo-card {
+            border: 2px solid #0f172a;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+            background: #f8fafc;
+          }
+
+          .processo-label {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            color: #475569;
+            text-transform: uppercase;
+          }
+
+          .processo-numero {
+            margin-top: 4px;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+          }
+
+          .box {
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 13px;
+            background: #ffffff;
+          }
+
+          .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px 16px;
+          }
+
+          .label {
+            font-size: 10px;
+            font-weight: 800;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+
+          .value {
+            margin-top: 2px;
+            font-weight: 700;
+            color: #111827;
+          }
+
+          .section-title {
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #0f172a;
+            margin-bottom: 8px;
+            font-size: 11px;
+          }
+
+          .text-block {
+            white-space: normal;
+            text-align: justify;
+          }
+
+          .decision-box {
+            border: 3px solid #0f172a;
+            padding: 16px;
+            border-radius: 14px;
+            margin: 16px 0;
+            text-align: center;
+            background: #f8fafc;
+          }
+
+          .decision-title {
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            font-weight: 900;
+            margin-bottom: 6px;
+            color: #64748b;
+            text-transform: uppercase;
+          }
+
+          .decision-value {
+            font-size: 25px;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: 0.06em;
+          }
+
+          .final-text {
+            margin-top: 12px;
+            padding: 12px;
+            border-left: 4px solid #005baa;
+            background: #f1f5f9;
+            border-radius: 8px;
+            text-align: justify;
+          }
+
+          .signature-area {
+            margin-top: 26px;
+            page-break-inside: avoid;
+          }
+
+          .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px 20px;
+            margin-top: 22px;
+          }
+
+          .signature-item {
+            text-align: center;
+            min-height: 86px;
+          }
+
+          .signature-line {
+            width: 82%;
+            margin: 0 auto 8px;
+            border-top: 1px solid #0f172a;
+          }
+
           .signature-name {
-            font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
           }
 
           .signature-role {
-            margin-top: 4px;
-            color: #374151;
+            margin-top: 2px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #334155;
           }
 
           .signature-date {
-            margin-top: 6px;
-            font-size: 11px;
-            color: #6b7280;
+            margin-top: 5px;
+            font-size: 9.5px;
+            color: #64748b;
           }
 
-          .verify-box {
-            margin-top: 30px;
-            border-top: 1px solid #d1d5db;
-            padding-top: 18px;
+          .signature-empty {
+            border: 1px dashed #94a3b8;
+            border-radius: 10px;
+            padding: 14px;
+            color: #64748b;
             text-align: center;
           }
 
-          .verify-code {
-            font-weight: bold;
-            font-size: 13px;
-            margin-top: 6px;
+          .validation-box {
+            margin-top: 26px;
+            border: 2px dashed #005baa;
+            border-radius: 14px;
+            padding: 15px;
+            background: #eff6ff;
+            display: grid;
+            grid-template-columns: 1fr 130px;
+            gap: 18px;
+            align-items: center;
+            page-break-inside: avoid;
           }
 
-          .qr {
-            margin-top: 14px;
+          .validation-title {
+            font-size: 13px;
+            font-weight: 900;
+            color: #005baa;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+          }
+
+          .validation-text {
+            margin-top: 6px;
+            color: #334155;
+            font-size: 11px;
+          }
+
+          .validation-code {
+            margin-top: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 900;
+            color: #0f172a;
+          }
+
+          .qr-area {
+            text-align: center;
+          }
+
+          .qr-area img {
+            width: 118px;
+            height: 118px;
           }
 
           .footer {
-            margin-top: 30px;
-            font-size: 10px;
-            color: #6b7280;
+            margin-top: 22px;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 10px;
+            font-size: 9.5px;
+            color: #64748b;
             text-align: center;
+          }
+
+          @media print {
+            button {
+              display: none;
+            }
           }
         </style>
       </head>
 
       <body>
-        <div class="header">
-          <h1>COMISSÃO DISCIPLINAR ESPECIAL - CDE</h1>
-          <div>Jogos Escolares de Roraima</div>
-        </div>
+        <div class="page">
+          <div class="watermark">JER 2026</div>
 
-        <div class="title">
-          DECISÃO DO PROCESSO Nº ${escapeHtml(item.protocolo)}
-        </div>
+          <div class="content">
+            <div class="header">
+              <img src="${logoJers}" class="logo-jers" />
 
-        <div class="box">
-          <div><strong>Escola:</strong> ${escapeHtml(item.escola)}</div>
-          <div><strong>Modalidade:</strong> ${escapeHtml(item.modalidade)}</div>
-          <div><strong>Categoria:</strong> ${escapeHtml(item.categoria)}</div>
-          <div><strong>Naipe:</strong> ${escapeHtml(item.naipe)}</div>
-        </div>
+              <div class="header-center">
+                <div class="titulo">Comissão Disciplinar Especial</div>
+                <div class="subtitulo">Jogos Escolares de Roraima 2026</div>
+              </div>
 
-        <div class="box">
-          <div class="section-title">Relato</div>
-          <div>${escapeHtml(item.relato).replaceAll("\n", "<br/>")}</div>
-        </div>
+              <img src="${logoIdjuv}" class="logo-idjuv" />
+            </div>
 
-        <div class="decision">
-          ${decisaoTexto}
-        </div>
+            <div class="linha-header"></div>
 
-        <div class="box">
-          <div class="section-title">Fundamentação</div>
-          <div>${escapeHtml(item.decision_reason).replaceAll("\n", "<br/>")}</div>
-        </div>
+            <div class="processo-card">
+              <div class="processo-label">Decisão oficial do processo</div>
+              <div class="processo-numero">${escapeHtml(item.protocolo)}</div>
+            </div>
 
-        <div class="signature-area">
-          <div class="section-title">
-            ASSINATURAS ELETRÔNICAS
+            <div class="box">
+              <div class="grid">
+                <div>
+                  <div class="label">Origem</div>
+                  <div class="value">${
+                    item.origem === "cde_cases" ? "Recurso Público" : "Protesto PWA"
+                  }</div>
+                </div>
+
+                <div>
+                  <div class="label">Data da publicação</div>
+                  <div class="value">${escapeHtml(
+                    safeDate(item.published_at || item.created_at)
+                  )}</div>
+                </div>
+
+                <div>
+                  <div class="label">Escola</div>
+                  <div class="value">${escapeHtml(item.escola)}</div>
+                </div>
+
+                <div>
+                  <div class="label">Município</div>
+                  <div class="value">${escapeHtml(item.municipio)}</div>
+                </div>
+
+                <div>
+                  <div class="label">Modalidade</div>
+                  <div class="value">${escapeHtml(item.modalidade)}</div>
+                </div>
+
+                <div>
+                  <div class="label">Categoria / Naipe</div>
+                  <div class="value">${escapeHtml(item.categoria)} / ${escapeHtml(
+                    item.naipe
+                  )}</div>
+                </div>
+
+                <div>
+                  <div class="label">Professor / Responsável</div>
+                  <div class="value">${escapeHtml(item.professor_nome)}</div>
+                </div>
+
+                <div>
+                  <div class="label">Tipo do recurso</div>
+                  <div class="value">${escapeHtml(item.tipo_recurso)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="box">
+              <div class="section-title">Relato do recurso</div>
+              <div class="text-block">${escapeHtml(item.relato).replaceAll(
+                "\n",
+                "<br />"
+              )}</div>
+            </div>
+
+            <div class="decision-box">
+              <div class="decision-title">Decisão da comissão</div>
+              <div class="decision-value">${decisaoTexto}</div>
+            </div>
+
+            <div class="box">
+              <div class="section-title">Fundamentação da decisão</div>
+              <div class="text-block">${escapeHtml(item.decision_reason).replaceAll(
+                "\n",
+                "<br />"
+              )}</div>
+            </div>
+
+            <div class="final-text">
+              Esta decisão entra em vigor imediatamente após sua publicação oficial pela
+              Comissão Disciplinar Especial dos Jogos Escolares de Roraima 2026, ficando
+              disponível para consulta pública por meio do código de validação abaixo.
+            </div>
+
+            <div class="signature-area">
+              <div class="section-title">Assinaturas eletrônicas</div>
+              <div class="signature-grid">
+                ${assinaturaHtml}
+              </div>
+            </div>
+
+            <div class="validation-box">
+              <div>
+                <div class="validation-title">Documento assinado eletronicamente</div>
+                <div class="validation-text">
+                  A autenticidade deste documento pode ser conferida pelo QR Code ou pelo
+                  link de consulta pública do processo.
+                </div>
+                <div class="validation-code">Código: ${escapeHtml(item.protocolo)}</div>
+                <div class="validation-text">${escapeHtml(qrUrl)}</div>
+              </div>
+
+              <div class="qr-area">
+                <img
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                    qrUrl
+                  )}"
+                  alt="QR Code de validação"
+                />
+              </div>
+            </div>
+
+            <div class="footer">
+              Emitido eletronicamente pelo Sistema JER Gestão — Comissão Disciplinar Especial — ${escapeHtml(
+                item.protocolo
+              )}
+            </div>
           </div>
-
-          ${assinaturaHtml}
-        </div>
-
-        <div class="verify-box">
-          <div>
-            Documento assinado eletronicamente pela Comissão Disciplinar Especial.
-          </div>
-
-          <div class="verify-code">
-            Código de validação:
-            ${escapeHtml(item.protocolo)}
-          </div>
-
-          <div class="qr">
-            <img
-              src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                qrUrl
-              )}"
-            />
-          </div>
-
-          <div style="margin-top:10px;">
-            Verifique em:
-            <br/>
-            ${escapeHtml(qrUrl)}
-          </div>
-        </div>
-
-        <div class="footer">
-          Sistema JER Gestão — Comissão Disciplinar Especial
         </div>
 
         <script>
