@@ -16,6 +16,7 @@ import {
   TextRun,
   HeadingLevel,
   AlignmentType,
+  ImageRun,
 } from "docx";
 
 import {
@@ -141,6 +142,27 @@ function StatCard({
       </CardContent>
     </Card>
   );
+}
+
+async function imageToArrayBuffer(src: string) {
+  const res = await fetch(src);
+  return await res.arrayBuffer();
+}
+
+function docLine(label: string, value?: string | null) {
+  return new Paragraph({
+    children: [
+      new TextRun({ text: `${label}: `, bold: true }),
+      new TextRun({ text: value || "-" }),
+    ],
+  });
+}
+
+function docSectionTitle(text: string) {
+  return new Paragraph({
+    spacing: { before: 260, after: 100 },
+    children: [new TextRun({ text, bold: true, size: 26 })],
+  });
 }
 
 async function gerarDocumentoDecisao(item: CdeItem) {
@@ -821,75 +843,106 @@ async function notificarDecisaoPublicada(item: CdeItem, decisao: string, parecer
 }
 
 async function gerarDocumentoRecurso(item: CdeItem) {
+  const [logoJersBuffer, logoIdjuvBuffer] = await Promise.all([
+    imageToArrayBuffer(logoJers),
+    imageToArrayBuffer(logoIdjuv),
+  ]);
+
   const doc = new Document({
     sections: [
       {
         children: [
           new Paragraph({
-            text: "RECURSO RECEBIDO - CDE",
+            alignment: AlignmentType.CENTER,
+            children: [
+              new ImageRun({
+                data: logoJersBuffer,
+                transformation: { width: 230, height: 88 },
+              }),
+            ],
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new ImageRun({
+                data: logoIdjuvBuffer,
+                transformation: { width: 300, height: 96 },
+              }),
+            ],
+          }),
+
+          new Paragraph({ text: "" }),
+
+          new Paragraph({
+            text: "COMISSÃO DISCIPLINAR ESPECIAL - CDE",
             heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+          }),
+
+          new Paragraph({
+            text: "JOGOS ESCOLARES DE RORAIMA 2026",
             alignment: AlignmentType.CENTER,
           }),
 
           new Paragraph({ text: "" }),
 
           new Paragraph({
-            text: `PROTOCOLO: ${item.protocolo}`,
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({
+                text: `RECURSO RECEBIDO Nº ${item.protocolo}`,
+                bold: true,
+                size: 30,
+              }),
+            ],
           }),
 
+          new Paragraph({ text: "" }),
+
+          docSectionTitle("1. DADOS DO SOLICITANTE"),
+          docLine("PROTOCOLO", item.protocolo),
+          docLine("PROFESSOR/RESPONSÁVEL", item.professor_nome),
+          docLine("EMAIL", item.professor_email),
+          docLine("TELEFONE", item.professor_telefone),
+          docLine("ESCOLA", item.escola),
+          docLine("MUNICÍPIO", item.municipio),
+
+          docSectionTitle("2. DADOS DA COMPETIÇÃO"),
+          docLine("MODALIDADE", item.modalidade),
+          docLine("CATEGORIA", item.categoria),
+          docLine("NAIPE", item.naipe),
+          docLine("JOGO/CONFRONTO", item.jogo_descricao),
+          docLine("TIPO DE RECURSO", item.tipo_recurso),
+          docLine("DATA DO PROTOCOLO", safeDate(item.created_at)),
+
+          docSectionTitle("3. RELATO DO OCORRIDO"),
+          new Paragraph({ text: item.relato || "-" }),
+
+          docSectionTitle("4. FUNDAMENTAÇÃO DO RECURSO"),
+          new Paragraph({ text: item.pedido || "-" }),
+
+          docSectionTitle("5. DECLARAÇÃO"),
           new Paragraph({
-            text: `PROFESSOR: ${item.professor_nome || "-"}`,
+            text:
+              "O presente recurso foi protocolado eletronicamente no Sistema JER Gestão e será analisado pela Comissão Disciplinar Especial, conforme regulamento aplicável aos Jogos Escolares de Roraima 2026.",
           }),
 
-          new Paragraph({
-            text: `EMAIL: ${item.professor_email || "-"}`,
-          }),
+          new Paragraph({ text: "" }),
+          new Paragraph({ text: "" }),
 
           new Paragraph({
-            text: `TELEFONE: ${item.professor_telefone || "-"}`,
-          }),
-
-          new Paragraph({
-            text: `ESCOLA: ${item.escola || "-"}`,
-          }),
-
-          new Paragraph({
-            text: `MUNICÍPIO: ${item.municipio || "-"}`,
-          }),
-
-          new Paragraph({
-            text: `MODALIDADE: ${item.modalidade || "-"}`,
-          }),
-
-          new Paragraph({
-            text: `CATEGORIA: ${item.categoria || "-"}`,
-          }),
-
-          new Paragraph({
-            text: `NAIPE: ${item.naipe || "-"}`,
-          }),
-
-          new Paragraph({
-            text: `JOGO: ${item.jogo_descricao || "-"}`,
-          }),
-
-          new Paragraph({
-            text: `TIPO DE RECURSO: ${item.tipo_recurso || "-"}`,
+            text: `Boa Vista/RR, ${safeDate(item.created_at)}`,
+            alignment: AlignmentType.RIGHT,
           }),
 
           new Paragraph({ text: "" }),
 
           new Paragraph({
-            children: [
-              new TextRun({
-                text: "RELATO:",
-                bold: true,
-              }),
-            ],
-          }),
-
-          new Paragraph({
-            text: item.relato || "-",
+            text: "Emitido eletronicamente pelo Sistema JER Gestão",
+            alignment: AlignmentType.CENTER,
           }),
         ],
       },
