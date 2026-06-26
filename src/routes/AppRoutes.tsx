@@ -239,7 +239,9 @@ const AtletaPublicProfilePage = lazy(() => import("../pages/public/AtletaPublicP
 const EntregaTecnicaPage = lazy(() => import("../pages/public/EntregaTecnicaPage"));
 const SubstituicaoSolicitarPage = lazy(() => import("../pages/public/SubstituicaoSolicitarPage"));
 const CdeRecursoPage = lazy(() => import("../pages/public/CdeRecursoPage"));
-const CdeAssinarPage = lazy(() => import("../pages/public/CdeAssinarPage"));
+const CdeAssinarPage = lazy(
+  () => import("@/pages/public/CdeAssinarPage")
+);
 const CdeConsultaPage = lazy(() => import("../pages/public/CdeConsultaPage"));
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
