@@ -163,6 +163,17 @@ export default function CdeRecursoPage() {
         console.warn("Notificação CDE não enviada.");
       }
 
+await (supabase as any)
+  .from("cde_case_history")
+  .insert({
+    cde_case_id: data.id,
+    action_type: "created",
+    action_label: "Recurso protocolado",
+    action_description:
+      "Recurso enviado pelo professor responsável.",
+    created_by: form.professor_nome,
+  });
+      
       setSent(data);
       toast.success("Recurso enviado com sucesso.");
     } catch (err: any) {
