@@ -638,6 +638,11 @@ export default function ProtestosFilaPage() {
     return `${window.location.origin}/cde/consulta/${selected.public_token}`;
   }, [selected]);
 
+  const assinaturaUrl = useMemo(() => {
+    if (!selected?.public_token) return "";
+    return `${window.location.origin}/cde/assinar/${selected.public_token}`;
+  }, [selected]);
+
   const dashboard = useMemo(() => {
     const total = list.length;
     const recursosPublicos = list.filter((item) => item.origem === "cde_cases").length;
@@ -1462,8 +1467,58 @@ export default function ProtestosFilaPage() {
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm">Consulta pública</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-xs break-all">
-                      {consultaUrl}
+                    <CardContent className="space-y-3 text-xs break-all">
+                      <p>{consultaUrl}</p>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(consultaUrl);
+                          toast({
+                            title: "Link copiado",
+                            description: "Link de consulta pública copiado.",
+                          });
+                        }}
+                      >
+                        Copiar link de consulta
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {assinaturaUrl && selected.origem === "cde_cases" && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">
+                        Link de assinatura eletrônica
+                      </CardTitle>
+                    </CardHeader>
+
+                    <CardContent className="space-y-3 text-xs break-all">
+                      <p>{assinaturaUrl}</p>
+
+                      <p className="text-muted-foreground">
+                        Envie este link para os membros da Comissão assinarem
+                        eletronicamente a decisão. Cada pessoa irá informar nome,
+                        função e confirmar a assinatura.
+                      </p>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(assinaturaUrl);
+                          toast({
+                            title: "Link copiado",
+                            description: "Link de assinatura copiado.",
+                          });
+                        }}
+                      >
+                        Copiar link de assinatura
+                      </Button>
                     </CardContent>
                   </Card>
                 )}
