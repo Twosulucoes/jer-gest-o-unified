@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -135,6 +135,8 @@ export default function AlimentacaoScanPage() {
   const lang = getPwaLang();
   const today = useTodayString();
 
+  const usbInputRef = useRef<HTMLInputElement>(null);
+
   const [windows, setWindows] = useState<MealWindow[]>([]);
   const [windowId, setWindowId] = useState(preselectedWindowId ?? "");
   const [consumptionCount, setConsumptionCount] = useState(0);
@@ -172,10 +174,20 @@ export default function AlimentacaoScanPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [now, setNow] = useState(() => new Date());
 
+  const focusUsbInput = useCallback(() => {
+    setTimeout(() => {
+      if (!scannerOpen) usbInputRef.current?.focus();
+    }, 150);
+  }, [scannerOpen]);
+
   useEffect(() => {
     const tick = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(tick);
   }, []);
+
+  useEffect(() => {
+    if (!scannerOpen) focusUsbInput();
+  }, [scannerOpen, windowId, isSubmitting, focusUsbInput]);
 
   useEffect(() => {
     setPrefs(loadScanPreferences(MODULE, userId));
@@ -201,7 +213,11 @@ export default function AlimentacaoScanPage() {
   };
 
   const reopenIfContinuous = () => {
-    if (!prefs.continuousMode) return;
+    if (!prefs.continuousMode) {
+      focusUsbInput();
+      return;
+    }
+
     setTimeout(() => setScannerOpen(true), prefs.reopenDelayMs);
   };
 
@@ -802,6 +818,7 @@ export default function AlimentacaoScanPage() {
 
     if (!val) {
       setIsSubmitting(false);
+      focusUsbInput();
       return;
     }
 
@@ -816,6 +833,7 @@ export default function AlimentacaoScanPage() {
     if (!windowId) {
       toast.error(getSystemMessage("ERR_WINDOW_REQUIRED", lang));
       setIsSubmitting(false);
+      focusUsbInput();
       return;
     }
 
@@ -1053,6 +1071,10 @@ export default function AlimentacaoScanPage() {
       recordOutcome("error");
     } finally {
       setIsSubmitting(false);
+      setManualQuery("");
+      setDebouncedManual("");
+      setManualHits([]);
+      focusUsbInput();
     }
   };
 
@@ -1132,6 +1154,7 @@ export default function AlimentacaoScanPage() {
       recordOutcome("error");
     } finally {
       setIsSubmitting(false);
+      focusUsbInput();
     }
   };
 
@@ -1358,7 +1381,10 @@ export default function AlimentacaoScanPage() {
         {scannerOpen && (
           <QrCodeScanner
             isOpen={scannerOpen}
-            onClose={() => setScannerOpen(false)}
+            onClose={() => {
+              setScannerOpen(false);
+              focusUsbInput();
+            }}
             onScan={handleScan}
             continuous={prefs.continuousMode}
             title="Escanear QR"
@@ -1367,18 +1393,40 @@ export default function AlimentacaoScanPage() {
         )}
 
         <div className="space-y-2">
+          <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-[11px] text-blue-700 dark:text-blue-300">
+            <strong>Leitor USB ativo:</strong> conecte o leitor no notebook, clique no campo abaixo e passe o crachá. A câmera do celular continua funcionando no botão acima.
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Nome, CPF ou código do voucher…"
+              ref={usbInputRef}
+              autoFocus
+              placeholder="Leitor USB / Nome / CPF / Código do voucher…"
               value={manualQuery}
+              disabled={isSubmitting}
               onChange={(e) => setManualQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && manualQuery.length >= 8) {
-                  void handleScan(manualQuery);
+                if (e.key === "Enter") {
+                  e.preventDefault();
+
+                  const code = manualQuery.trim();
+
+                  if (code.length >= 3) {
+                    setManualQuery("");
+                    setDebouncedManual("");
+                    setManualHits([]);
+
+                    void handleScan(code).finally(() => {
+                      focusUsbInput();
+                    });
+                  }
                 }
               }}
-              className="h-11 border-border/80 bg-card/90 pl-10"
+              onBlur={() => {
+                if (!scannerOpen) focusUsbInput();
+              }}
+              className="h-12 border-border/80 bg-card/90 pl-10 text-base font-mono"
             />
           </div>
 
@@ -1484,7 +1532,7 @@ export default function AlimentacaoScanPage() {
           >
             <ListChecks className="h-4 w-4 text-module shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-bold leading-tight truncate">Lista conssssumos</p>
+              <p className="text-xs font-bold leading-tight truncate">Lista consumos</p>
               <p className="text-[10px] text-muted-foreground">Histórico do dia</p>
             </div>
           </button>
