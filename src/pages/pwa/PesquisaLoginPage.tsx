@@ -35,7 +35,12 @@ export default function PesquisaLoginPage() {
 
       const result = data as any;
       if (result?.error) {
-        setError(result.error === 'PIN_INVALID' ? 'PIN inválido' : 'Evento inativo');
+        const errorMessages: Record<string, string> = {
+          PIN_INVALID: 'PIN inválido',
+          EVENT_INACTIVE: 'Evento inativo',
+          RATE_LIMITED: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+        };
+        setError(errorMessages[result.error] ?? 'Não foi possível entrar');
         setPin(''); // Clear PIN on error
         return;
       }

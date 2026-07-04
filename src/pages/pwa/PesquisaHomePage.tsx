@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { getSession, clearSession } from '@/lib/pesquisaSession';
+import { getSession, clearSession, getDeviceId } from '@/lib/pesquisaSession';
 import { usePesquisaSync } from '@/hooks/usePesquisaSync';
 import OfflineBadge from '@/components/pesquisa/OfflineBadge';
 import { Button } from '@/components/ui/button';
@@ -71,7 +71,7 @@ export default function PesquisaHomePage() {
 
   const handleLogout = async () => {
     if (session) {
-      try { await supabase.rpc('pesquisa_revoke_session', { p_session_id: session.session_id }); } catch {}
+      try { await supabase.rpc('pesquisa_revoke_session', { p_session_id: session.session_id, p_device_id: getDeviceId() }); } catch {}
     }
     clearSession();
     navigate('/pesquisa/login', { replace: true });

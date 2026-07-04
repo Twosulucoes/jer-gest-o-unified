@@ -5924,6 +5924,38 @@ export type Database = {
           },
         ]
       }
+      pesquisa_login_attempts: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          id: string
+          researcher_id: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          researcher_id?: string | null
+          success: boolean
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          researcher_id?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pesquisa_login_attempts_researcher_id_fkey"
+            columns: ["researcher_id"]
+            isOneToOne: false
+            referencedRelation: "pesquisa_researchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pesquisa_researchers: {
         Row: {
           active: boolean
@@ -9544,7 +9576,7 @@ export type Database = {
         Returns: Json
       }
       pesquisa_revoke_session: {
-        Args: { p_session_id: string }
+        Args: { p_session_id: string; p_device_id?: string }
         Returns: undefined
       }
       pesquisa_touch_session: {
