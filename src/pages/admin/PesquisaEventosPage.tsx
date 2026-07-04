@@ -18,7 +18,7 @@ import {
   FileText, Users, LayoutDashboard,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PESQUISA_TEMPLATES, type PesquisaTemplate } from '@/lib/pesquisa/templates';
+import { PESQUISA_PRESETS } from '@/lib/pesquisa/config';
 
 interface PesquisaEvent {
   id: string;
@@ -44,13 +44,6 @@ const KIND_LABELS: Record<string, string> = {
   outro: 'Outro',
 };
 
-const BADGE_COLORS: Record<string, string> = {
-  'Recomendado': 'bg-primary/10 text-primary border-primary/20',
-  'OSC / Legal':  'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  'Por Etapa':   'bg-info/10 text-info border-info/20',
-  'Participante':'bg-success/10 text-success border-success/20',
-};
-
 export default function PesquisaEventosPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -64,7 +57,7 @@ export default function PesquisaEventosPage() {
     event_date: '',
     active: true,
     event_stage_id: '',
-    templateId: PESQUISA_TEMPLATES[0].id,
+    presetId: PESQUISA_PRESETS[0].id,
   });
 
   // ── Queries ──────────────────────────────────────────────────
@@ -101,7 +94,7 @@ export default function PesquisaEventosPage() {
   // ── Mutations ─────────────────────────────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const selectedTemplate = PESQUISA_TEMPLATES.find(t => t.id === form.templateId);
+      const selectedPreset = PESQUISA_PRESETS.find(p => p.id === form.presetId);
       const payload: any = {
         name: form.name.trim(),
         location: form.location.trim() || null,
@@ -114,9 +107,8 @@ export default function PesquisaEventosPage() {
         const { error } = await supabase.from('pesquisa_events').update(payload).eq('id', editing.id);
         if (error) throw error;
       } else {
-        // Apply template questions_config on creation (null = default JER)
-        const isDefault = form.templateId === PESQUISA_TEMPLATES[0].id;
-        payload.questions_config = isDefault ? null : (selectedTemplate?.questions ?? null);
+        // Aplica o config v2 do preset na criação.
+        payload.questions_config = selectedPreset?.config ?? null;
         const { error } = await supabase.from('pesquisa_events').insert(payload);
         if (error) throw error;
       }
@@ -138,7 +130,7 @@ export default function PesquisaEventosPage() {
       event_date: '',
       active: true,
       event_stage_id: stageId ?? '',
-      templateId: PESQUISA_TEMPLATES[0].id,
+      presetId: PESQUISA_PRESETS[0].id,
     });
     setDialogOpen(true);
   };
@@ -151,7 +143,7 @@ export default function PesquisaEventosPage() {
       event_date: e.event_date ?? '',
       active: e.active,
       event_stage_id: e.event_stage_id ?? '',
-      templateId: PESQUISA_TEMPLATES[0].id,
+      presetId: PESQUISA_PRESETS[0].id,
     });
     setDialogOpen(true);
   };
@@ -171,7 +163,7 @@ export default function PesquisaEventosPage() {
     return `${s.event_name} · ${s.name} (${KIND_LABELS[s.kind] ?? s.kind})`;
   };
 
-  const selectedTemplate: PesquisaTemplate | undefined = PESQUISA_TEMPLATES.find(t => t.id === form.templateId);
+  const selectedPreset = PESQUISA_PRESETS.find(p => p.id === form.presetId);
 
   const base = stageId ? `/admin/etapa/${stageId}/pesquisa` : '/admin/pesquisa';
 
@@ -334,31 +326,26 @@ export default function PesquisaEventosPage() {
               <div className="space-y-2">
                 <Label className="font-semibold">Modelo de formulário</Label>
                 <div className="grid grid-cols-1 gap-2">
-                  {PESQUISA_TEMPLATES.map(tpl => (
+                  {PESQUISA_PRESETS.map(preset => (
                     <button
-                      key={tpl.id}
+                      key={preset.id}
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, templateId: tpl.id }))}
+                      onClick={() => setForm(f => ({ ...f, presetId: preset.id }))}
                       className={[
                         'w-full text-left rounded-lg border p-3 transition-all duration-150',
-                        form.templateId === tpl.id
+                        form.presetId === preset.id
                           ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
                           : 'border-border hover:border-primary/30 hover:bg-muted/40',
                       ].join(' ')}
                     >
-                      <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <span className="font-semibold text-sm">{tpl.name}</span>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${BADGE_COLORS[tpl.badge] ?? 'bg-muted text-muted-foreground'}`}>
-                          {tpl.badge}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-snug">{tpl.description}</p>
+                      <span className="font-semibold text-sm">{preset.name}</span>
+                      <p className="text-xs text-muted-foreground leading-snug mt-0.5">{preset.description}</p>
                     </button>
                   ))}
                 </div>
-                {selectedTemplate && (
+                {selectedPreset && (
                   <p className="text-xs text-muted-foreground pl-1">
-                    {selectedTemplate.questions.length} perguntas · {[...new Set(selectedTemplate.questions.map(q => q.dim))].length} dimensões
+                    {selectedPreset.config.questions.length} perguntas · {selectedPreset.config.sections.length} seções · personalize depois em “Configurar”
                   </p>
                 )}
                 <Separator />
