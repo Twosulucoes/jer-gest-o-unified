@@ -13,7 +13,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
-  Plus, Pencil, Settings2, ClipboardList, CalendarDays,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Plus, Pencil, Settings2, ClipboardList, CalendarDays, Trash2,
   MapPin, CheckCircle2, PauseCircle, Layers, ChevronRight,
   FileText,
 } from 'lucide-react';
@@ -117,6 +121,23 @@ export default function PesquisaEventosPage() {
       queryClient.invalidateQueries({ queryKey: ['pesquisa-events-admin'] });
       setDialogOpen(false);
       toast.success(editing ? 'Pesquisa atualizada' : 'Pesquisa criada com sucesso');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await (supabase.rpc as any)('pesquisa_delete_event', { p_id: id });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.error === 'HAS_SURVEYS') {
+        throw new Error(`Não é possível excluir: ${res.count} resposta(s) vinculada(s). Desative a pesquisa em vez de excluir.`);
+      }
+      if (res?.error) throw new Error('Você não tem permissão para excluir.');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pesquisa-events-admin'] });
+      toast.success('Pesquisa excluída');
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -275,6 +296,27 @@ export default function PesquisaEventosPage() {
                         Configurar
                         <ChevronRight className="h-3 w-3 opacity-60" />
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-1.5 text-xs text-destructive hover:text-destructive" title="Excluir">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir pesquisa?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              <strong>{ev.name}</strong> será removida permanentemente, junto com seus pesquisadores e sessões. Respostas já coletadas bloqueiam a exclusão.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMutation.mutate(ev.id)}>
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </CardContent>

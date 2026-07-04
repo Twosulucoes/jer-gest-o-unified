@@ -9,7 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Plus, Pencil, Copy, Key } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Plus, Pencil, Copy, Key, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Researcher {
@@ -111,6 +115,23 @@ export default function PesquisaPesquisadoresPage() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await (supabase.rpc as any)('pesquisa_delete_researcher', { p_id: id });
+      if (error) throw error;
+      const res = data as any;
+      if (res?.error === 'HAS_SURVEYS') {
+        throw new Error(`Não é possível excluir: ${res.count} resposta(s) vinculada(s). Desative o pesquisador em vez de excluir.`);
+      }
+      if (res?.error) throw new Error('Você não tem permissão para excluir.');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pesquisa-researchers-admin'] });
+      toast.success('Pesquisador excluído');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const openNew = () => {
     setEditing(null);
     setGeneratedPin('');
@@ -170,6 +191,25 @@ export default function PesquisaPesquisadoresPage() {
                 <Button variant="ghost" size="icon" onClick={() => openPin(r)} title="Definir PIN"><Key className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => copyMessage(r)} title="Copiar mensagem"><Copy className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => openEdit(r)} title="Editar"><Pencil className="h-4 w-4" /></Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" title="Excluir" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir pesquisador?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        <strong>{r.name}</strong> será removido permanentemente, junto com suas sessões de acesso. Respostas já coletadas bloqueiam a exclusão.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMutation.mutate(r.id)}>
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </Card>
           ))}
