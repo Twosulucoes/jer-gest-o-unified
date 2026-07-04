@@ -156,22 +156,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "athlete_substitutions_participant_in_id_fkey"
-            columns: ["participant_in_id"]
+            foreignKeyName: "athlete_substitutions_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "athlete_substitutions_participant_in_id_fkey"
             columns: ["participant_in_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
-          {
-            foreignKeyName: "athlete_substitutions_participant_out_id_fkey"
-            columns: ["participant_out_id"]
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
@@ -180,8 +173,8 @@ export type Database = {
             foreignKeyName: "athlete_substitutions_participant_out_id_fkey"
             columns: ["participant_out_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "athlete_substitutions_sport_event_id_fkey"
@@ -353,11 +346,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bulletin_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "bulletin_documents_stage_id_fkey"
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletin_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -404,11 +453,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bulletin_generation_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "bulletin_generation_logs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -454,7 +559,351 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "categories_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
+      }
+      cde_attachments: {
+        Row: {
+          case_id: string
+          cde_case_id: string | null
+          created_at: string
+          file_name: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+        }
+        Insert: {
+          case_id: string
+          cde_case_id?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+        }
+        Update: {
+          case_id?: string
+          cde_case_id?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cde_attachments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cde_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cde_case_history: {
+        Row: {
+          action_description: string | null
+          action_label: string
+          action_type: string
+          case_id: string | null
+          cde_case_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+        }
+        Insert: {
+          action_description?: string | null
+          action_label: string
+          action_type: string
+          case_id?: string | null
+          cde_case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+        }
+        Update: {
+          action_description?: string | null
+          action_label?: string
+          action_type?: string
+          case_id?: string | null
+          cde_case_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cde_case_history_cde_case_id_fkey"
+            columns: ["cde_case_id"]
+            isOneToOne: false
+            referencedRelation: "cde_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cde_cases: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          decision_pdf_url: string | null
+          decision_text: string | null
+          escola: string
+          event_id: string | null
+          id: string
+          is_published: boolean
+          jogo_descricao: string | null
+          modalidade: string
+          municipio: string | null
+          naipe: string | null
+          pedido: string | null
+          priority: string
+          professor_email: string
+          professor_nome: string
+          professor_telefone: string | null
+          protocol: string
+          public_token: string
+          published_at: string | null
+          published_by: string | null
+          relato: string
+          stage_id: string | null
+          status: string
+          tipo_recurso: string
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_pdf_url?: string | null
+          decision_text?: string | null
+          escola: string
+          event_id?: string | null
+          id?: string
+          is_published?: boolean
+          jogo_descricao?: string | null
+          modalidade: string
+          municipio?: string | null
+          naipe?: string | null
+          pedido?: string | null
+          priority?: string
+          professor_email: string
+          professor_nome: string
+          professor_telefone?: string | null
+          protocol: string
+          public_token?: string
+          published_at?: string | null
+          published_by?: string | null
+          relato: string
+          stage_id?: string | null
+          status?: string
+          tipo_recurso: string
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_pdf_url?: string | null
+          decision_text?: string | null
+          escola?: string
+          event_id?: string | null
+          id?: string
+          is_published?: boolean
+          jogo_descricao?: string | null
+          modalidade?: string
+          municipio?: string | null
+          naipe?: string | null
+          pedido?: string | null
+          priority?: string
+          professor_email?: string
+          professor_nome?: string
+          professor_telefone?: string | null
+          protocol?: string
+          public_token?: string
+          published_at?: string | null
+          published_by?: string | null
+          relato?: string
+          stage_id?: string | null
+          status?: string
+          tipo_recurso?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cde_decision_signatures: {
+        Row: {
+          case_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          public_token: string
+          signed_at: string
+          signer_document: string | null
+          signer_name: string
+          signer_role: string
+          user_agent: string | null
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          public_token: string
+          signed_at?: string
+          signer_document?: string | null
+          signer_name: string
+          signer_role: string
+          user_agent?: string | null
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          public_token?: string
+          signed_at?: string
+          signer_document?: string | null
+          signer_name?: string
+          signer_role?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cde_decision_signatures_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cde_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cde_logs: {
+        Row: {
+          action: string
+          case_id: string
+          created_at: string
+          description: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          case_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          case_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cde_logs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cde_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cde_notification_logs: {
+        Row: {
+          case_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          sent_at: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          sent_at?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cde_notification_logs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cde_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cde_recursos: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          email: string | null
+          equipe: string | null
+          id: string
+          modalidade: string | null
+          professor: string | null
+          status: string | null
+          telefone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          email?: string | null
+          equipe?: string | null
+          id?: string
+          modalidade?: string | null
+          professor?: string | null
+          status?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          email?: string | null
+          equipe?: string | null
+          id?: string
+          modalidade?: string | null
+          professor?: string | null
+          status?: string | null
+          telefone?: string | null
+        }
+        Relationships: []
       }
       competition_groups: {
         Row: {
@@ -497,6 +946,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_groups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "competition_groups_phase_id_fkey"
@@ -791,11 +1247,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "competition_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "competition_matches_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "competition_matches_group_id_fkey"
@@ -925,6 +1437,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "competition_phases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_phases_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+          {
             foreignKeyName: "competition_phases_sport_event_id_fkey"
             columns: ["sport_event_id"]
             isOneToOne: false
@@ -953,6 +1528,78 @@ export type Database = {
             referencedColumns: ["sport_event_id"]
           },
         ]
+      }
+      crachas_temp: {
+        Row: {
+          arquivo: string | null
+          codigo_credencial: string
+          created_at: string | null
+          funcao_cracha: string | null
+          id: number
+          nome: string
+          pagina: number | null
+        }
+        Insert: {
+          arquivo?: string | null
+          codigo_credencial: string
+          created_at?: string | null
+          funcao_cracha?: string | null
+          id?: number
+          nome: string
+          pagina?: number | null
+        }
+        Update: {
+          arquivo?: string | null
+          codigo_credencial?: string
+          created_at?: string | null
+          funcao_cracha?: string | null
+          id?: number
+          nome?: string
+          pagina?: number | null
+        }
+        Relationships: []
+      }
+      credential_audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          after_state: Json | null
+          before_state: Json | null
+          created_at: string
+          credential_id: string
+          credential_kind: string
+          event_id: string
+          id: string
+          participant_id: string | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          credential_id: string
+          credential_kind: string
+          event_id: string
+          id?: string
+          participant_id?: string | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          after_state?: Json | null
+          before_state?: Json | null
+          created_at?: string
+          credential_id?: string
+          credential_kind?: string
+          event_id?: string
+          id?: string
+          participant_id?: string | null
+          reason?: string | null
+        }
+        Relationships: []
       }
       credential_scans: {
         Row: {
@@ -1003,6 +1650,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "credential_scans_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       credential_templates: {
@@ -1052,6 +1706,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credential_templates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
         ]
       }
@@ -1105,6 +1766,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "db_operation_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "db_operation_logs_user_id_fkey"
@@ -1192,18 +1860,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_delegation_requests_target_participant"
-            columns: ["target_participant_id"]
+            foreignKeyName: "fk_delegation_requests_event"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_delegation_requests_target_participant"
             columns: ["target_participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_delegation_requests_target_sport_event"
@@ -1287,6 +1955,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "delegations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "delegations_institution_id_fkey"
             columns: ["institution_id"]
             isOneToOne: false
@@ -1359,18 +2034,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_disciplinary_cases_complainant"
-            columns: ["complainant_participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
-          {
             foreignKeyName: "fk_disciplinary_cases_event"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_disciplinary_cases_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_disciplinary_cases_incident"
@@ -1406,13 +2081,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_disciplinary_cases_target_participant"
-            columns: ["target_participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
           },
         ]
       }
@@ -1517,6 +2185,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_document_requirements_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       event_branding: {
@@ -1569,6 +2244,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_branding_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
         ]
       }
@@ -1653,6 +2335,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_edition_rules_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       event_osc_configs: {
@@ -1711,6 +2400,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_osc_configs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
         ]
       }
@@ -1828,6 +2524,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_participation_rules_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       event_role_catalog: {
@@ -1918,6 +2621,179 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_rules_audit_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      event_staff_credentials: {
+        Row: {
+          contato: string | null
+          created_at: string | null
+          credential_code: string | null
+          escola: string | null
+          event_id: string | null
+          funcao: string
+          id: string
+          nome: string
+          stage_id: string | null
+          status: string | null
+        }
+        Insert: {
+          contato?: string | null
+          created_at?: string | null
+          credential_code?: string | null
+          escola?: string | null
+          event_id?: string | null
+          funcao: string
+          id?: string
+          nome: string
+          stage_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          contato?: string | null
+          created_at?: string | null
+          credential_code?: string | null
+          escola?: string | null
+          event_id?: string | null
+          funcao?: string
+          id?: string
+          nome?: string
+          stage_id?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      event_stage_sports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          event_stage_id: string
+          id: string
+          is_planned: boolean
+          notes: string | null
+          programa: string
+          source: string
+          sport_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          event_stage_id: string
+          id?: string
+          is_planned?: boolean
+          notes?: string | null
+          programa?: string
+          source?: string
+          sport_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          event_stage_id?: string
+          id?: string
+          is_planned?: boolean
+          notes?: string | null
+          programa?: string
+          source?: string
+          sport_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_stage_sports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_id"]
+          },
+          {
+            foreignKeyName: "event_stage_sports_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_stages: {
@@ -1983,6 +2859,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       events: {
@@ -2032,6 +2915,10 @@ export type Database = {
       }
       external_credentials: {
         Row: {
+          cancel_note: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           created_at: string
           credential_code: string
           event_id: string
@@ -2044,6 +2931,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancel_note?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           credential_code: string
           event_id: string
@@ -2056,6 +2947,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancel_note?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           credential_code?: string
           event_id?: string
@@ -2076,18 +2971,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "external_credentials_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "external_credentials_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "external_credentials_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2220,6 +3115,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "import_aliases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       import_logs: {
@@ -2274,11 +3176,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "import_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "import_logs_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -2370,13 +3328,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "import_pendencias_candidate_person_id_fkey"
-            columns: ["candidate_person_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["person_id"]
-          },
-          {
             foreignKeyName: "import_pendencias_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -2384,11 +3335,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "import_pendencias_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "import_pendencias_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "import_pendencias_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "import_pendencias_import_log_id_fkey"
@@ -2444,7 +3451,56 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "import_row_errors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
+      }
+      importacao_temp: {
+        Row: {
+          cpf: string | null
+          created_at: string | null
+          email: string | null
+          escola: string | null
+          funcao: string | null
+          id: number
+          nascimento: string | null
+          nome: string | null
+          sexo: string | null
+          telefone: string | null
+          tipo_usuario: string | null
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          escola?: string | null
+          funcao?: string | null
+          id?: number
+          nascimento?: string | null
+          nome?: string | null
+          sexo?: string | null
+          telefone?: string | null
+          tipo_usuario?: string | null
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          escola?: string | null
+          funcao?: string | null
+          id?: number
+          nascimento?: string | null
+          nome?: string | null
+          sexo?: string | null
+          telefone?: string | null
+          tipo_usuario?: string | null
+        }
+        Relationships: []
       }
       institutions: {
         Row: {
@@ -2567,6 +3623,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_jerpa_fc_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "fk_jerpa_fc_medical_document"
             columns: ["medical_document_id"]
             isOneToOne: false
@@ -2579,13 +3642,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_jerpa_fc_participant"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "fk_jerpa_fc_previous_document"
@@ -2639,18 +3695,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_jerpa_support_participant"
-            columns: ["participant_id"]
+            foreignKeyName: "fk_jerpa_support_event"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_jerpa_support_participant"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2712,11 +3768,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lodging_audit_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_audit_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "lodging_audit_logs_location_id_fkey"
@@ -2731,13 +3843,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lodging_audit_logs_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "lodging_audit_logs_unit_id_fkey"
@@ -2806,13 +3911,6 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "lodging_incidents_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
         ]
       }
       lodging_locations: {
@@ -2820,7 +3918,7 @@ export type Database = {
           address: string | null
           created_at: string
           event_id: string
-          event_stage_id: string | null
+          event_stage_id: string
           id: string
           is_active: boolean
           name: string
@@ -2833,7 +3931,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           event_id: string
-          event_stage_id?: string | null
+          event_stage_id: string
           id?: string
           is_active?: boolean
           name: string
@@ -2846,7 +3944,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           event_id?: string
-          event_stage_id?: string | null
+          event_stage_id?: string
           id?: string
           is_active?: boolean
           name?: string
@@ -2864,10 +3962,162 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lodging_locations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "lodging_locations_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+        ]
+      }
+      lodging_mattress_inventory: {
+        Row: {
+          created_at: string
+          current_qty: number
+          id: string
+          initial_qty: number
+          location_id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_qty?: number
+          id?: string
+          initial_qty?: number
+          location_id: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_qty?: number
+          id?: string
+          initial_qty?: number
+          location_id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_mattress_inventory_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: true
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lodging_mattress_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          incident_id: string | null
+          kind: string
+          location_id: string
+          notes: string | null
+          occupancy_id: string | null
+          qty: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incident_id?: string | null
+          kind: string
+          location_id: string
+          notes?: string | null
+          occupancy_id?: string | null
+          qty: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incident_id?: string | null
+          kind?: string
+          location_id?: string
+          notes?: string | null
+          occupancy_id?: string | null
+          qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_mattress_movements_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_mattress_movements_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_mattress_movements_occupancy_id_fkey"
+            columns: ["occupancy_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_occupancies"
             referencedColumns: ["id"]
           },
         ]
@@ -2885,7 +4135,7 @@ export type Database = {
           created_at: string
           divergence_notes: string | null
           event_id: string
-          event_stage_id: string | null
+          event_stage_id: string
           id: string
           metadata: Json | null
           notes: string | null
@@ -2906,7 +4156,7 @@ export type Database = {
           created_at?: string
           divergence_notes?: string | null
           event_id: string
-          event_stage_id?: string | null
+          event_stage_id: string
           id?: string
           metadata?: Json | null
           notes?: string | null
@@ -2927,7 +4177,7 @@ export type Database = {
           created_at?: string
           divergence_notes?: string | null
           event_id?: string
-          event_stage_id?: string | null
+          event_stage_id?: string
           id?: string
           metadata?: Json | null
           notes?: string | null
@@ -2959,6 +4209,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lodging_occupancies_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
@@ -2966,18 +4223,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lodging_occupancies_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_occupancies_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "lodging_occupancies_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "lodging_occupancies_unit_id_fkey"
@@ -3031,6 +4330,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lodging_presence_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
@@ -3038,18 +4344,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lodging_presence_logs_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_presence_logs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "lodging_presence_logs_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "lodging_presence_logs_unit_id_fkey"
@@ -3119,11 +4467,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
-            columns: ["event_stage_id"]
+            foreignKeyName: "fk_lodging_supervisions_event"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "event_stages"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_lodging_supervisions_location"
@@ -3140,11 +4488,142 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_lodging_supervisions_responsible"
-            columns: ["responsible_participant_id"]
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_supervisions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+        ]
+      }
+      lodging_unit_swaps: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          executed_at: string | null
+          executed_by: string | null
+          from_unit_id: string
+          id: string
+          notes: string | null
+          occupancy_id: string
+          reason: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          requested_at: string
+          requested_by: string
+          status: string
+          to_unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          executed_at?: string | null
+          executed_by?: string | null
+          from_unit_id: string
+          id?: string
+          notes?: string | null
+          occupancy_id: string
+          reason?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          requested_at?: string
+          requested_by: string
+          status?: string
+          to_unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          executed_at?: string | null
+          executed_by?: string | null
+          from_unit_id?: string
+          id?: string
+          notes?: string | null
+          occupancy_id?: string
+          reason?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          requested_at?: string
+          requested_by?: string
+          status?: string
+          to_unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_unit_swaps_from_unit_id_fkey"
+            columns: ["from_unit_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_unit_swaps_occupancy_id_fkey"
+            columns: ["occupancy_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_occupancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_unit_swaps_to_unit_id_fkey"
+            columns: ["to_unit_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_units"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3154,7 +4633,7 @@ export type Database = {
           capacity: number
           created_at: string
           event_id: string
-          event_stage_id: string | null
+          event_stage_id: string
           floor: string | null
           gender_restriction: string
           gender_zone: string | null
@@ -3168,13 +4647,14 @@ export type Database = {
           seed_batch_id: string | null
           seed_tag: string | null
           updated_at: string
+          wing_id: string | null
         }
         Insert: {
           accessible_features_json?: Json | null
           capacity?: number
           created_at?: string
           event_id: string
-          event_stage_id?: string | null
+          event_stage_id: string
           floor?: string | null
           gender_restriction?: string
           gender_zone?: string | null
@@ -3188,13 +4668,14 @@ export type Database = {
           seed_batch_id?: string | null
           seed_tag?: string | null
           updated_at?: string
+          wing_id?: string | null
         }
         Update: {
           accessible_features_json?: Json | null
           capacity?: number
           created_at?: string
           event_id?: string
-          event_stage_id?: string | null
+          event_stage_id?: string
           floor?: string | null
           gender_restriction?: string
           gender_zone?: string | null
@@ -3208,6 +4689,7 @@ export type Database = {
           seed_batch_id?: string | null
           seed_tag?: string | null
           updated_at?: string
+          wing_id?: string | null
         }
         Relationships: [
           {
@@ -3218,6 +4700,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lodging_units_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "lodging_units_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
@@ -3225,7 +4714,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "lodging_units_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+          {
             foreignKeyName: "lodging_units_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lodging_units_wing_id_fkey"
+            columns: ["wing_id"]
+            isOneToOne: false
+            referencedRelation: "lodging_wings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lodging_wings: {
+        Row: {
+          created_at: string
+          gender_default: string | null
+          id: string
+          location_id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          gender_default?: string | null
+          id?: string
+          location_id: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          gender_default?: string | null
+          id?: string
+          location_id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lodging_wings_location_id_fkey"
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "lodging_locations"
@@ -3356,13 +4939,6 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "match_attempts_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
         ]
       }
       match_discipline: {
@@ -3409,6 +4985,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_discipline_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "match_discipline_match_entry_id_fkey"
@@ -3509,12 +5092,76 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      match_evidences: {
+        Row: {
+          event_id: string
+          evidence_type: string
+          file_name: string | null
+          id: string
+          match_id: string
+          mime_type: string | null
+          notes: string | null
+          storage_bucket: string | null
+          storage_path: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          event_id: string
+          evidence_type: string
+          file_name?: string | null
+          id?: string
+          match_id: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          event_id?: string
+          evidence_type?: string
+          file_name?: string | null
+          id?: string
+          match_id?: string
+          mime_type?: string | null
+          notes?: string | null
+          storage_bucket?: string | null
+          storage_path?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "match_events_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "match_evidences_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_evidences_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "match_evidences_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "competition_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_evidences_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["match_id"]
           },
         ]
       }
@@ -3586,13 +5233,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_lineups_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "match_lineups_team_member_id_fkey"
@@ -3724,13 +5364,6 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "match_penalties_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
         ]
       }
       match_player_stats: {
@@ -3796,13 +5429,6 @@ export type Database = {
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "match_player_stats_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
         ]
       }
       match_scores: {
@@ -3866,63 +5492,6 @@ export type Database = {
           },
         ]
       }
-      match_evidences: {
-        Row: {
-          event_id: string
-          evidence_type: string
-          file_name: string | null
-          id: string
-          match_id: string
-          mime_type: string | null
-          notes: string | null
-          storage_bucket: string | null
-          storage_path: string | null
-          uploaded_at: string
-          uploaded_by: string | null
-        }
-        Insert: {
-          event_id: string
-          evidence_type: string
-          file_name?: string | null
-          id?: string
-          match_id: string
-          mime_type?: string | null
-          notes?: string | null
-          storage_bucket?: string | null
-          storage_path?: string | null
-          uploaded_at?: string
-          uploaded_by?: string | null
-        }
-        Update: {
-          event_id?: string
-          evidence_type?: string
-          file_name?: string | null
-          id?: string
-          match_id?: string
-          mime_type?: string | null
-          notes?: string | null
-          storage_bucket?: string | null
-          storage_path?: string | null
-          uploaded_at?: string
-          uploaded_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "match_evidences_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_evidences_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "competition_matches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       match_user_assignments: {
         Row: {
           acceptance_status: string | null
@@ -3975,11 +5544,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_user_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "match_user_assignments_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "match_user_assignments_match_id_fkey"
@@ -3996,6 +5621,54 @@ export type Database = {
             referencedColumns: ["match_id"]
           },
         ]
+      }
+      meal_audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string | null
+          after_data: Json | null
+          before_data: Json | null
+          consumption_id: string | null
+          created_at: string
+          device_info: Json | null
+          id: string
+          meal_window_id: string | null
+          participant_id: string | null
+          reason: string | null
+          source: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          consumption_id?: string | null
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          meal_window_id?: string | null
+          participant_id?: string | null
+          reason?: string | null
+          source?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          consumption_id?: string | null
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          meal_window_id?: string | null
+          participant_id?: string | null
+          reason?: string | null
+          source?: string | null
+        }
+        Relationships: []
       }
       meal_consumptions: {
         Row: {
@@ -4061,18 +5734,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "meal_consumptions_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["janela_id"]
+          },
+          {
+            foreignKeyName: "meal_consumptions_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["janela_id"]
+          },
+          {
             foreignKeyName: "meal_consumptions_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      meal_consumptions_unlinked: {
+        Row: {
+          consumed_at: string
+          id: string
+          meal_window_id: string
+          method: string
+          qr_code: string
+          registered_by: string | null
+        }
+        Insert: {
+          consumed_at?: string
+          id?: string
+          meal_window_id: string
+          method?: string
+          qr_code: string
+          registered_by?: string | null
+        }
+        Update: {
+          consumed_at?: string
+          id?: string
+          meal_window_id?: string
+          method?: string
+          qr_code?: string
+          registered_by?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "meal_consumptions_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "meal_consumptions_unlinked_meal_window_id_fkey"
+            columns: ["meal_window_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "meal_windows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_consumptions_unlinked_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["janela_id"]
+          },
+          {
+            foreignKeyName: "meal_consumptions_unlinked_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["janela_id"]
           },
         ]
       }
@@ -4116,11 +5845,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "meal_forecast_exports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_forecast_exports_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -4167,18 +5952,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "meal_incidents_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "meal_incidents_meal_window_id_fkey"
+            columns: ["meal_window_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["janela_id"]
+          },
+          {
+            foreignKeyName: "meal_incidents_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["janela_id"]
           },
           {
             foreignKeyName: "meal_incidents_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4223,6 +6015,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_locations_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -4275,11 +6130,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "meal_types_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "meal_types_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_types_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -4318,6 +6229,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meal_windows"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_window_eligibility_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["janela_id"]
+          },
+          {
+            foreignKeyName: "meal_window_eligibility_meal_window_id_fkey"
+            columns: ["meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["janela_id"]
           },
         ]
       }
@@ -4373,11 +6298,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "meal_window_patterns_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_window_patterns_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "meal_window_patterns_meal_type_id_fkey"
@@ -4459,11 +6440,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "meal_windows_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "meal_windows_meal_type_id_fkey"
@@ -4698,6 +6735,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "official_bulletins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "official_bulletins_rectifies_bulletin_id_fkey"
             columns: ["rectifies_bulletin_id"]
             isOneToOne: false
@@ -4710,6 +6754,55 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "official_bulletins_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -4787,6 +6880,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_evidence_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "operational_evidence_match_id_fkey"
@@ -4868,11 +6968,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "operational_incidents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "operational_incidents_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "operational_incidents_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -4921,6 +7077,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "osc_accountability_templates_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       osc_generated_reports: {
@@ -4966,11 +7129,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "osc_generated_reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "osc_generated_reports_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "osc_accountability_templates"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      osc_meta_targets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          event_stage_id: string | null
+          fonte: string | null
+          id: string
+          meta_number: number
+          metric_key: string
+          notes: string | null
+          unidade: string | null
+          updated_at: string
+          updated_by: string | null
+          valor_executado: number | null
+          valor_previsto: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          event_stage_id?: string | null
+          fonte?: string | null
+          id?: string
+          meta_number: number
+          metric_key: string
+          notes?: string | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valor_executado?: number | null
+          valor_previsto?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          event_stage_id?: string | null
+          fonte?: string | null
+          id?: string
+          meta_number?: number
+          metric_key?: string
+          notes?: string | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valor_executado?: number | null
+          valor_previsto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "osc_meta_targets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "osc_meta_targets_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -5022,6 +7314,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "osc_registros_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       participant_credentials: {
@@ -5038,7 +7337,7 @@ export type Database = {
           external_system: string
           function_label: string | null
           id: string
-          is_active: boolean
+          is_active: boolean | null
           issued_at: string | null
           issued_by: string | null
           last_reissue_request_id: number | null
@@ -5048,7 +7347,9 @@ export type Database = {
           qr_code_value: string
           raw_payload: Json | null
           reissued_count: number | null
+          revoke_reason: string | null
           revoked_at: string | null
+          revoked_by: string | null
           revoked_reason: string | null
           status: string
           updated_at: string
@@ -5066,7 +7367,7 @@ export type Database = {
           external_system?: string
           function_label?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           issued_at?: string | null
           issued_by?: string | null
           last_reissue_request_id?: number | null
@@ -5076,7 +7377,9 @@ export type Database = {
           qr_code_value: string
           raw_payload?: Json | null
           reissued_count?: number | null
+          revoke_reason?: string | null
           revoked_at?: string | null
+          revoked_by?: string | null
           revoked_reason?: string | null
           status?: string
           updated_at?: string
@@ -5094,7 +7397,7 @@ export type Database = {
           external_system?: string
           function_label?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           issued_at?: string | null
           issued_by?: string | null
           last_reissue_request_id?: number | null
@@ -5104,7 +7407,9 @@ export type Database = {
           qr_code_value?: string
           raw_payload?: Json | null
           reissued_count?: number | null
+          revoke_reason?: string | null
           revoked_at?: string | null
+          revoked_by?: string | null
           revoked_reason?: string | null
           status?: string
           updated_at?: string
@@ -5118,18 +7423,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "participant_credentials_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "participant_credentials_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "participant_credentials_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5191,18 +7496,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_participant_documents_participant"
-            columns: ["participant_id"]
+            foreignKeyName: "fk_participant_documents_event"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_participant_documents_participant"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5271,18 +7576,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_participant_event_roles_participant"
-            columns: ["participant_id"]
+            foreignKeyName: "fk_participant_event_roles_event"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_participant_event_roles_participant"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_participant_event_roles_request"
@@ -5333,6 +7638,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "participant_event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "participant_event_stages_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
@@ -5340,18 +7652,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "participant_event_stages_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "participant_event_stages_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5407,18 +7761,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_participant_national_eligibility_participant"
-            columns: ["participant_id"]
+            foreignKeyName: "fk_participant_national_eligibility_event"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_participant_national_eligibility_participant"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_participant_national_eligibility_sport_event"
@@ -5522,6 +7876,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "participant_sport_events_cancelled_by_substitution_id_fkey"
+            columns: ["cancelled_by_substitution_id"]
+            isOneToOne: false
+            referencedRelation: "substitutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_created_by_substitution_id_fkey"
+            columns: ["created_by_substitution_id"]
+            isOneToOne: false
+            referencedRelation: "substitutions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "participant_sport_events_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
@@ -5529,18 +7897,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "participant_sport_events_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "participant_sport_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "participant_sport_events_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "participant_sport_events_sport_event_id_fkey"
@@ -5578,17 +7988,20 @@ export type Database = {
           credentialed_at: string | null
           credentialed_by: string | null
           delegation_id: string | null
-          enrollment_class: string
           event_id: string
+          function_name: string | null
           id: string
           is_active: boolean
+          left_event_at: string | null
+          left_event_by: string | null
+          left_event_reason: string | null
           logistics_notes: string | null
           logistics_restrictions: string | null
           needs_lodging: boolean
           needs_meals: boolean
           needs_transport: boolean
           notes: string | null
-          participant_type: string
+          participant_type: Database["public"]["Enums"]["participant_type"]
           person_id: string
           regular_attendance_confirmed: boolean | null
           seed_batch_id: string | null
@@ -5601,17 +8014,20 @@ export type Database = {
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          enrollment_class?: string
           event_id: string
+          function_name?: string | null
           id?: string
           is_active?: boolean
+          left_event_at?: string | null
+          left_event_by?: string | null
+          left_event_reason?: string | null
           logistics_notes?: string | null
           logistics_restrictions?: string | null
           needs_lodging?: boolean
           needs_meals?: boolean
           needs_transport?: boolean
           notes?: string | null
-          participant_type?: string
+          participant_type?: Database["public"]["Enums"]["participant_type"]
           person_id: string
           regular_attendance_confirmed?: boolean | null
           seed_batch_id?: string | null
@@ -5624,17 +8040,20 @@ export type Database = {
           credentialed_at?: string | null
           credentialed_by?: string | null
           delegation_id?: string | null
-          enrollment_class?: string
           event_id?: string
+          function_name?: string | null
           id?: string
           is_active?: boolean
+          left_event_at?: string | null
+          left_event_by?: string | null
+          left_event_reason?: string | null
           logistics_notes?: string | null
           logistics_restrictions?: string | null
           needs_lodging?: boolean
           needs_meals?: boolean
           needs_transport?: boolean
           notes?: string | null
-          participant_type?: string
+          participant_type?: Database["public"]["Enums"]["participant_type"]
           person_id?: string
           regular_attendance_confirmed?: boolean | null
           seed_batch_id?: string | null
@@ -5658,18 +8077,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "participants_person_id_fkey"
-            columns: ["person_id"]
+            foreignKeyName: "participants_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "people"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "participants_person_id_fkey"
             columns: ["person_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["person_id"]
+            referencedRelation: "people"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5725,18 +8144,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "participation_irregularities_participant_id_fkey"
-            columns: ["participant_id"]
+            foreignKeyName: "participation_irregularities_event_id_fkey"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "participation_irregularities_participant_id_fkey"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5922,6 +8341,55 @@ export type Database = {
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pesquisa_events_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
         ]
       }
       pesquisa_login_attempts: {
@@ -6056,91 +8524,43 @@ export type Database = {
       }
       pesquisa_surveys: {
         Row: {
+          answers: Json
           application_location: string | null
           client_uuid: string
           collected_at: string
           created_at: string
           created_by: string | null
-          d1_alimentacao: number
-          d1_infraestrutura: number
-          d1_organizacao: number
-          d1_seguranca: number
-          d1_transporte: number
-          d2_acessibilidade: number
-          d2_igualdade: number
-          d2_inclusao: number
-          d3_aprendizado: number
-          d3_cidadania: number
-          d3_convivencia: number
-          d3_superacao: number
           device_id: string | null
           event_id: string
           id: string
           mode: string
-          ponto_positivo: string | null
           researcher_id: string
-          respondent_age: string
-          respondent_gender: string
-          respondent_type: string
-          sugestao: string | null
         }
         Insert: {
+          answers?: Json
           application_location?: string | null
           client_uuid: string
           collected_at?: string
           created_at?: string
           created_by?: string | null
-          d1_alimentacao: number
-          d1_infraestrutura: number
-          d1_organizacao: number
-          d1_seguranca: number
-          d1_transporte: number
-          d2_acessibilidade: number
-          d2_igualdade: number
-          d2_inclusao: number
-          d3_aprendizado: number
-          d3_cidadania: number
-          d3_convivencia: number
-          d3_superacao: number
           device_id?: string | null
           event_id: string
           id?: string
           mode: string
-          ponto_positivo?: string | null
           researcher_id: string
-          respondent_age: string
-          respondent_gender: string
-          respondent_type: string
-          sugestao?: string | null
         }
         Update: {
+          answers?: Json
           application_location?: string | null
           client_uuid?: string
           collected_at?: string
           created_at?: string
           created_by?: string | null
-          d1_alimentacao?: number
-          d1_infraestrutura?: number
-          d1_organizacao?: number
-          d1_seguranca?: number
-          d1_transporte?: number
-          d2_acessibilidade?: number
-          d2_igualdade?: number
-          d2_inclusao?: number
-          d3_aprendizado?: number
-          d3_cidadania?: number
-          d3_convivencia?: number
-          d3_superacao?: number
           device_id?: string | null
           event_id?: string
           id?: string
           mode?: string
-          ponto_positivo?: string | null
           researcher_id?: string
-          respondent_age?: string
-          respondent_gender?: string
-          respondent_type?: string
-          sugestao?: string | null
         }
         Relationships: [
           {
@@ -6209,6 +8629,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_phase_qualification_rules_event"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_phase_qualification_rules_phase"
@@ -6455,6 +8882,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "protests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "protests_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: false
@@ -6538,6 +8972,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prova_aliases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "prova_aliases_sport_id_fkey"
             columns: ["sport_id"]
             isOneToOne: false
@@ -6600,6 +9041,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prova_catalog_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "prova_catalog_sport_id_fkey"
@@ -6765,11 +9213,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pwa_telemetry_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "pwa_telemetry_stage_id_fkey"
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "pwa_telemetry_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -6947,6 +9451,55 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "referee_remuneration_configs_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+          {
             foreignKeyName: "referee_remuneration_configs_sport_id_fkey"
             columns: ["sport_id"]
             isOneToOne: false
@@ -6994,6 +9547,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_mode_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
         ]
       }
@@ -7075,7 +9635,38 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "report_presets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
+      }
+      rpc_idempotency_log: {
+        Row: {
+          actor_user_id: string | null
+          created_at: string
+          idempotency_key: string
+          params_summary: Json | null
+          rpc_name: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          created_at?: string
+          idempotency_key: string
+          params_summary?: Json | null
+          rpc_name: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          created_at?: string
+          idempotency_key?: string
+          params_summary?: Json | null
+          rpc_name?: string
+        }
+        Relationships: []
       }
       service_eventual_people: {
         Row: {
@@ -7122,6 +9713,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "service_eventual_people_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       service_voucher_attempts: {
@@ -7130,6 +9728,7 @@ export type Database = {
           attempted_by: string | null
           context_id: string | null
           event_id: string | null
+          event_stage_id: string | null
           id: string
           is_offline: boolean | null
           metadata: Json | null
@@ -7145,6 +9744,7 @@ export type Database = {
           attempted_by?: string | null
           context_id?: string | null
           event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           is_offline?: boolean | null
           metadata?: Json | null
@@ -7160,6 +9760,7 @@ export type Database = {
           attempted_by?: string | null
           context_id?: string | null
           event_id?: string | null
+          event_stage_id?: string | null
           id?: string
           is_offline?: boolean | null
           metadata?: Json | null
@@ -7177,6 +9778,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_attempts_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "service_voucher_attempts_voucher_id_fkey"
@@ -7225,6 +9889,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           event_id: string
+          event_stage_id: string | null
           id: string
           label: string | null
           quantity: number
@@ -7239,6 +9904,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_id: string
+          event_stage_id?: string | null
           id?: string
           label?: string | null
           quantity?: number
@@ -7253,6 +9919,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           event_id?: string
+          event_stage_id?: string | null
           id?: string
           label?: string | null
           quantity?: number
@@ -7272,6 +9939,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_voucher_batches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+          {
             foreignKeyName: "service_voucher_batches_target_facility_id_fkey"
             columns: ["target_facility_id"]
             isOneToOne: false
@@ -7284,6 +10014,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meal_windows"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_target_meal_window_id_fkey"
+            columns: ["target_meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["janela_id"]
+          },
+          {
+            foreignKeyName: "service_voucher_batches_target_meal_window_id_fkey"
+            columns: ["target_meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["janela_id"]
           },
           {
             foreignKeyName: "service_voucher_batches_target_trip_id_fkey"
@@ -7451,6 +10195,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "service_vouchers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+          {
             foreignKeyName: "service_vouchers_eventual_person_id_fkey"
             columns: ["eventual_person_id"]
             isOneToOne: false
@@ -7463,13 +10270,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "participants"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_vouchers_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
           },
           {
             foreignKeyName: "service_vouchers_replaces_voucher_id_fkey"
@@ -7491,6 +10291,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "meal_windows"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_target_meal_window_id_fkey"
+            columns: ["target_meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["janela_id"]
+          },
+          {
+            foreignKeyName: "service_vouchers_target_meal_window_id_fkey"
+            columns: ["target_meal_window_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["janela_id"]
           },
           {
             foreignKeyName: "service_vouchers_target_trip_id_fkey"
@@ -7542,6 +10356,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_event_prova_map_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "sport_event_prova_map_sport_event_id_fkey"
@@ -7705,6 +10526,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sport_event_rules_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "sport_event_rules_sport_event_id_fkey"
             columns: ["sport_event_id"]
             isOneToOne: true
@@ -7782,6 +10610,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "sport_events_sport_id_fkey"
@@ -7885,6 +10720,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       state_selection_callups: {
@@ -7936,18 +10778,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_state_selection_callups_participant"
-            columns: ["participant_id"]
+            foreignKeyName: "fk_state_selection_callups_event"
+            columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "participants"
-            referencedColumns: ["id"]
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "fk_state_selection_callups_participant"
             columns: ["participant_id"]
             isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_state_selection_callups_sport_event"
@@ -7979,76 +10821,153 @@ export type Database = {
           },
         ]
       }
+      substitution_documents: {
+        Row: {
+          created_at: string | null
+          document_type: string
+          file_url: string | null
+          id: string
+          status: string | null
+          storage_path: string
+          substitution_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_type: string
+          file_url?: string | null
+          id?: string
+          status?: string | null
+          storage_path: string
+          substitution_id: string
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string
+          file_url?: string | null
+          id?: string
+          status?: string | null
+          storage_path?: string
+          substitution_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "substitution_documents_substitution_id_fkey"
+            columns: ["substitution_id"]
+            isOneToOne: false
+            referencedRelation: "substitutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       substitutions: {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          athlete_in_name_text: string | null
+          athlete_out_name_text: string | null
+          category_text: string | null
+          contact_email: string | null
           created_at: string
-          delegation_id: string
+          delegation_id: string | null
           event_id: string
-          event_stage_id: string
+          event_stage_id: string | null
           executed_at: string | null
           executed_by: string | null
+          gender_text: string | null
           id: string
+          modality_name_text: string | null
+          modality_type_text: string | null
+          municipio_text: string | null
           notes: string | null
-          participant_in_id: string
-          participant_out_id: string
+          participant_in_id: string | null
+          participant_out_id: string | null
+          proof_name_text: string | null
+          protocol_number: string | null
           reason: string | null
           reason_code: string | null
           rejected_at: string | null
           rejected_by: string | null
           rejection_notes: string | null
           requested_at: string
-          requested_by: string
-          sport_event_id: string
+          requested_by: string | null
+          requester_name: string | null
+          requester_phone: string | null
+          school_name_text: string | null
+          sport_event_id: string | null
           status: Database["public"]["Enums"]["substitution_status"]
           updated_at: string
         }
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          athlete_in_name_text?: string | null
+          athlete_out_name_text?: string | null
+          category_text?: string | null
+          contact_email?: string | null
           created_at?: string
-          delegation_id: string
+          delegation_id?: string | null
           event_id: string
-          event_stage_id: string
+          event_stage_id?: string | null
           executed_at?: string | null
           executed_by?: string | null
+          gender_text?: string | null
           id?: string
+          modality_name_text?: string | null
+          modality_type_text?: string | null
+          municipio_text?: string | null
           notes?: string | null
-          participant_in_id: string
-          participant_out_id: string
+          participant_in_id?: string | null
+          participant_out_id?: string | null
+          proof_name_text?: string | null
+          protocol_number?: string | null
           reason?: string | null
           reason_code?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_notes?: string | null
           requested_at?: string
-          requested_by: string
-          sport_event_id: string
+          requested_by?: string | null
+          requester_name?: string | null
+          requester_phone?: string | null
+          school_name_text?: string | null
+          sport_event_id?: string | null
           status?: Database["public"]["Enums"]["substitution_status"]
           updated_at?: string
         }
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          athlete_in_name_text?: string | null
+          athlete_out_name_text?: string | null
+          category_text?: string | null
+          contact_email?: string | null
           created_at?: string
-          delegation_id?: string
+          delegation_id?: string | null
           event_id?: string
-          event_stage_id?: string
+          event_stage_id?: string | null
           executed_at?: string | null
           executed_by?: string | null
+          gender_text?: string | null
           id?: string
+          modality_name_text?: string | null
+          modality_type_text?: string | null
+          municipio_text?: string | null
           notes?: string | null
-          participant_in_id?: string
-          participant_out_id?: string
+          participant_in_id?: string | null
+          participant_out_id?: string | null
+          proof_name_text?: string | null
+          protocol_number?: string | null
           reason?: string | null
           reason_code?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejection_notes?: string | null
           requested_at?: string
-          requested_by?: string
-          sport_event_id?: string
+          requested_by?: string | null
+          requester_name?: string | null
+          requester_phone?: string | null
+          school_name_text?: string | null
+          sport_event_id?: string | null
           status?: Database["public"]["Enums"]["substitution_status"]
           updated_at?: string
         }
@@ -8068,11 +10987,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "substitutions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "substitutions_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "substitutions_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "substitutions_participant_in_id_fkey"
@@ -8092,8 +11067,29 @@ export type Database = {
             foreignKeyName: "substitutions_sport_event_id_fkey"
             columns: ["sport_event_id"]
             isOneToOne: false
+            referencedRelation: "public_results_view"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
             referencedRelation: "sport_events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
+          },
+          {
+            foreignKeyName: "substitutions_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_stage_sport_event_summary"
+            referencedColumns: ["sport_event_id"]
           },
         ]
       }
@@ -8201,6 +11197,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "support_tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
       }
       system_config: {
@@ -8288,13 +11291,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "team_members_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
-          {
             foreignKeyName: "team_members_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -8378,6 +11374,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "teams_sport_event_id_fkey"
@@ -8473,13 +11476,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transport_passengers_participant_id_fkey"
-            columns: ["participant_id"]
-            isOneToOne: false
-            referencedRelation: "vw_person_logistics_consumption"
-            referencedColumns: ["participant_id"]
-          },
-          {
             foreignKeyName: "transport_passengers_trip_id_fkey"
             columns: ["trip_id"]
             isOneToOne: false
@@ -8540,11 +11536,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transport_routes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "transport_routes_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_routes_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -8627,11 +11679,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transport_trips_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "transport_trips_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_trips_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "transport_trips_route_id_fkey"
@@ -8701,11 +11809,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transport_vehicles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "transport_vehicles_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "transport_vehicles_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -8831,6 +11995,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_sport_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "user_sport_links_sport_id_fkey"
             columns: ["sport_id"]
             isOneToOne: false
@@ -8885,6 +12056,55 @@ export type Database = {
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "user_stage_assignments_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
         ]
       }
       venue_event_stages: {
@@ -8916,6 +12136,55 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venue_event_stages_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
           {
             foreignKeyName: "venue_event_stages_venue_id_fkey"
@@ -8991,11 +12260,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "venues_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "venues_event_stage_id_fkey"
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "venues_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -9041,7 +12366,53 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "competition_matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
         ]
+      }
+      v_credenciamento_externo: {
+        Row: {
+          credential_code: string | null
+          documento: string | null
+          escola: string | null
+          event_id: string | null
+          id: string | null
+          nome: string | null
+          origem: string | null
+          stage_id: string | null
+          status: string | null
+          tipo: string | null
+        }
+        Insert: {
+          credential_code?: string | null
+          documento?: string | null
+          escola?: string | null
+          event_id?: string | null
+          id?: string | null
+          nome?: string | null
+          origem?: never
+          stage_id?: string | null
+          status?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          credential_code?: string | null
+          documento?: string | null
+          escola?: string | null
+          event_id?: string | null
+          id?: string | null
+          nome?: string | null
+          origem?: never
+          stage_id?: string | null
+          status?: string | null
+          tipo?: string | null
+        }
+        Relationships: []
       }
       v_venue_dependencies: {
         Row: {
@@ -9058,6 +12429,528 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venues_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      vw_consumo_completo: {
+        Row: {
+          consumed_at: string | null
+          created_at: string | null
+          device_info: Json | null
+          duplicidade_detectada: boolean | null
+          etapa_id: string | null
+          etapa_nome: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          id: string | null
+          janela_data: string | null
+          janela_fim: string | null
+          janela_inicio: string | null
+          janela_nome: string | null
+          method: string | null
+          notes: string | null
+          origem: string | null
+          participante_cpf: string | null
+          participante_id: string | null
+          participante_nome: string | null
+          refeicao_tipo: string | null
+          registrado_por_id: string | null
+          registrado_por_nome: string | null
+          sync_at: string | null
+          sync_delay_segundos: number | null
+          sync_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_consumptions_participant_id_fkey"
+            columns: ["participante_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+        ]
+      }
+      vw_consumo_por_dia: {
+        Row: {
+          data: string | null
+          etapa_id: string | null
+          etapa_nome: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          participantes_distintos: number | null
+          total_consumos: number | null
+          total_duplicidade: number | null
+          total_queue: number | null
+          total_realtime: number | null
+          usuarios_distintos: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+        ]
+      }
+      vw_consumo_por_etapa: {
+        Row: {
+          data_fim: string | null
+          data_inicio: string | null
+          etapa_id: string | null
+          etapa_nome: string | null
+          event_id: string | null
+          media_por_dia: number | null
+          taxa_erro_percent: number | null
+          total_erros: number | null
+          total_participantes_distintos: number | null
+          total_queue: number | null
+          total_realtime: number | null
+          total_refeicoes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      vw_consumo_por_janela: {
+        Row: {
+          data: string | null
+          etapa_id: string | null
+          etapa_nome: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          janela_id: string | null
+          janela_nome: string | null
+          primeiro_consumo: string | null
+          refeicao_tipo: string | null
+          total_consumos: number | null
+          total_duplicidade: number | null
+          total_queue: number | null
+          total_realtime: number | null
+          ultimo_consumo: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+        ]
+      }
+      vw_consumo_por_operador: {
+        Row: {
+          data: string | null
+          etapa_id: string | null
+          etapa_nome: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          janela_id: string | null
+          janela_nome: string | null
+          media_intervalo_segundos: number | null
+          operador_id: string | null
+          operador_nome: string | null
+          primeiro_scan: string | null
+          total_manual: number | null
+          total_registrado: number | null
+          total_scan_qr: number | null
+          total_voucher: number | null
+          ultimo_scan: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+        ]
+      }
+      vw_erros_sync: {
+        Row: {
+          consumed_at: string | null
+          created_at: string | null
+          device_info: Json | null
+          duplicidade_detectada: boolean | null
+          etapa_id: string | null
+          etapa_nome: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          id: string | null
+          is_offline: boolean | null
+          janela_data: string | null
+          janela_nome: string | null
+          method: string | null
+          notes: string | null
+          participant_id: string | null
+          participante_nome: string | null
+          registrado_por_id: string | null
+          registrado_por_nome: string | null
+          sync_at: string | null
+          sync_delay_segundos: number | null
+          sync_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_consumptions_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "meal_windows_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
           },
         ]
       }
@@ -9085,11 +12978,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "competition_matches_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+          {
             foreignKeyName: "match_user_assignments_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_user_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "match_user_assignments_match_id_fkey"
@@ -9136,6 +13085,96 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_osc_meta1_por_etapa: {
+        Row: {
+          atletas_alojados: number | null
+          delegacoes_atendidas: number | null
+          ends_at: string | null
+          event_id: string | null
+          event_stage_id: string | null
+          host_city: string | null
+          kind: string | null
+          kits_entregues: number | null
+          refeicoes_fornecidas: number | null
+          sort_order: number | null
+          stage_code: string | null
+          stage_name: string | null
+          starts_at: string | null
+        }
+        Insert: {
+          atletas_alojados?: never
+          delegacoes_atendidas?: never
+          ends_at?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
+          host_city?: never
+          kind?: string | null
+          kits_entregues?: never
+          refeicoes_fornecidas?: never
+          sort_order?: number | null
+          stage_code?: string | null
+          stage_name?: string | null
+          starts_at?: string | null
+        }
+        Update: {
+          atletas_alojados?: never
+          delegacoes_atendidas?: never
+          ends_at?: string | null
+          event_id?: string | null
+          event_stage_id?: string | null
+          host_city?: never
+          kind?: string | null
+          kits_entregues?: never
+          refeicoes_fornecidas?: never
+          sort_order?: number | null
+          stage_code?: string | null
+          stage_name?: string | null
+          starts_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_stages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      vw_osc_meta2_competicoes: {
+        Row: {
+          arbitros: number | null
+          etapas: number | null
+          event_id: string | null
+          jogos_provas: number | null
+          modalidades_paralimpicas: number | null
+          modalidades_realizadas: number | null
+        }
+        Insert: {
+          arbitros?: never
+          etapas?: never
+          event_id?: string | null
+          jogos_provas?: never
+          modalidades_paralimpicas?: never
+          modalidades_realizadas?: never
+        }
+        Update: {
+          arbitros?: never
+          etapas?: never
+          event_id?: string | null
+          jogos_provas?: never
+          modalidades_paralimpicas?: never
+          modalidades_realizadas?: never
+        }
+        Relationships: []
+      }
       vw_participant_sport_history: {
         Row: {
           aggregated_stats_json: Json | null
@@ -9177,41 +13216,6 @@ export type Database = {
         }
         Relationships: []
       }
-      vw_person_logistics_consumption: {
-        Row: {
-          cpf: string | null
-          delegation_id: string | null
-          delegation_name: string | null
-          event_id: string | null
-          full_name: string | null
-          lodging_nights: number | null
-          meals_consumed: number | null
-          needs_lodging: boolean | null
-          needs_meals: boolean | null
-          needs_transport: boolean | null
-          participant_id: string | null
-          participant_type: string | null
-          person_id: string | null
-          transport_boardings: number | null
-          voucher_uses_total: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "participants_delegation_id_fkey"
-            columns: ["delegation_id"]
-            isOneToOne: false
-            referencedRelation: "delegations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "participants_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       vw_sport_event_summary: {
         Row: {
           category_id: string | null
@@ -9248,6 +13252,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
           },
           {
             foreignKeyName: "sport_events_sport_id_fkey"
@@ -9304,6 +13315,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sport_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
             foreignKeyName: "sport_events_sport_id_fkey"
             columns: ["sport_id"]
             isOneToOne: false
@@ -9353,6 +13371,18 @@ export type Database = {
       }
       bot_get_full_context: { Args: { phone_number: string }; Returns: Json }
       bot_lookup_participant: { Args: { phone_number: string }; Returns: Json }
+      can_credenciar: { Args: { _user_id: string }; Returns: boolean }
+      cancel_external_credential: {
+        Args: {
+          p_cred_id: string
+          p_event_id: string
+          p_note?: string
+          p_participant_id: string
+          p_reason?: string
+          p_user_id?: string
+        }
+        Returns: undefined
+      }
       check_is_admin_or_secretaria: {
         Args: { _user_id: string }
         Returns: boolean
@@ -9416,6 +13446,7 @@ export type Database = {
         }[]
       }
       generate_public_token: { Args: never; Returns: string }
+      get_actor_primary_role: { Args: { p_user: string }; Returns: string }
       get_alimentacao_duplicates: { Args: never; Returns: Json }
       get_alojamento_duplicates: {
         Args: { p_facility_id: string }
@@ -9425,7 +13456,12 @@ export type Database = {
         Args: { p_facility_id: string; p_status?: string }
         Returns: Json
       }
-      get_alojamento_kpis: { Args: { p_facility_id: string }; Returns: Json }
+      get_alojamento_kpis:
+        | { Args: { p_facility_id: string }; Returns: Json }
+        | {
+            Args: { p_event_stage_id?: string; p_facility_id: string }
+            Returns: Json
+          }
       get_alojamento_ocupacao: {
         Args: { p_facility_id: string }
         Returns: Json
@@ -9447,6 +13483,10 @@ export type Database = {
       get_next_bulletin_number: {
         Args: { p_event_id: string; p_stage_id: string; p_type: string }
         Returns: string
+      }
+      get_osc_execucao_fisica: {
+        Args: { p_date_from?: string; p_date_to?: string; p_event_id: string }
+        Returns: Json
       }
       get_participant_counts_by_delegation: {
         Args: { p_event_id: string; p_stage_id?: string }
@@ -9516,6 +13556,39 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_present_participant_counts_by_delegation: {
+        Args: {
+          p_event_id: string
+          p_service_date: string
+          p_stage_id?: string
+        }
+        Returns: {
+          count: number
+          id: string
+        }[]
+      }
+      get_present_participant_counts_by_institution: {
+        Args: {
+          p_event_id: string
+          p_service_date: string
+          p_stage_id?: string
+        }
+        Returns: {
+          count: number
+          id: string
+        }[]
+      }
+      get_present_participant_counts_by_profile: {
+        Args: {
+          p_event_id: string
+          p_service_date: string
+          p_stage_id?: string
+        }
+        Returns: {
+          count: number
+          type: string
+        }[]
+      }
       get_unhandled_referee_indisponibilities: {
         Args: { p_etapa_id: string }
         Returns: {
@@ -9546,6 +13619,44 @@ export type Database = {
         }
         Returns: undefined
       }
+      issue_voucher_batch_v1: {
+        Args: {
+          p_event_id: string
+          p_event_stage_id: string
+          p_instance_id: string
+          p_label: string
+          p_qr_codes: string[]
+          p_quantity: number
+          p_service_type: string
+          p_target_date: string
+        }
+        Returns: Json
+      }
+      issue_voucher_v1: {
+        Args: {
+          p_event_id: string
+          p_event_stage_id: string
+          p_eventual_person_id: string
+          p_instance_id: string
+          p_is_nominal: boolean
+          p_label: string
+          p_qr_code: string
+          p_service_type: string
+          p_target_date: string
+        }
+        Returns: Json
+      }
+      link_external_credential: {
+        Args: {
+          p_credential_code: string
+          p_event_id: string
+          p_is_internal_mode?: boolean
+          p_participant_id: string
+          p_replace_id?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       list_alojamento_facilities: { Args: never; Returns: Json }
       list_blocked_participants: {
         Args: { p_event_id: string }
@@ -9553,7 +13664,24 @@ export type Database = {
           participant_id: string
         }[]
       }
+      log_access_error: {
+        Args: {
+          p_action: string
+          p_error_code?: string
+          p_error_msg?: string
+          p_metadata?: Json
+          p_resource: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       maintain_system_logs: { Args: never; Returns: Json }
+      mark_expired_vouchers: {
+        Args: never
+        Returns: {
+          expired_count: number
+        }[]
+      }
       merge_people: {
         Args: { p_drop_id: string; p_keep_id: string }
         Returns: Json
@@ -9576,7 +13704,7 @@ export type Database = {
         Returns: Json
       }
       pesquisa_revoke_session: {
-        Args: { p_session_id: string; p_device_id?: string }
+        Args: { p_device_id?: string; p_session_id: string }
         Returns: undefined
       }
       pesquisa_touch_session: {
@@ -9608,16 +13736,28 @@ export type Database = {
         Args: { p_device_id: string; p_facility_id: string; p_token: string }
         Returns: Json
       }
-      pwa_lodging_checkin: {
-        Args: {
-          p_device_id: string
-          p_location_id: string
-          p_mode?: string
-          p_token: string
-          p_unit_id?: string
-        }
-        Returns: Json
-      }
+      pwa_lodging_checkin:
+        | {
+            Args: {
+              p_device_id: string
+              p_location_id: string
+              p_mode?: string
+              p_token: string
+              p_unit_id?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_device_id: string
+              p_force?: boolean
+              p_location_id: string
+              p_mode?: string
+              p_token: string
+              p_unit_id?: string
+            }
+            Returns: Json
+          }
       pwa_lodging_checkout: {
         Args: { p_device_id: string; p_location_id: string; p_token: string }
         Returns: Json
@@ -9649,6 +13789,15 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      record_meal_consumption: {
+        Args: {
+          p_meal_window_id: string
+          p_method?: string
+          p_participant_id: string
+          p_registered_by?: string
+        }
+        Returns: Json
+      }
       record_meal_incident: {
         Args: {
           p_device_info?: Json
@@ -9674,6 +13823,10 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      reissue_voucher_v1: {
+        Args: { p_new_qr: string; p_reason: string; p_voucher_id: string }
+        Returns: Json
+      }
       reset_all_data: { Args: { p_confirm?: string }; Returns: Json }
       reset_demo: { Args: { p_event_id: string }; Returns: Json }
       resolve_import_alias: {
@@ -9685,6 +13838,25 @@ export type Database = {
         Returns: Json
       }
       resolve_qr: { Args: { p_token: string }; Returns: Json }
+      restore_meal_consumption: {
+        Args: { p_consumption_id: string }
+        Returns: Json
+      }
+      reverse_meal_consumption: {
+        Args: {
+          p_consumption_id: string
+          p_reason: Database["public"]["Enums"]["meal_consumption_reverse_reason"]
+        }
+        Returns: Json
+      }
+      revoke_voucher_batch_v1: {
+        Args: { p_batch_id: string; p_reason: string }
+        Returns: Json
+      }
+      revoke_voucher_v1: {
+        Args: { p_reason: string; p_voucher_id: string }
+        Returns: Json
+      }
       rpc_allocate_lodging_batch: {
         Args: {
           p_allocated_by?: string
@@ -9694,6 +13866,7 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_approve_lodging_swap: { Args: { p_swap_id: string }; Returns: Json }
       rpc_archive_venue: {
         Args: { p_force?: boolean; p_reason?: string; p_venue_id: string }
         Returns: Json
@@ -9921,7 +14094,28 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_register_mattress_loss: {
+        Args: {
+          p_description: string
+          p_location_id: string
+          p_qty: number
+          p_severity?: string
+        }
+        Returns: Json
+      }
+      rpc_register_mattress_restock: {
+        Args: { p_location_id: string; p_notes?: string; p_qty: number }
+        Returns: Json
+      }
       rpc_reprocess_event: { Args: { p_event_id: string }; Returns: Json }
+      rpc_request_lodging_swap: {
+        Args: {
+          p_occupancy_id: string
+          p_reason?: string
+          p_to_unit_id: string
+        }
+        Returns: Json
+      }
       rpc_reset_import_data: {
         Args: { p_event_id: string; p_force?: boolean; p_stage_id?: string }
         Returns: Json
@@ -9933,6 +14127,10 @@ export type Database = {
       rpc_restore_venue: { Args: { p_venue_id: string }; Returns: Json }
       rpc_seed_sport_event_rules_for_event: {
         Args: { p_dry_run?: boolean; p_event_id: string; p_mode?: string }
+        Returns: Json
+      }
+      rpc_set_mattress_initial: {
+        Args: { p_initial_qty: number; p_location_id: string; p_notes?: string }
         Returns: Json
       }
       rpc_substitute_athlete: {
@@ -10011,6 +14209,111 @@ export type Database = {
         Args: { p_event_id: string; p_source_stage_slug?: string }
         Returns: Json
       }
+      set_osc_meta_target: {
+        Args: {
+          p_event_id: string
+          p_event_stage_id?: string
+          p_meta_number: number
+          p_metric_key: string
+          p_unidade?: string
+          p_valor_previsto: number
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          event_stage_id: string | null
+          fonte: string | null
+          id: string
+          meta_number: number
+          metric_key: string
+          notes: string | null
+          unidade: string | null
+          updated_at: string
+          updated_by: string | null
+          valor_executado: number | null
+          valor_previsto: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "osc_meta_targets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      substituicao_buscar_atletas_entrando: {
+        Args: {
+          p_delegation_id: string
+          p_event_id: string
+          p_sport_event_id: string
+          p_stage_id: string
+        }
+        Returns: {
+          full_name: string
+          participant_id: string
+        }[]
+      }
+      substituicao_buscar_atletas_saindo: {
+        Args: {
+          p_delegation_id: string
+          p_sport_event_id: string
+          p_stage_id: string
+        }
+        Returns: {
+          full_name: string
+          participant_id: string
+        }[]
+      }
+      substituicao_buscar_delegacao: {
+        Args: { p_event_id: string; p_phone_suffix: string }
+        Returns: {
+          chief_name: string
+          city: string
+          delegation_id: string
+          institution_name: string
+        }[]
+      }
+      substituicao_buscar_delegacao_por_nome: {
+        Args: { p_event_id: string; p_school_name: string; p_stage_id: string }
+        Returns: {
+          chief_name: string
+          city: string
+          delegation_id: string
+          institution_name: string
+        }[]
+      }
+      substituicao_buscar_delegacoes_etapa: {
+        Args: { p_event_id: string; p_stage_id: string }
+        Returns: {
+          chief_name: string
+          city: string
+          delegation_id: string
+          institution_name: string
+        }[]
+      }
+      substituicao_buscar_etapas: {
+        Args: { p_event_id: string }
+        Returns: {
+          stage_id: string
+          stage_name: string
+        }[]
+      }
+      substituicao_buscar_eventos: {
+        Args: never
+        Returns: {
+          event_id: string
+          event_name: string
+        }[]
+      }
+      substituicao_buscar_provas: {
+        Args: { p_event_id: string; p_stage_id: string }
+        Returns: {
+          category_name: string
+          sport_event_id: string
+          sport_event_name: string
+          sport_name: string
+        }[]
+      }
       unaccent: { Args: { "": string }; Returns: string }
       upsert_event_participation_rules: {
         Args: {
@@ -10051,6 +14354,12 @@ export type Database = {
         | "resultado_lancado"
         | "resultado_validado"
         | "publicado"
+      meal_consumption_reverse_reason:
+        | "duplicidade"
+        | "participante_errado"
+        | "janela_errada"
+        | "lancamento_acidental"
+        | "incidente_operacional"
       meal_incident_type:
         | "NOT_ELIGIBLE"
         | "OUTSIDE_WINDOW"
@@ -10064,7 +14373,6 @@ export type Database = {
         | "PARTICIPANT_INACTIVE"
         | "NEEDS_MEALS_FALSE"
         | "LEFT_EVENT"
-      participant_category: "delegation" | "organization"
       participant_type:
         | "athlete"
         | "coach"
@@ -10240,6 +14548,13 @@ export const Constants = {
         "resultado_validado",
         "publicado",
       ],
+      meal_consumption_reverse_reason: [
+        "duplicidade",
+        "participante_errado",
+        "janela_errada",
+        "lancamento_acidental",
+        "incidente_operacional",
+      ],
       meal_incident_type: [
         "NOT_ELIGIBLE",
         "OUTSIDE_WINDOW",
@@ -10254,7 +14569,6 @@ export const Constants = {
         "NEEDS_MEALS_FALSE",
         "LEFT_EVENT",
       ],
-      participant_category: ["delegation", "organization"],
       participant_type: [
         "athlete",
         "coach",
