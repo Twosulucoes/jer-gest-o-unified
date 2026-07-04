@@ -7,29 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, MessageSquare } from 'lucide-react';
+import { Download, FileText, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
-import {
-  coerceConfig, isConfigV2, type PesquisaConfig, type PesquisaQuestion, type Answers, type AnswerValue,
-} from '@/lib/pesquisa/config';
-
-type SurveyRow = {
-  id: string; client_uuid: string; researcher_id: string; event_id: string;
-  mode: string | null; collected_at: string; application_location: string | null; answers: Answers;
-  pesquisa_researchers?: { name?: string } | null;
-  pesquisa_events?: { name?: string; location?: string | null } | null;
-};
-
-// Estatística agregada de uma pergunta.
-type QStat =
-  | { key: string; label: string; type: 'scale'; avg: number; count: number }
-  | { key: string; label: string; type: 'choice'; dist: { label: string; count: number }[]; count: number }
-  | { key: string; label: string; type: 'boolean'; yes: number; no: number; count: number }
-  | { key: string; label: string; type: 'text'; values: { text: string; at: string; who?: string }[] };
-
-const asNumber = (v: AnswerValue | undefined) => (typeof v === 'number' ? v : null);
-const boolLabel = (b: boolean) => (b ? 'Sim' : 'Não');
+import { coerceConfig, isConfigV2, type PesquisaConfig } from '@/lib/pesquisa/config';
+import { computeStats, boolLabel, type SurveyRow } from '@/lib/pesquisa/aggregate';
+import { exportPesquisaSatisfacaoPdf } from './relatorios/pesquisaSatisfacaoPdfExporter';
 
 export default function PesquisaDashboardPage() {
 
@@ -37,6 +21,7 @@ export default function PesquisaDashboardPage() {
   const [researcherFilter, setResearcherFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   // Esconde os KPIs globais da etapa (vinculados/credenciados/pendentes) — não se aplicam à pesquisa.
   useStageModuleKpis([], true);
@@ -86,32 +71,7 @@ export default function PesquisaDashboardPage() {
     return ev && isConfigV2(ev.questions_config) ? coerceConfig(ev.questions_config) : null;
   }, [eventFilter, events]);
 
-  const stats = useMemo(() => {
-    if (!surveys || surveys.length === 0) return null;
-    const total = surveys.length;
-    const todayStr = new Date().toDateString();
-    const today = surveys.filter((s) => new Date(s.collected_at).toDateString() === todayStr).length;
-
-    // Perguntas a agregar: do config (quando há um evento), senão inferidas das respostas.
-    const questions: PesquisaQuestion[] = selectedConfig
-      ? [...selectedConfig.questions].sort((a, b) => a.order - b.order)
-      : inferQuestions(surveys);
-
-    const qStats: QStat[] = questions.map((q) => aggregateQuestion(q, surveys));
-
-    const scaleStats = qStats.filter((s): s is Extract<QStat, { type: 'scale' }> => s.type === 'scale' && s.count > 0);
-    const overallAvg = scaleStats.length
-      ? +(scaleStats.reduce((a, s) => a + s.avg, 0) / scaleStats.length).toFixed(2)
-      : null;
-
-    const textStats = qStats.filter((s): s is Extract<QStat, { type: 'text' }> => s.type === 'text');
-    const recentComments = textStats
-      .flatMap((s) => s.values.map((v) => ({ ...v, question: s.label })))
-      .sort((a, b) => (a.at < b.at ? 1 : -1))
-      .slice(0, 12);
-
-    return { total, today, overallAvg, qStats, scaleStats, recentComments };
-  }, [surveys, selectedConfig]);
+  const stats = useMemo(() => computeStats(surveys ?? [], selectedConfig), [surveys, selectedConfig]);
 
   const questionKeysForExport = useMemo(() => {
     if (selectedConfig) return selectedConfig.questions.map((q) => q.key);
@@ -150,6 +110,37 @@ export default function PesquisaDashboardPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportPdf = async () => {
+    if (!surveys || surveys.length === 0) return;
+    try {
+      setExporting(true);
+      const eventName = eventFilter === 'all'
+        ? 'Todos os eventos'
+        : events?.find((e) => e.id === eventFilter)?.name ?? 'Evento';
+      const researcherName = researcherFilter === 'all'
+        ? undefined
+        : (researchers as { id: string; name: string }[] | undefined)?.find((r) => r.id === researcherFilter)?.name;
+      const blob = await exportPesquisaSatisfacaoPdf(surveys, selectedConfig, {
+        eventName,
+        researcherName,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        generatedAt: new Date(),
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pesquisa_satisfacao_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório PDF gerado');
+    } catch (e: unknown) {
+      toast.error('Falha ao gerar PDF: ' + (e instanceof Error ? e.message : 'erro desconhecido'));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -171,7 +162,7 @@ export default function PesquisaDashboardPage() {
           <SelectTrigger className="w-[220px]"><SelectValue placeholder="Pesquisador" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos pesquisadores</SelectItem>
-            {researchers?.map((r: any) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+            {researchers?.map((r: { id: string; name: string }) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
           </SelectContent>
         </Select>
 
@@ -180,6 +171,10 @@ export default function PesquisaDashboardPage() {
 
         <Button variant="outline" onClick={handleExport} disabled={!surveys?.length}>
           <Download className="h-4 w-4 mr-2" /> Exportar CSV
+        </Button>
+
+        <Button onClick={handleExportPdf} disabled={!surveys?.length || exporting}>
+          <FileText className="h-4 w-4 mr-2" /> {exporting ? 'Gerando...' : 'Exportar PDF'}
         </Button>
       </div>
 
@@ -310,54 +305,4 @@ export default function PesquisaDashboardPage() {
       )}
     </div>
   );
-}
-
-// --- agregação ---
-
-function aggregateQuestion(q: PesquisaQuestion, surveys: SurveyRow[]): QStat {
-  const vals = surveys.map((s) => s.answers?.[q.key]).filter((v) => v !== undefined && v !== null) as AnswerValue[];
-  if (q.type === 'scale') {
-    const nums = vals.map((v) => (typeof v === 'number' ? v : NaN)).filter((n) => !Number.isNaN(n));
-    const avg = nums.length ? +(nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : 0;
-    return { key: q.key, label: q.label, type: 'scale', avg, count: nums.length };
-  }
-  if (q.type === 'boolean') {
-    let yes = 0, no = 0;
-    vals.forEach((v) => { if (v === true) yes++; else if (v === false) no++; });
-    return { key: q.key, label: q.label, type: 'boolean', yes, no, count: yes + no };
-  }
-  if (q.type === 'single_choice' || q.type === 'multi_choice') {
-    const counts = new Map<string, number>();
-    vals.forEach((v) => {
-      const arr = Array.isArray(v) ? v : [v];
-      arr.forEach((raw) => {
-        const opt = (q.options ?? []).find((o) => o.value === raw);
-        const label = opt?.label ?? String(raw);
-        counts.set(label, (counts.get(label) ?? 0) + 1);
-      });
-    });
-    return { key: q.key, label: q.label, type: 'choice', dist: [...counts].map(([label, count]) => ({ label, count })), count: vals.length };
-  }
-  // text
-  const values = surveys
-    .map((s) => ({ v: s.answers?.[q.key], at: s.collected_at, who: s.pesquisa_researchers?.name }))
-    .filter((x) => typeof x.v === 'string' && (x.v as string).trim() !== '')
-    .map((x) => ({ text: x.v as string, at: x.at, who: x.who }));
-  return { key: q.key, label: q.label, type: 'text', values };
-}
-
-/** Sem config (visão "todos eventos"): infere perguntas pelas chaves de answers. */
-function inferQuestions(surveys: SurveyRow[]): PesquisaQuestion[] {
-  const keys = new Set<string>();
-  surveys.forEach((s) => Object.keys(s.answers ?? {}).forEach((k) => keys.add(k)));
-  return [...keys].map((key, i) => {
-    // Deduz o tipo pela 1ª ocorrência não-nula.
-    const sample = surveys.map((s) => s.answers?.[key]).find((v) => v !== undefined && v !== null);
-    const type: PesquisaQuestion['type'] =
-      typeof sample === 'number' ? 'scale'
-      : typeof sample === 'boolean' ? 'boolean'
-      : Array.isArray(sample) ? 'multi_choice'
-      : 'text';
-    return { key, label: key, section: 'geral', order: i + 1, type };
-  });
 }
