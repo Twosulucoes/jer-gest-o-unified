@@ -1,9 +1,10 @@
-import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { pdf, Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import {
-  computeStats, scaleHistogram, type SurveyRow, type QStat,
+  computeStats, scaleHistogram, dailyCounts, type SurveyRow, type QStat,
 } from '@/lib/pesquisa/aggregate';
 import { DEFAULT_SCALE_LABELS, type PesquisaConfig } from '@/lib/pesquisa/config';
+import type { EventBrandingResolved } from '@/hooks/useEventBranding';
 
 export interface PesquisaReportMeta {
   eventName: string;
@@ -11,6 +12,7 @@ export interface PesquisaReportMeta {
   dateFrom?: string;
   dateTo?: string;
   generatedAt: Date;
+  branding?: EventBrandingResolved | null;
 }
 
 const COLOR = {
@@ -28,10 +30,19 @@ const COLOR = {
 
 const s = StyleSheet.create({
   page: { paddingTop: 34, paddingBottom: 44, paddingHorizontal: 34, fontFamily: 'Helvetica', fontSize: 9, color: COLOR.ink },
+  headerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 6 },
+  logo: { height: 38, objectFit: 'contain' },
   title: { fontSize: 15, fontWeight: 'bold' },
+  reportType: { fontSize: 11, fontWeight: 'bold', marginTop: 6 },
   subtitle: { fontSize: 10, color: COLOR.muted, marginTop: 2 },
   metaLine: { fontSize: 8, color: COLOR.faint, marginTop: 3 },
   divider: { borderBottomWidth: 1, borderBottomColor: COLOR.line, marginVertical: 8 },
+
+  trendRow: { flexDirection: 'row', alignItems: 'flex-end', height: 86, gap: 4, marginTop: 4 },
+  trendCol: { flexGrow: 1, flexBasis: 0, alignItems: 'center' },
+  trendCount: { fontSize: 7, color: COLOR.muted, marginBottom: 2 },
+  trendLabelRow: { flexDirection: 'row', gap: 4, marginTop: 2 },
+  trendLabel: { flexGrow: 1, flexBasis: 0, fontSize: 6.5, color: COLOR.faint, textAlign: 'center' },
 
   kpiRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
   kpi: { flexGrow: 1, flexBasis: 0, borderWidth: 0.5, borderColor: COLOR.line, borderRadius: 4, padding: 8 },
@@ -163,6 +174,27 @@ function TextBlock({ stat }: { stat: Extract<QStat, { type: 'text' }> }) {
   );
 }
 
+function TrendChart({ data }: { data: { label: string; count: number }[] }) {
+  const days = data.slice(-14);
+  const max = Math.max(1, ...days.map((d) => d.count));
+  const barMaxH = 60;
+  return (
+    <View style={s.q} wrap={false}>
+      <View style={s.trendRow}>
+        {days.map((d, i) => (
+          <View key={i} style={s.trendCol}>
+            <Text style={s.trendCount}>{d.count}</Text>
+            <View style={{ width: '68%', height: Math.max(2, (d.count / max) * barMaxH), backgroundColor: COLOR.primary, borderTopLeftRadius: 2, borderTopRightRadius: 2 }} />
+          </View>
+        ))}
+      </View>
+      <View style={s.trendLabelRow}>
+        {days.map((d, i) => <Text key={i} style={s.trendLabel}>{d.label}</Text>)}
+      </View>
+    </View>
+  );
+}
+
 function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; config: PesquisaConfig | null; meta: PesquisaReportMeta }) {
   const stats = computeStats(surveys, config);
   const dateStr = format(meta.generatedAt, 'dd/MM/yyyy');
@@ -186,12 +218,27 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
 
   let currentSection: string | null = null;
 
+  const logos = (meta.branding?.logos || []).filter((l) => l.active).slice(0, 3);
+  const brandTitle = meta.branding?.nome_oficial || meta.branding?.fallbackEventName;
+  const rodape = meta.branding?.rodape_texto || 'JER Gestão';
+  const localAno = meta.branding?.local_ano || '';
+
   return (
     <Document>
       <Page size="A4" style={s.page}>
-        <Text style={s.title}>Relatório — Pesquisa de Satisfação</Text>
-        <Text style={s.subtitle}>{meta.eventName}</Text>
-        {filters ? <Text style={s.metaLine}>{filters}</Text> : null}
+        {logos.length > 0 ? (
+          <View style={s.headerRow}>{logos.map((l, i) => <Image key={i} src={l.url} style={s.logo} />)}</View>
+        ) : null}
+        {brandTitle ? (
+          <>
+            <Text style={s.title}>{brandTitle}</Text>
+            {meta.branding?.subtitulo ? <Text style={s.subtitle}>{meta.branding.subtitulo}</Text> : null}
+            <Text style={s.reportType}>Relatório de Resultados — Pesquisa de Satisfação</Text>
+          </>
+        ) : (
+          <Text style={s.title}>Relatório — Pesquisa de Satisfação</Text>
+        )}
+        <Text style={s.metaLine}>{meta.eventName}{filters ? `   ·   ${filters}` : ''}</Text>
         <Text style={s.metaLine}>Gerado em {dateStr} às {timeStr}</Text>
         <View style={s.divider} />
 
@@ -213,6 +260,9 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
                 <Text style={s.kpiValue}>{stats.today}</Text>
               </View>
             </View>
+
+            <Text style={s.sectionTitle}>Coletas por dia</Text>
+            <TrendChart data={dailyCounts(surveys)} />
 
             {config ? (
               <View style={s.legend}>
@@ -260,7 +310,7 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
         <Text
           style={s.footer}
           render={({ pageNumber, totalPages }) =>
-            `JER Gestão • Pesquisa de Satisfação • Gerado em ${dateStr} às ${timeStr} • Página ${pageNumber}/${totalPages}`
+            `${rodape}${localAno ? ' • ' + localAno : ''} • Pesquisa de Satisfação • Gerado em ${dateStr} às ${timeStr} • Página ${pageNumber}/${totalPages}`
           }
           fixed
         />

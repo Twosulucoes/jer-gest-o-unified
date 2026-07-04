@@ -11,6 +11,7 @@ import { Download, FileText, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
+import { useEventBranding } from '@/hooks/useEventBranding';
 import { coerceConfig, isConfigV2, type PesquisaConfig } from '@/lib/pesquisa/config';
 import { computeStats, boolLabel, type SurveyRow } from '@/lib/pesquisa/aggregate';
 import { exportPesquisaSatisfacaoPdf } from './relatorios/pesquisaSatisfacaoPdfExporter';
@@ -31,9 +32,13 @@ export default function PesquisaDashboardPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from('pesquisa_events')
-        .select('id, name, questions_config')
+        .select('id, name, questions_config, event_stage_id, event_stages(event_id)')
         .order('created_at', { ascending: false });
-      return (data || []) as { id: string; name: string; questions_config: unknown }[];
+      return (data || []) as unknown as {
+        id: string; name: string; questions_config: unknown;
+        event_stage_id: string | null;
+        event_stages?: { event_id: string | null } | null;
+      }[];
     },
   });
 
@@ -72,6 +77,13 @@ export default function PesquisaDashboardPage() {
   }, [eventFilter, events]);
 
   const stats = useMemo(() => computeStats(surveys ?? [], selectedConfig), [surveys, selectedConfig]);
+
+  // Evento principal (via etapa vinculada) para resolver logo/branding no PDF.
+  const mainEventId = useMemo(() => {
+    if (eventFilter === 'all') return undefined;
+    return events?.find((e) => e.id === eventFilter)?.event_stages?.event_id ?? undefined;
+  }, [eventFilter, events]);
+  const { data: branding } = useEventBranding(mainEventId);
 
   const questionKeysForExport = useMemo(() => {
     if (selectedConfig) return selectedConfig.questions.map((q) => q.key);
@@ -126,6 +138,7 @@ export default function PesquisaDashboardPage() {
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         generatedAt: new Date(),
+        branding: branding ?? null,
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
