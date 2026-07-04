@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Plus, Pencil, Settings2, ClipboardList, CalendarDays,
   MapPin, CheckCircle2, PauseCircle, Layers, ChevronRight,
-  FileText, Users, LayoutDashboard,
+  FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PESQUISA_PRESETS } from '@/lib/pesquisa/config';
@@ -184,26 +184,6 @@ export default function PesquisaEventosPage() {
             <Plus className="h-4 w-4" />
             Nova Pesquisa
           </Button>
-        </div>
-        <div className="flex gap-1 border-b border-border">
-          <button
-            onClick={() => navigate(base)}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:border-border -mb-px transition-colors"
-          >
-            <LayoutDashboard className="h-4 w-4" /> Dashboard
-          </button>
-          <button
-            onClick={() => navigate(`${base}/eventos`)}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 border-primary text-primary -mb-px transition-colors"
-          >
-            <ClipboardList className="h-4 w-4" /> Pesquisas
-          </button>
-          <button
-            onClick={() => navigate(`${base}/pesquisadores`)}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:border-border -mb-px transition-colors"
-          >
-            <Users className="h-4 w-4" /> Pesquisadores
-          </button>
         </div>
       </div>
 
