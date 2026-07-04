@@ -235,8 +235,8 @@ export default function PesquisaEventosPage() {
             const linkedStage = stageName(ev.event_stage_id);
             return (
               <Card key={ev.id} className="transition-all duration-200 hover:shadow-app-md">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
 
                     {/* Status dot */}
                     <div className="mt-1 shrink-0">
@@ -267,8 +267,9 @@ export default function PesquisaEventosPage() {
                           </span>
                         )}
                         {linkedStage && (
-                          <span className="flex items-center gap-1 text-primary font-medium">
-                            <Layers className="h-3 w-3" /> {linkedStage}
+                          <span className="flex items-center gap-1 text-primary font-medium min-w-0 max-w-[220px]">
+                            <Layers className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{linkedStage}</span>
                           </span>
                         )}
                         {!linkedStage && (
@@ -278,34 +279,35 @@ export default function PesquisaEventosPage() {
                         )}
                       </div>
                     </div>
+                  </div>
 
-                    {/* Ações */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs"
-                        onClick={() => openEdit(ev)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="gap-1.5 text-xs"
-                        onClick={() => goToFormEditor(ev.id)}
-                      >
-                        <Settings2 className="h-3.5 w-3.5" />
-                        Configurar
-                        <ChevronRight className="h-3 w-3 opacity-60" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1.5 text-xs text-destructive hover:text-destructive" title="Excluir">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
+                  {/* Ações */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs flex-1 min-w-[110px]"
+                      onClick={() => openEdit(ev)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="gap-1.5 text-xs flex-1 min-w-[130px]"
+                      onClick={() => goToFormEditor(ev.id)}
+                    >
+                      <Settings2 className="h-3.5 w-3.5" />
+                      Configurar
+                      <ChevronRight className="h-3 w-3 opacity-60" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1.5 text-xs text-destructive hover:text-destructive shrink-0" title="Excluir">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>Excluir pesquisa?</AlertDialogTitle>
@@ -321,7 +323,6 @@ export default function PesquisaEventosPage() {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
