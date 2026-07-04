@@ -28,13 +28,22 @@ export function usePesquisaSync() {
           // Don't retry if session is invalid
           break;
         }
-        // Success or duplicate - remove from queue
+        // 'created' | 'duplicate' -> sucesso. 'invalid' -> payload rejeitado pelo
+        // servidor (nunca vai passar): descarta em vez de reenviar pra sempre.
         const idx = remaining.indexOf(item);
         remaining.splice(idx, 1);
         changed = true;
+        if (result?.status === 'invalid') {
+          console.error('[pesquisa] item descartado (invalid):', result?.reason, item.client_uuid);
+        }
       } catch (err: any) {
         item.attempts += 1;
         item.last_error = err.message || 'Unknown error';
+        // Backstop: descarta após muitas tentativas para não travar a fila.
+        if (item.attempts >= 25) {
+          const idx = remaining.indexOf(item);
+          if (idx >= 0) remaining.splice(idx, 1);
+        }
         changed = true;
       }
     }

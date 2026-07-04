@@ -3,59 +3,28 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getSession, clearSession, addToQueue, saveDraft, clearDraft, getDraft } from '@/lib/pesquisaSession';
 import { usePesquisaSync } from '@/hooks/usePesquisaSync';
-import ScaleInput from '@/components/pesquisa/ScaleInput';
+import QuestionRenderer from '@/components/pesquisa/QuestionRenderer';
 import OfflineBadge from '@/components/pesquisa/OfflineBadge';
 import { PwaRefreshButton } from '@/components/pwa/PwaRefreshButton';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Send, ScanLine, User as UserIcon, Loader2 } from 'lucide-react';
-import QrCodeScanner from "@/components/pwa/QrCodeScanner";
-import { resolveQrCredential } from "@/lib/resolveQrCredential";
-import { toast } from "sonner";
-import { differenceInYears, parseISO } from "date-fns";
+import { ArrowLeft, ArrowRight, Send, ScanLine, Loader2 } from 'lucide-react';
+import QrCodeScanner from '@/components/pwa/QrCodeScanner';
+import { resolveQrCredential } from '@/lib/resolveQrCredential';
+import { toast } from 'sonner';
+import { differenceInYears, parseISO } from 'date-fns';
+import {
+  coerceConfig, orderedSections, visibleQuestionsForSection, allVisibleQuestions,
+  firstValidationError, isAnswerFilled, pruneHiddenAnswers, DEFAULT_CONFIG,
+  type PesquisaConfig, type Answers, type AnswerValue,
+} from '@/lib/pesquisa/config';
 
-type Step = 'profile' | 'questionnaire' | 'open';
-
-const TYPE_OPTIONS = [
-  { value: 'atleta', label: 'Atleta' },
-  { value: 'familiar', label: 'Familiar' },
-  { value: 'professor', label: 'Professor' },
-  { value: 'tecnico', label: 'Técnico' },
-  { value: 'outro', label: 'Outro' },
-];
-
-const AGE_OPTIONS = [
-  { value: 'ate_12', label: 'Até 12 anos' },
-  { value: '13_17', label: '13 a 17 anos' },
-  { value: '18_30', label: '18 a 30 anos' },
-  { value: 'acima_30', label: 'Acima de 30' },
-];
-
-const GENDER_OPTIONS = [
-  { value: 'masculino', label: 'Masculino' },
-  { value: 'feminino', label: 'Feminino' },
-  { value: 'nao_informado', label: 'Prefiro não informar' },
-];
+type Step = 'setup' | 'form';
 
 const MODE_OPTIONS = [
   { value: 'entrevista', label: 'Entrevista' },
   { value: 'autopreenchimento', label: 'Autopreenchimento' },
-];
-
-const DEFAULT_QUESTIONS = [
-  { key: 'd1_organizacao', label: 'Organização do evento', dim: 'D1 — Operação' },
-  { key: 'd1_infraestrutura', label: 'Infraestrutura', dim: 'D1 — Operação' },
-  { key: 'd1_alimentacao', label: 'Alimentação', dim: 'D1 — Operação' },
-  { key: 'd1_seguranca', label: 'Segurança', dim: 'D1 — Operação' },
-  { key: 'd1_transporte', label: 'Transporte', dim: 'D1 — Operação' },
-  { key: 'd2_igualdade', label: 'Igualdade de tratamento', dim: 'D2 — Valores' },
-  { key: 'd2_acessibilidade', label: 'Acessibilidade', dim: 'D2 — Valores' },
-  { key: 'd2_inclusao', label: 'Inclusão', dim: 'D2 — Valores' },
-  { key: 'd3_aprendizado', label: 'Aprendizado', dim: 'D3 — Impacto' },
-  { key: 'd3_convivencia', label: 'Convivência e amizade', dim: 'D3 — Impacto' },
-  { key: 'd3_cidadania', label: 'Cidadania', dim: 'D3 — Impacto' },
-  { key: 'd3_superacao', label: 'Superação pessoal', dim: 'D3 — Impacto' },
 ];
 
 export default function PesquisaNovaPage() {
@@ -64,183 +33,160 @@ export default function PesquisaNovaPage() {
   const [searchParams] = useSearchParams();
   const session = getSession();
 
-  const [step, setStep] = useState<Step>('profile');
-  const [questionIdx, setQuestionIdx] = useState(0);
+  const [step, setStep] = useState<Step>('setup');
   const [submitting, setSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [identifying, setIdentifying] = useState(false);
-  const [QUESTIONS, setQUESTIONS] = useState(DEFAULT_QUESTIONS);
+  const [config, setConfig] = useState<PesquisaConfig>(DEFAULT_CONFIG);
 
-  // Profile fields
-  const [respondentType, setRespondentType] = useState('');
-  const [respondentAge, setRespondentAge] = useState('');
-  const [respondentGender, setRespondentGender] = useState('');
+  // Campos operacionais (definidos pelo pesquisador)
   const [mode, setMode] = useState('');
   const [applicationLocation, setApplicationLocation] = useState('');
 
-  // Question answers
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [pontoPositivo, setPontoPositivo] = useState('');
-  const [sugestao, setSugestao] = useState('');
+  // Respostas dinâmicas
+  const [answers, setAnswers] = useState<Answers>({});
 
-  // Load draft on mount
+  // Carrega rascunho
   useEffect(() => {
     const draft = getDraft();
     if (draft) {
-      if (draft.respondentType) setRespondentType(draft.respondentType as string);
-      if (draft.respondentAge) setRespondentAge(draft.respondentAge as string);
-      if (draft.respondentGender) setRespondentGender(draft.respondentGender as string);
       if (draft.mode) setMode(draft.mode as string);
       if (draft.applicationLocation) setApplicationLocation(draft.applicationLocation as string);
-      if (draft.answers) setAnswers(draft.answers as Record<string, number>);
-      if (draft.pontoPositivo) setPontoPositivo(draft.pontoPositivo as string);
-      if (draft.sugestao) setSugestao(draft.sugestao as string);
+      if (draft.answers) setAnswers(draft.answers as Answers);
     } else if (session?.researcher?.assigned_location || session?.event?.location) {
       setApplicationLocation((session.researcher.assigned_location || session.event.location || '').trim());
     }
   }, [session?.event?.location, session?.researcher?.assigned_location]);
 
-  // Save draft on changes (debounced)
+  // Autosave do rascunho (debounced)
   const saveDraftDebounced = useCallback(() => {
     const timeout = setTimeout(() => {
-      saveDraft({ respondentType, respondentAge, respondentGender, mode, applicationLocation, answers, pontoPositivo, sugestao });
+      saveDraft({ mode, applicationLocation, answers });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [respondentType, respondentAge, respondentGender, mode, applicationLocation, answers, pontoPositivo, sugestao]);
+  }, [mode, applicationLocation, answers]);
 
-  useEffect(() => {
-    const cleanup = saveDraftDebounced();
-    return cleanup;
-  }, [saveDraftDebounced]);
+  useEffect(() => saveDraftDebounced(), [saveDraftDebounced]);
 
   useEffect(() => {
     if (!session) navigate('/pesquisa/login', { replace: true });
   }, [session, navigate]);
 
   useEffect(() => {
-    if (searchParams.get('scan') === 'true') {
-      setScannerOpen(true);
-    }
+    if (searchParams.get('scan') === 'true') setScannerOpen(true);
   }, [searchParams]);
 
+  // Carrega o config do evento (v2). Fallback: DEFAULT_CONFIG.
   useEffect(() => {
     if (!session?.researcher?.event_id) return;
     (supabase.rpc as any)('pesquisa_get_event_config', { p_event_id: session.researcher.event_id })
-      .then(({ data }) => {
-        const config = data as any;
-        if (Array.isArray(config?.questions_config) && config.questions_config.length > 0) {
-          setQUESTIONS(config.questions_config);
-        }
-      });
+      .then(({ data }: { data: any }) => {
+        setConfig(coerceConfig(data?.questions_config));
+      })
+      .catch(() => setConfig(DEFAULT_CONFIG));
   }, [session?.researcher?.event_id]);
+
+  const setAnswer = (key: string, val: AnswerValue) => setAnswers((prev) => ({ ...prev, [key]: val }));
+
+  // Preenche uma resposta demográfica apenas se a pergunta existir e o valor for opção válida.
+  const prefillIfValid = (updates: Record<string, string>) => {
+    setAnswers((prev) => {
+      const next = { ...prev };
+      for (const [key, value] of Object.entries(updates)) {
+        const q = config.questions.find((x) => x.key === key && x.type === 'single_choice');
+        if (q && (q.options ?? []).some((o) => o.value === value)) next[key] = value;
+      }
+      return next;
+    });
+  };
 
   const handleScan = async (payload: string) => {
     setScannerOpen(false);
     setIdentifying(true);
     try {
-      // NOVO: Verifica se é um voucher
-      if (payload.trim().toLowerCase().startsWith("voucher:")) {
-        // Vouchers podem conter informações do portador
-        // Usamos 'label' em vez de 'person_name' (que não existe)
+      if (payload.trim().toLowerCase().startsWith('voucher:')) {
         const { data: voucher, error: vErr } = await supabase
-          .from("service_vouchers")
-          .select("label, participant_id, voucher_type")
-          .eq("qr_code_value", payload.trim())
+          .from('service_vouchers')
+          .select('label, participant_id, voucher_type')
+          .eq('qr_code_value', payload.trim())
           .maybeSingle();
-
         if (vErr || !voucher) {
-          toast.error("Voucher não encontrado ou inválido para identificação.");
+          toast.error('Voucher não encontrado ou inválido para identificação.');
           return;
         }
-
-        const typedVoucher = voucher as any;
-        if (typedVoucher.participant_id) {
-          // Se tiver participant_id, segue o fluxo de carregar dados do participante
-          await loadParticipantData(typedVoucher.participant_id, typedVoucher.label || "Portador de Voucher");
+        const tv = voucher as any;
+        if (tv.participant_id) {
+          await loadParticipantData(tv.participant_id, tv.label || 'Portador de Voucher');
         } else {
-          // Voucher avulso/agregado
-          setRespondentType(typedVoucher.voucher_type === 'nominal' ? 'atleta' : 'outro');
-          toast.success(`Identificado via Voucher: ${typedVoucher.label || 'Portador'}`);
+          prefillIfValid({ tipo: tv.voucher_type === 'nominal' ? 'estudante_atleta' : 'outro' });
+          toast.success(`Identificado via Voucher: ${tv.label || 'Portador'}`);
         }
         return;
       }
-
       const resolved = await resolveQrCredential(payload, { eventId: session?.researcher?.event_id });
       if (!resolved) {
-        toast.error("Participante não encontrado");
+        toast.error('Participante não encontrado');
         return;
       }
-      
       await loadParticipantData(resolved.participant_id, resolved.full_name);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao identificar participante");
+      toast.error('Erro ao identificar participante');
     } finally {
       setIdentifying(false);
     }
   };
 
   const loadParticipantData = async (participantId: string, name: string) => {
-    // Fetch participant_type (inscrição) + birth_date/gender via JOIN com people
-    // (Fase A1 da normalização: cadastrais civis vivem em `people`).
     const { data: part, error } = await (supabase as any)
-      .from("participants")
-      .select("participant_type, people(birth_date, gender)")
-      .eq("id", participantId)
+      .from('participants')
+      .select('participant_type, people(birth_date, gender)')
+      .eq('id', participantId)
       .single();
-
     if (error) throw error;
+    if (!part) return;
 
-    if (part) {
-      setRespondentType(part.participant_type === 'athlete' ? 'atleta' :
-                        part.participant_type === 'coach' ? 'tecnico' : 'outro');
+    const updates: Record<string, string> = {};
+    updates.tipo = part.participant_type === 'athlete' ? 'estudante_atleta'
+      : part.participant_type === 'coach' ? 'tecnico' : 'outro';
 
-      const personGender: string | undefined = part.people?.gender;
-      if (personGender) {
-        setRespondentGender(personGender === 'male' ? 'masculino' : 'feminino');
-      }
+    const g: string | undefined = part.people?.gender;
+    if (g) updates.sexo = g === 'male' ? 'masculino' : g === 'female' ? 'feminino' : 'nao_informado';
 
-      const personBirth: string | undefined = part.people?.birth_date;
-      if (personBirth) {
-        const age = differenceInYears(new Date(), parseISO(personBirth));
-        if (age <= 12) setRespondentAge('ate_12');
-        else if (age <= 17) setRespondentAge('13_17');
-        else if (age <= 30) setRespondentAge('18_30');
-        else setRespondentAge('acima_30');
-      }
-
-      toast.success(`Identificado: ${name}`);
+    const birth: string | undefined = part.people?.birth_date;
+    if (birth) {
+      const age = differenceInYears(new Date(), parseISO(birth));
+      updates.idade = age <= 12 ? 'ate_12' : age <= 14 ? '13_14' : age <= 17 ? '15_17' : '18_mais';
     }
+    prefillIfValid(updates);
+    toast.success(`Identificado: ${name}`);
   };
 
   if (!session) return null;
 
   const isKiosk = mode === 'autopreenchimento';
-  const profileComplete = respondentType && respondentAge && respondentGender && mode && applicationLocation.trim();
-  const allAnswered = QUESTIONS.every(q => answers[q.key] != null);
-  const totalProgress = Object.keys(answers).length;
-  const progressPercent = (totalProgress / QUESTIONS.length) * 100;
+  const setupComplete = !!mode && applicationLocation.trim() !== '';
+  const sections = orderedSections(config);
+  const visible = allVisibleQuestions(config, answers);
+  const answeredCount = visible.filter((q) => isAnswerFilled(answers[q.key])).length;
+  const progressPercent = visible.length ? (answeredCount / visible.length) * 100 : 0;
+  const validationError = firstValidationError(config, answers);
+  const canSubmit = validationError === null;
 
   const handleSubmit = async () => {
-    if (!allAnswered) return;
+    if (!canSubmit) return;
     setSubmitting(true);
 
     const clientUuid = crypto.randomUUID();
     const payload: Record<string, unknown> = {
       client_uuid: clientUuid,
-      respondent_type: respondentType,
-      respondent_age: respondentAge,
-      respondent_gender: respondentGender,
       mode,
       application_location: applicationLocation.trim(),
-      ...answers,
-      ponto_positivo: pontoPositivo || null,
-      sugestao: sugestao || null,
+      answers: pruneHiddenAnswers(config, answers),
       collected_at: new Date().toISOString(),
     };
 
     let submitted = false;
-
     if (navigator.onLine) {
       try {
         const { data, error } = await supabase.rpc('pesquisa_pwa_submit_survey', {
@@ -254,9 +200,14 @@ export default function PesquisaNovaPage() {
           navigate('/pesquisa/login', { replace: true });
           return;
         }
+        if (result?.status === 'invalid') {
+          setSubmitting(false);
+          toast.error('Não foi possível enviar: revise as respostas obrigatórias.');
+          return;
+        }
         submitted = true;
       } catch {
-        // will queue
+        // cai na fila offline
       }
     }
 
@@ -285,13 +236,11 @@ export default function PesquisaNovaPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header (hidden in kiosk after profile step) */}
-      {(!isKiosk || step === 'profile') && (
+      {(!isKiosk || step === 'setup') && (
         <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={() => {
-            if (step === 'profile') navigate('/pesquisa/home');
-            else if (step === 'open') setStep('questionnaire');
-            else setStep('profile');
+            if (step === 'setup') navigate('/pesquisa/home');
+            else setStep('setup');
           }}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
@@ -303,14 +252,14 @@ export default function PesquisaNovaPage() {
       )}
 
       <div className="max-w-lg mx-auto p-4 space-y-6">
-        {/* STEP 1: Profile */}
-        {step === 'profile' && (
+        {/* SETUP: campos operacionais do pesquisador */}
+        {step === 'setup' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Perfil do Respondente</h2>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <h2 className="text-xl font-bold">Nova resposta</h2>
+              <Button
+                variant="outline"
+                size="sm"
                 className="gap-2 border-primary/20 text-primary"
                 onClick={() => setScannerOpen(true)}
                 disabled={identifying}
@@ -321,36 +270,9 @@ export default function PesquisaNovaPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Tipo</label>
-              <div className="grid grid-cols-2 gap-2">
-                {TYPE_OPTIONS.map(o => (
-                  <OptionButton key={o.value} {...o} selected={respondentType === o.value} onClick={() => setRespondentType(o.value)} />
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Faixa etária</label>
-              <div className="grid grid-cols-2 gap-2">
-                {AGE_OPTIONS.map(o => (
-                  <OptionButton key={o.value} {...o} selected={respondentAge === o.value} onClick={() => setRespondentAge(o.value)} />
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Gênero</label>
-              <div className="grid grid-cols-3 gap-2">
-                {GENDER_OPTIONS.map(o => (
-                  <OptionButton key={o.value} {...o} selected={respondentGender === o.value} onClick={() => setRespondentGender(o.value)} />
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Modo de coleta</label>
               <div className="grid grid-cols-2 gap-2">
-                {MODE_OPTIONS.map(o => (
+                {MODE_OPTIONS.map((o) => (
                   <OptionButton key={o.value} {...o} selected={mode === o.value} onClick={() => setMode(o.value)} />
                 ))}
               </div>
@@ -366,78 +288,45 @@ export default function PesquisaNovaPage() {
               />
             </div>
 
-            <Button onClick={() => setStep('questionnaire')} disabled={!profileComplete} className="w-full h-14 text-lg">
-              Próxima Etapa <ArrowRight className="ml-2 h-5 w-5" />
+            <Button onClick={() => setStep('form')} disabled={!setupComplete} className="w-full h-14 text-lg">
+              Começar <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
         )}
 
-        {/* STEP 2: Questionnaire */}
-        {step === 'questionnaire' && (
+        {/* FORM: questionário dinâmico por seções */}
+        {step === 'form' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-bold">Avaliação</h2>
+              <h2 className="text-xl font-bold">{config.name ?? 'Pesquisa de Satisfação'}</h2>
               <Progress value={progressPercent} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">{totalProgress} de {QUESTIONS.length} respondidas</p>
+              <p className="text-xs text-muted-foreground mt-1">{answeredCount} de {visible.length} respondidas</p>
             </div>
 
-            <div className="space-y-8">
-              {QUESTIONS.map((q, idx) => {
-                const showDimHeader = idx === 0 || QUESTIONS[idx - 1].dim !== q.dim;
-                return (
-                  <div key={q.key}>
-                    {showDimHeader && (
-                      <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-3">{q.dim}</p>
-                    )}
-                    <ScaleInput
-                      label={q.label}
-                      value={answers[q.key] ?? null}
-                      onChange={(val) => setAnswers(prev => ({ ...prev, [q.key]: val }))}
+            {sections.map((section) => {
+              const qs = visibleQuestionsForSection(config, section.key, answers);
+              if (qs.length === 0) return null;
+              return (
+                <div key={section.key} className="space-y-6">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">{section.label}</p>
+                  {qs.map((q) => (
+                    <QuestionRenderer
+                      key={q.key}
+                      question={q}
+                      value={answers[q.key]}
+                      onChange={(v) => setAnswer(q.key, v)}
+                      scaleLabels={config.scaleLabels}
                     />
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
+              );
+            })}
 
-            <Button onClick={() => setStep('open')} disabled={!allAnswered} className="w-full h-14 text-lg">
-              Próxima Etapa <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        )}
-
-        {/* STEP 3: Open fields + Submit */}
-        {step === 'open' && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold">Comentários (opcional)</h2>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ponto positivo do evento</label>
-              <Textarea
-                value={pontoPositivo}
-                onChange={(e) => setPontoPositivo(e.target.value)}
-                placeholder="O que você mais gostou?"
-                maxLength={500}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Sugestão de melhoria</label>
-              <Textarea
-                value={sugestao}
-                onChange={(e) => setSugestao(e.target.value)}
-                placeholder="O que poderia melhorar?"
-                maxLength={500}
-                rows={3}
-              />
-            </div>
-
-            <Button onClick={handleSubmit} disabled={submitting} className="w-full h-14 text-lg gap-2">
+            <Button onClick={handleSubmit} disabled={!canSubmit || submitting} className="w-full h-14 text-lg gap-2">
               <Send className="h-5 w-5" /> {submitting ? 'Enviando...' : 'Enviar resposta'}
             </Button>
           </div>
         )}
-        {/* Step 3 content above ... */}
       </div>
 
       <QrCodeScanner
