@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
+import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
 import {
   coerceConfig, isConfigV2, type PesquisaConfig, type PesquisaQuestion, type Answers, type AnswerValue,
 } from '@/lib/pesquisa/config';
@@ -36,6 +37,9 @@ export default function PesquisaDashboardPage() {
   const [researcherFilter, setResearcherFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  // Esconde os KPIs globais da etapa (vinculados/credenciados/pendentes) — não se aplicam à pesquisa.
+  useStageModuleKpis([], true);
 
   const { data: events } = useQuery({
     queryKey: ['pesquisa-events-cfg'],

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Copy, Key, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
 
 interface Researcher {
   id: string;
@@ -29,6 +30,10 @@ interface Researcher {
 
 export default function PesquisaPesquisadoresPage() {
   const queryClient = useQueryClient();
+
+  // Esconde os KPIs globais da etapa (vinculados/credenciados/pendentes).
+  useStageModuleKpis([], true);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Researcher | null>(null);

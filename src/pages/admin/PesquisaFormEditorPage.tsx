@@ -15,6 +15,7 @@ import {
   coerceConfig, DEFAULT_CONFIG, PESQUISA_PRESETS,
   type PesquisaConfig, type PesquisaQuestion, type PesquisaSection, type QuestionType, type QuestionOption,
 } from '@/lib/pesquisa/config';
+import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
 
 interface EventStageOption { id: string; name: string; kind: string; event_name: string; }
 
@@ -36,6 +37,9 @@ const CHOICE_TYPES: QuestionType[] = ['single_choice', 'multi_choice'];
 export default function PesquisaFormEditorPage() {
   const { eventId, stageId } = useParams<{ eventId: string; stageId: string }>();
   const navigate = useNavigate();
+
+  // Esconde os KPIs globais da etapa (vinculados/credenciados/pendentes).
+  useStageModuleKpis([], true);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
