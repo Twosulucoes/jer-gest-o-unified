@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 import { Card } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, MessageSquare, LayoutDashboard, ClipboardList, Users } from 'lucide-react';
+import { Download, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   coerceConfig, isConfigV2, type PesquisaConfig, type PesquisaQuestion, type Answers, type AnswerValue,
@@ -32,9 +31,6 @@ const asNumber = (v: AnswerValue | undefined) => (typeof v === 'number' ? v : nu
 const boolLabel = (b: boolean) => (b ? 'Sim' : 'Não');
 
 export default function PesquisaDashboardPage() {
-  const navigate = useNavigate();
-  const { stageId } = useParams<{ stageId: string }>();
-  const base = stageId ? `/admin/etapa/${stageId}/pesquisa` : '/admin/pesquisa';
 
   const [eventFilter, setEventFilter] = useState<string>('all');
   const [researcherFilter, setResearcherFilter] = useState<string>('all');
@@ -152,22 +148,9 @@ export default function PesquisaDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pesquisa de Satisfação</h1>
-          <p className="text-sm text-muted-foreground">Gestão e resultados das pesquisas</p>
-        </div>
-        <div className="flex gap-1 border-b border-border">
-          <button onClick={() => navigate(base)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 border-primary text-primary -mb-px transition-colors">
-            <LayoutDashboard className="h-4 w-4" /> Dashboard
-          </button>
-          <button onClick={() => navigate(`${base}/eventos`)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:border-border -mb-px transition-colors">
-            <ClipboardList className="h-4 w-4" /> Pesquisas
-          </button>
-          <button onClick={() => navigate(`${base}/pesquisadores`)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:border-border -mb-px transition-colors">
-            <Users className="h-4 w-4" /> Pesquisadores
-          </button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Pesquisa de Satisfação</h1>
+        <p className="text-sm text-muted-foreground">Gestão e resultados das pesquisas</p>
       </div>
 
       {/* Filtros */}
