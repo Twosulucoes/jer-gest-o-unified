@@ -2,6 +2,7 @@
 // Fonte ÚNICA usada tanto pelo painel (PesquisaDashboardPage) quanto pelo
 // exportador de PDF (pesquisaSatisfacaoPdfExporter). Não duplicar esta lógica.
 
+import { format } from 'date-fns';
 import type { PesquisaConfig, PesquisaQuestion, Answers, AnswerValue } from './config';
 
 export type SurveyRow = {
@@ -121,4 +122,16 @@ export function scaleHistogram(key: string, surveys: SurveyRow[], scaleMax: numb
     if (typeof v === 'number' && Number.isInteger(v) && v >= 1 && v <= scaleMax) hist[v - 1]++;
   });
   return hist;
+}
+
+/** Coletas por dia (ordenado por data), para o gráfico de tendência. */
+export function dailyCounts(surveys: SurveyRow[]): { day: string; label: string; count: number }[] {
+  const map = new Map<string, number>();
+  surveys.forEach((s) => {
+    const day = format(new Date(s.collected_at), 'yyyy-MM-dd');
+    map.set(day, (map.get(day) ?? 0) + 1);
+  });
+  return [...map.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([day, count]) => ({ day, label: format(new Date(day + 'T12:00:00'), 'dd/MM'), count }));
 }
