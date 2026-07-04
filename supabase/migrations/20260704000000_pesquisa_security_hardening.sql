@@ -126,14 +126,13 @@ $$;
 GRANT EXECUTE ON FUNCTION public.pesquisa_revoke_session(uuid, text) TO anon;
 
 -- ------------------------------------------------------------
--- 4. submit_survey: clamp anti-adulteração em collected_at + restaura event_stage_id
+-- 4. submit_survey: clamp anti-adulteração em collected_at
 --    (preserva application_location de 20260418183000)
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.pesquisa_pwa_submit_survey(p_session_id uuid, p_payload json)
 RETURNS json LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_session record;
-  v_event_stage_id uuid;
   v_collected_at timestamptz;
   v_row_count int;
 BEGIN
@@ -146,11 +145,6 @@ BEGIN
     RETURN json_build_object('error', 'SESSION_INVALID');
   END IF;
 
-  -- Resolve a etapa a partir do evento vinculado (restaura comportamento de stage isolation).
-  SELECT event_stage_id INTO v_event_stage_id
-  FROM public.pesquisa_events
-  WHERE id = v_session.event_id;
-
   -- collected_at: preserva o horário real de coleta (essencial para o fluxo offline,
   -- em que a resposta é enfileirada e enviada mais tarde), mas rejeita datas futuras
   -- além de uma pequena tolerância de relógio. O carimbo servidor imutável fica em created_at.
@@ -160,7 +154,7 @@ BEGIN
   END IF;
 
   INSERT INTO pesquisa_surveys (
-    client_uuid, researcher_id, event_id, event_stage_id, device_id,
+    client_uuid, researcher_id, event_id, device_id,
     respondent_type, respondent_age, respondent_gender, mode,
     d1_organizacao, d1_infraestrutura, d1_alimentacao, d1_seguranca, d1_transporte,
     d2_igualdade, d2_acessibilidade, d2_inclusao,
@@ -170,7 +164,6 @@ BEGIN
     (p_payload->>'client_uuid')::uuid,
     v_session.researcher_id,
     v_session.event_id,
-    v_event_stage_id,
     v_session.device_id,
     p_payload->>'respondent_type',
     p_payload->>'respondent_age',
