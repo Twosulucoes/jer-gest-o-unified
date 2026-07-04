@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PESQUISA_PRESETS } from '@/lib/pesquisa/config';
+import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
 
 interface PesquisaEvent {
   id: string;
@@ -52,6 +53,9 @@ export default function PesquisaEventosPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { stageId } = useParams<{ stageId: string }>();
+
+  // Esconde os KPIs globais da etapa (vinculados/credenciados/pendentes).
+  useStageModuleKpis([], true);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<PesquisaEvent | null>(null);
