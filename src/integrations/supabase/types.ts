@@ -8303,6 +8303,7 @@ export type Database = {
           id: string
           location: string | null
           name: string
+          public_enabled: boolean
           questions_config: Json | null
           updated_at: string
           updated_by: string | null
@@ -8316,6 +8317,7 @@ export type Database = {
           id?: string
           location?: string | null
           name: string
+          public_enabled?: boolean
           questions_config?: Json | null
           updated_at?: string
           updated_by?: string | null
@@ -8329,6 +8331,7 @@ export type Database = {
           id?: string
           location?: string | null
           name?: string
+          public_enabled?: boolean
           questions_config?: Json | null
           updated_at?: string
           updated_by?: string | null
@@ -8534,7 +8537,7 @@ export type Database = {
           event_id: string
           id: string
           mode: string
-          researcher_id: string
+          researcher_id: string | null
         }
         Insert: {
           answers?: Json
@@ -8547,7 +8550,7 @@ export type Database = {
           event_id: string
           id?: string
           mode: string
-          researcher_id: string
+          researcher_id?: string | null
         }
         Update: {
           answers?: Json
@@ -8560,7 +8563,7 @@ export type Database = {
           event_id?: string
           id?: string
           mode?: string
-          researcher_id?: string
+          researcher_id?: string | null
         }
         Relationships: [
           {
@@ -13688,10 +13691,20 @@ export type Database = {
       }
       normalize_prova_slug: { Args: { p: string }; Returns: string }
       normalize_text: { Args: { p: string }; Returns: string }
+      pesquisa_clean_answers: {
+        Args: { p_answers: Json; p_config: Json }
+        Returns: Json
+      }
+      pesquisa_delete_event: { Args: { p_id: string }; Returns: Json }
+      pesquisa_delete_researcher: { Args: { p_id: string }; Returns: Json }
       pesquisa_get_event_config: { Args: { p_event_id: string }; Returns: Json }
       pesquisa_hash_pin: { Args: { pin: string }; Returns: string }
       pesquisa_login_with_pin: {
         Args: { p_device_id: string; p_pin: string }
+        Returns: Json
+      }
+      pesquisa_public_submit_survey: {
+        Args: { p_event_id: string; p_payload: Json }
         Returns: Json
       }
       pesquisa_pwa_get_home: { Args: { p_session_id: string }; Returns: Json }
@@ -14600,3 +14613,4 @@ export const Constants = {
     },
   },
 } as const
+

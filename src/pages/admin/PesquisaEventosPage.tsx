@@ -19,11 +19,13 @@ import {
 import {
   Plus, Pencil, Settings2, ClipboardList, CalendarDays, Trash2,
   MapPin, CheckCircle2, PauseCircle, Layers, ChevronRight,
-  FileText,
+  FileText, QrCode, Copy, Printer,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { toast } from 'sonner';
 import { PESQUISA_PRESETS } from '@/lib/pesquisa/config';
 import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
+import { QrCodePreview } from '@/components/admin/links/QrCodePreview';
 
 interface PesquisaEvent {
   id: string;
@@ -32,6 +34,7 @@ interface PesquisaEvent {
   event_date: string | null;
   active: boolean;
   event_stage_id: string | null;
+  public_enabled: boolean;
 }
 
 interface EventStageOption {
@@ -59,6 +62,7 @@ export default function PesquisaEventosPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<PesquisaEvent | null>(null);
+  const [qrEvent, setQrEvent] = useState<PesquisaEvent | null>(null);
   const [form, setForm] = useState({
     name: '',
     location: '',
@@ -146,6 +150,18 @@ export default function PesquisaEventosPage() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const togglePublicMutation = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: boolean }) => {
+      const { error } = await supabase.from('pesquisa_events').update({ public_enabled: value }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['pesquisa-events-admin'] });
+      toast.success(vars.value ? 'Formulário público ativado' : 'Formulário público desativado');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   // ── Handlers ──────────────────────────────────────────────────
   const openNew = () => {
     setEditing(null);
@@ -179,6 +195,35 @@ export default function PesquisaEventosPage() {
     } else {
       navigate(`/admin/pesquisa/eventos/${eventId}/form`);
     }
+  };
+
+  const publicUrl = (id: string) => `${window.location.origin}/pesquisa/publica/${id}`;
+
+  const copyPublicLink = (id: string) => {
+    navigator.clipboard.writeText(publicUrl(id));
+    toast.success('Link copiado!');
+  };
+
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const printPoster = async (ev: PesquisaEvent) => {
+    const url = publicUrl(ev.id);
+    const dataUrl = await QRCode.toDataURL(url, { width: 420, margin: 2 });
+    const w = window.open('', '_blank');
+    if (!w) { toast.error('Permita pop-ups para imprimir o cartaz.'); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Cartaz — ${escapeHtml(ev.name)}</title></head>
+      <body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 24px;color:#111">
+        <h1 style="font-size:30px;margin:0 0 4px">Pesquisa de Satisfação</h1>
+        <h2 style="font-size:20px;color:#555;margin:0 0 8px;font-weight:600">${escapeHtml(ev.name)}</h2>
+        <p style="font-size:19px;margin:28px 0 20px">Aponte a câmera do seu celular para responder 📱</p>
+        <img src="${dataUrl}" alt="QR" style="width:340px;height:340px" />
+        <p style="font-size:13px;color:#666;margin-top:18px;word-break:break-all">${escapeHtml(url)}</p>
+        <p style="font-size:14px;color:#888;margin-top:24px">Sua opinião é anônima e ajuda a melhorar os Jogos ✨</p>
+      </body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 250);
   };
 
   const stageName = (stageId: string | null) => {
@@ -324,12 +369,64 @@ export default function PesquisaEventosPage() {
                         </AlertDialogContent>
                       </AlertDialog>
                   </div>
+
+                  {/* Formulário público (QR) */}
+                  <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Switch
+                        checked={ev.public_enabled}
+                        onCheckedChange={(v) => togglePublicMutation.mutate({ id: ev.id, value: v })}
+                        aria-label="Ativar formulário público"
+                      />
+                      <span className="text-xs font-medium truncate">Formulário público (QR)</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 text-xs shrink-0"
+                      disabled={!ev.public_enabled}
+                      onClick={() => setQrEvent(ev)}
+                      title={ev.public_enabled ? 'Ver QR / link público' : 'Ative o formulário público primeiro'}
+                    >
+                      <QrCode className="h-3.5 w-3.5" /> QR / Link
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
       )}
+
+      {/* Dialog: QR / link público */}
+      <Dialog open={!!qrEvent} onOpenChange={(o) => !o && setQrEvent(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-primary" />
+              Formulário público
+            </DialogTitle>
+            <DialogDescription>{qrEvent?.name}</DialogDescription>
+          </DialogHeader>
+          {qrEvent && (
+            <div className="flex flex-col items-center gap-4">
+              <QrCodePreview value={publicUrl(qrEvent.id)} size={200} filename={`pesquisa-${qrEvent.id}`} showDownload />
+              <div className="w-full flex items-center gap-2">
+                <Input readOnly value={publicUrl(qrEvent.id)} className="text-xs" onFocus={(e) => e.currentTarget.select()} />
+                <Button variant="outline" size="icon" className="shrink-0" onClick={() => copyPublicLink(qrEvent.id)} title="Copiar link">
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button variant="secondary" className="w-full gap-2" onClick={() => printPoster(qrEvent)}>
+                <Printer className="h-4 w-4" /> Imprimir cartaz
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Cole o QR pelo local do evento. Qualquer pessoa responde pelo celular, sem login.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog: criar / editar */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
