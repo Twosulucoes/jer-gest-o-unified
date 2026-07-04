@@ -115,6 +115,9 @@ const AlimentacaoHubPage = lazy(() => import("../pages/admin/AlimentacaoHubPage"
 const TransporteHubPage = lazy(() => import("../pages/admin/TransporteHubPage"));
 const OcorrenciasPage = lazy(() => import("../pages/admin/OcorrenciasPage"));
 const PesquisaDashboardPage = lazy(() => import("../pages/admin/PesquisaDashboardPage"));
+const PesquisaEventosPage = lazy(() => import("../pages/admin/PesquisaEventosPage"));
+const PesquisaFormEditorPage = lazy(() => import("../pages/admin/PesquisaFormEditorPage"));
+const PesquisaPesquisadoresPage = lazy(() => import("../pages/admin/PesquisaPesquisadoresPage"));
 const VouchersPage = lazy(() => import("../pages/admin/VouchersPage"));
 const VoucherValidarPage = lazy(() => import("../pages/admin/VoucherValidarPage"));
 const VoucherAuditoriaPage = lazy(() => import("../pages/admin/VoucherAuditoriaPage"));
@@ -369,6 +372,9 @@ export const AppRoutes = () => (
           <Route path="transporte/embarque/:tripId" element={<AdminTransporteEmbarquePage />} />
           <Route path="ocorrencias" element={<OcorrenciasPage />} />
           <Route path="pesquisa" element={<PesquisaDashboardPage />} />
+          <Route path="pesquisa/eventos" element={<PesquisaEventosPage />} />
+          <Route path="pesquisa/eventos/:eventId/form" element={<PesquisaFormEditorPage />} />
+          <Route path="pesquisa/pesquisadores" element={<PesquisaPesquisadoresPage />} />
           <Route path="vouchers" element={<VouchersPage />} />
           <Route path="voucher/validar" element={<VoucherValidarPage />} />
           <Route path="vouchers/auditoria" element={<VoucherAuditoriaPage />} />
