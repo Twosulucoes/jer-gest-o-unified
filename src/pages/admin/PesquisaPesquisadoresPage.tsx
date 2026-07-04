@@ -37,7 +37,7 @@ export default function PesquisaPesquisadoresPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Researcher | null>(null);
-  const [form, setForm] = useState({ name: '', event_id: '', active: true, assigned_location: '' });
+  const [form, setForm] = useState({ name: '', event_id: '', active: true, assigned_location: '', pin: '' });
   const [pinTarget, setPinTarget] = useState<Researcher | null>(null);
   const [newPin, setNewPin] = useState('');
   const [generatedPin, setGeneratedPin] = useState('');
@@ -75,8 +75,9 @@ export default function PesquisaPesquisadoresPage() {
           .eq('id', editing.id);
         if (error) throw error;
       } else {
-        // Generate random PIN
-        const pin = String(Math.floor(1000 + Math.random() * 9000));
+        // PIN definido no formulário (pré-preenchido aleatório, editável pelo admin)
+        const pin = form.pin;
+        if (!/^\d{4}$/.test(pin)) throw new Error('PIN de 4 dígitos obrigatório');
         const { data: hash, error: hashErr } = await supabase.rpc('pesquisa_hash_pin', { pin });
         if (hashErr) throw hashErr;
         const { error } = await supabase.from('pesquisa_researchers').insert({
@@ -137,17 +138,19 @@ export default function PesquisaPesquisadoresPage() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const randomPin = () => String(Math.floor(1000 + Math.random() * 9000));
+
   const openNew = () => {
     setEditing(null);
     setGeneratedPin('');
-    setForm({ name: '', event_id: events?.[0]?.id || '', active: true, assigned_location: '' });
+    setForm({ name: '', event_id: events?.[0]?.id || '', active: true, assigned_location: '', pin: randomPin() });
     setDialogOpen(true);
   };
 
   const openEdit = (r: Researcher) => {
     setEditing(r);
     setGeneratedPin('');
-    setForm({ name: r.name, event_id: r.event_id, active: r.active, assigned_location: r.assigned_location || '' });
+    setForm({ name: r.name, event_id: r.event_id, active: r.active, assigned_location: r.assigned_location || '', pin: '' });
     setDialogOpen(true);
   };
 
@@ -263,6 +266,27 @@ export default function PesquisaPesquisadoresPage() {
                     maxLength={200}
                   />
                 </div>
+                {!editing && (
+                  <div className="space-y-2">
+                    <Label>PIN de acesso (4 dígitos) *</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={form.pin}
+                        onChange={e => setForm(f => ({ ...f, pin: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+                        className="text-center text-2xl tracking-[0.5em] font-mono flex-1"
+                      />
+                      <Button type="button" variant="outline" onClick={() => setForm(f => ({ ...f, pin: randomPin() }))}>
+                        Gerar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Um PIN aleatório já foi sugerido. Você pode digitar outro ou gerar de novo.
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Switch checked={form.active} onCheckedChange={a => setForm(f => ({ ...f, active: a }))} />
                   <Label>Ativo</Label>
@@ -270,7 +294,7 @@ export default function PesquisaPesquisadoresPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={() => saveMutation.mutate()} disabled={!form.name.trim() || !form.event_id || saveMutation.isPending}>
+                <Button onClick={() => saveMutation.mutate()} disabled={!form.name.trim() || !form.event_id || (!editing && form.pin.length !== 4) || saveMutation.isPending}>
                   {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
                 </Button>
               </DialogFooter>
