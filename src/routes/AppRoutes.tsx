@@ -234,6 +234,7 @@ const PesquisaLoginPage = lazy(() => import("../pages/pwa/PesquisaLoginPage"));
 const PesquisaHomePage = lazy(() => import("../pages/pwa/PesquisaHomePage"));
 const PesquisaNovaPage = lazy(() => import("../pages/pwa/PesquisaNovaPage"));
 const PesquisaConfirmacaoPage = lazy(() => import("../pages/pwa/PesquisaConfirmacaoPage"));
+const PesquisaPublicaPage = lazy(() => import("../pages/pwa/PesquisaPublicaPage"));
 
 // Public Pages
 const PublicResultsPage = lazy(() => import("../pages/public/PublicResultsPage"));
@@ -539,6 +540,7 @@ export const AppRoutes = () => (
       <Route path="/pesquisa/home" element={<PesquisaHomePage />} />
       <Route path="/pesquisa/nova" element={<PesquisaNovaPage />} />
       <Route path="/pesquisa/confirmacao" element={<PesquisaConfirmacaoPage />} />
+      <Route path="/pesquisa/publica/:eventId" element={<PesquisaPublicaPage />} />
 
       <Route path="/resultados-publicos" element={<Navigate to="/login" replace />} />
       <Route path="/public/results" element={<Navigate to="/login" replace />} />
