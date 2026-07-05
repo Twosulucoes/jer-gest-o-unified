@@ -71,6 +71,18 @@ create policy "Super admin acesso total osc_meta_targets"
   using (has_role(auth.uid(), 'super_admin'::app_role))
   with check (has_role(auth.uid(), 'super_admin'::app_role));
 
+-- 1b) Colunas de cidade-sede da etapa, usadas pela view e pela função de
+--     transparência abaixo (coalesce(es.host_city, es.host_name, es.name)).
+--     Idempotente e aditivo. Em produção estas colunas já existem — esta migration
+--     só foi aplicada com sucesso lá porque elas estavam presentes — então este
+--     bloco é no-op em produção (a migration não é reexecutada). O objetivo é
+--     garantir que um replay limpo do histórico (ex.: preview branch do Supabase)
+--     também tenha as colunas ANTES de criar a view vw_osc_meta1_por_etapa,
+--     evitando "column es.host_city does not exist".
+alter table public.event_stages
+  add column if not exists host_city text,
+  add column if not exists host_name text;
+
 -- 2) VIEW transparência: Meta 1 (apoio às delegações) por etapa regional / cidade-sede.
 create or replace view public.vw_osc_meta1_por_etapa
 with (security_invoker = on) as
