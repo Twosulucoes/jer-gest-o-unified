@@ -1,6 +1,7 @@
 export type ModuleId =
   | "alojamento"
   | "alimentacao"
+  | "material"
   | "credenciamento"
   | "transporte"
   | "coordenacao-tecnica"
@@ -21,6 +22,7 @@ export interface ModuleConfig {
 export const APP_MODULES: ModuleConfig[] = [
   { id: "alojamento", pathPrefix: "/pwa/alojamento", label: "Alojamento" },
   { id: "alimentacao", pathPrefix: "/pwa/alimentacao", label: "Alimentação" },
+  { id: "material", pathPrefix: "/pwa/material", label: "Entrega de Material" },
   { id: "credenciamento", pathPrefix: "/pwa/credenciamento", label: "Credenciamento" },
   { id: "transporte", pathPrefix: "/pwa/transporte", label: "Transporte" },
   { id: "coordenacao-tecnica", pathPrefix: "/pwa/coordenacao-tecnica", label: "Coordenação Técnica" },

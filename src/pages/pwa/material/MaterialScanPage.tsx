@@ -1,0 +1,921 @@
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  ScanLine,
+  CheckCircle,
+  XCircle,
+  Search,
+  Loader2,
+  User,
+  ChevronsUpDown,
+  Lock,
+  ListChecks,
+  Settings2,
+  Layers,
+  Package,
+} from "lucide-react";
+import { toast } from "sonner";
+import QrCodeScanner from "@/components/pwa/QrCodeScanner";
+import { resolveQrCredential } from "@/lib/resolveQrCredential";
+import {
+  searchParticipantsByNameOrCpf,
+  type ParticipantManualSearchRow,
+} from "@/lib/participantManualSearch";
+import { useEventContext } from "@/contexts/EventContext";
+import { useActiveStageId, useStageContext } from "@/contexts/StageContext";
+import { isVoucherQr } from "@/lib/voucherScan";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  loadScanPreferences,
+  saveScanPreferences,
+  loadScanTelemetry,
+  bumpScanTelemetry,
+  type ScanPreferences,
+  type ScanTelemetry,
+} from "@/lib/pwaScan";
+import { usePwaAudit } from "@/hooks/usePwaAudit";
+import PwaLayout from "@/components/pwa/PwaLayout";
+import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
+import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
+import { cn } from "@/lib/utils";
+
+interface MaterialKit {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+const MODULE = "material" as const;
+
+export default function MaterialScanPage() {
+  const navigate = useNavigate();
+
+  const { user } = useAuth();
+  const { activeEventId } = useEventContext();
+  const { activeStage, stages, setActiveStageId } = useStageContext();
+
+  usePwaAudit("material/escanear", activeEventId);
+
+  const stageId = useActiveStageId();
+  const userId = user?.id ?? null;
+
+  const usbInputRef = useRef<HTMLInputElement>(null);
+
+  const [kits, setKits] = useState<MaterialKit[]>([]);
+  const [kitId, setKitId] = useState("");
+  const [kitCount, setKitCount] = useState(0);
+  const [totalToday, setTotalToday] = useState(0);
+  const [myCount, setMyCount] = useState(0);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [online, setOnline] = useState(isOnline());
+
+  const { lookupQr, searchOffline } = useParticipantStatusCache({
+    eventId: activeEventId,
+    online,
+  });
+
+  const [prefs, setPrefs] = useState<ScanPreferences>(() =>
+    loadScanPreferences(MODULE, userId),
+  );
+  const [telemetry, setTelemetry] = useState<ScanTelemetry>(() =>
+    loadScanTelemetry(MODULE, userId),
+  );
+
+  const [result, setResult] = useState<{
+    ok: boolean;
+    message: string;
+    source?: "qr" | "manual";
+  } | null>(null);
+
+  const [manualQuery, setManualQuery] = useState("");
+  const [debouncedManual, setDebouncedManual] = useState("");
+  const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
+  const [manualSearching, setManualSearching] = useState(false);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const focusUsbInput = useCallback(() => {
+    setTimeout(() => {
+      if (!scannerOpen) usbInputRef.current?.focus();
+    }, 150);
+  }, [scannerOpen]);
+
+  useEffect(() => {
+    if (!scannerOpen) focusUsbInput();
+  }, [scannerOpen, kitId, isSubmitting, focusUsbInput]);
+
+  useEffect(() => {
+    setPrefs(loadScanPreferences(MODULE, userId));
+    setTelemetry(loadScanTelemetry(MODULE, userId));
+  }, [userId]);
+
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const updatePrefs = (next: ScanPreferences) => {
+    setPrefs(next);
+    saveScanPreferences(MODULE, next, userId);
+  };
+
+  const reopenIfContinuous = () => {
+    if (!prefs.continuousMode) {
+      focusUsbInput();
+      return;
+    }
+    setTimeout(() => setScannerOpen(true), prefs.reopenDelayMs);
+  };
+
+  const getErrorMessage = (err: unknown) => {
+    if (err instanceof Error && err.message) return err.message;
+    return "desconhecido";
+  };
+
+  const recordOutcome = (outcome: "ok" | "error") => {
+    setTelemetry(bumpScanTelemetry(MODULE, outcome, userId));
+  };
+
+  useEffect(() => {
+    if (!activeEventId) return;
+    (async () => {
+      let q = (supabase as any)
+        .from("material_kits")
+        .select("id, name, description")
+        .eq("event_id", activeEventId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+
+      if (stageId) q = q.eq("event_stage_id", stageId);
+
+      const { data } = await q;
+      const list = (data ?? []) as MaterialKit[];
+      setKits(list);
+    })();
+  }, [activeEventId, stageId]);
+
+  useEffect(() => {
+    if (kitId && kits.some((k) => k.id === kitId)) return;
+    if (kits.length > 0) setKitId(kits[0].id);
+  }, [kits]);
+
+  useEffect(() => {
+    if (!kitId) {
+      setKitCount(0);
+      return;
+    }
+    const fetchCount = async () => {
+      const { count } = await (supabase as any)
+        .from("material_deliveries")
+        .select("*", { count: "exact", head: true })
+        .eq("kit_id", kitId)
+        .eq("status", "active");
+      setKitCount(count || 0);
+    };
+    void fetchCount();
+
+    const channel = supabase
+      .channel(`material_deliveries_${kitId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "material_deliveries",
+          filter: `kit_id=eq.${kitId}`,
+        },
+        () => void fetchCount(),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [kitId]);
+
+  useEffect(() => {
+    if (!activeEventId || kits.length === 0) {
+      setTotalToday(0);
+      setMyCount(0);
+      return;
+    }
+    let cancelled = false;
+    const kitIds = kits.map((k) => k.id);
+    (async () => {
+      const { count: total } = await (supabase as any)
+        .from("material_deliveries")
+        .select("id", { count: "exact", head: true })
+        .in("kit_id", kitIds)
+        .eq("status", "active");
+      if (!cancelled) setTotalToday(total || 0);
+
+      if (userId) {
+        const { count: mine } = await (supabase as any)
+          .from("material_deliveries")
+          .select("id", { count: "exact", head: true })
+          .in("kit_id", kitIds)
+          .eq("status", "active")
+          .eq("delivered_by", userId);
+        if (!cancelled) setMyCount(mine || 0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeEventId, kits, userId, kitCount]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
+    return () => clearTimeout(t);
+  }, [manualQuery]);
+
+  useEffect(() => {
+    if (!activeEventId || debouncedManual.length < 2) {
+      setManualHits([]);
+      setManualSearching(false);
+      return;
+    }
+
+    if (!online) {
+      const results = searchOffline(debouncedManual);
+      setManualHits(
+        results.map((e) => ({
+          participant_id: e.participant_id,
+          person_id: "",
+          full_name: e.full_name,
+          cpf: e.cpf,
+          participant_type: "",
+          is_active: e.is_active,
+          needs_meals: e.needs_meals,
+          credentialed_at: e.credentialed_at,
+          left_event_at: null,
+        })),
+      );
+      setManualSearching(false);
+      return;
+    }
+
+    let cancelled = false;
+    setManualSearching(true);
+    void searchParticipantsByNameOrCpf(debouncedManual, activeEventId)
+      .then((rows) => {
+        if (!cancelled) setManualHits(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setManualSearching(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedManual, activeEventId, online]);
+
+  async function registerDelivery(
+    participantId: string,
+    participantName: string | null,
+    method: "qr_scan" | "manual",
+    resultSource: "qr" | "manual",
+  ) {
+    if (!kitId) {
+      toast.error("Selecione um kit de material.");
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user.id) {
+      setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
+      recordOutcome("error");
+      return;
+    }
+
+    const payload = {
+      participant_id: participantId,
+      kit_id: kitId,
+      method,
+      delivered_by: session.user.id,
+    };
+
+    if (!isOnline()) {
+      const enqueueResult = addToOfflineQueue(
+        "material",
+        payload,
+        participantName || undefined,
+      );
+
+      if (enqueueResult.deduped) {
+        const dedupMsg = `Já existe registro offline pendente para ${
+          participantName || "esta pessoa"
+        } neste kit.`;
+        setResult({ ok: false, message: dedupMsg, source: resultSource });
+        toast.info(dedupMsg);
+        recordOutcome("error");
+        reopenIfContinuous();
+        return;
+      }
+
+      const successMsg = `Material registrado (offline): ${participantName || ""}`;
+      setResult({ ok: true, source: resultSource, message: successMsg });
+      toast.info("Registrado offline. Sincronize quando houver internet.");
+      recordOutcome("ok");
+      if (navigator.vibrate) navigator.vibrate(200);
+      reopenIfContinuous();
+      return;
+    }
+
+    const { data: rpcResult, error: rpcError } = await (supabase as any).rpc(
+      "record_material_delivery",
+      {
+        p_participant_id: participantId,
+        p_kit_id: kitId,
+        p_method: method,
+        p_delivered_by: session.user.id,
+      },
+    );
+
+    if (rpcError) throw rpcError;
+
+    const res = rpcResult as { ok: boolean; reason?: string };
+
+    if (!res.ok) {
+      let msg: string;
+      switch (res.reason) {
+        case "ALREADY_DELIVERED":
+          msg = "Material já entregue a esta pessoa.";
+          break;
+        case "KIT_NOT_FOUND":
+          msg = "Kit não encontrado ou inativo.";
+          break;
+        default:
+          msg = "Não foi possível registrar a entrega. Tente novamente.";
+      }
+      setResult({ ok: false, message: msg, source: resultSource });
+      toast.error(msg);
+      recordOutcome("error");
+      reopenIfContinuous();
+      return;
+    }
+
+    const prefix = method === "manual" ? "Busca manual · " : "";
+    const successMsg = `${prefix}Material entregue: ${participantName || ""}`;
+    setResult({ ok: true, source: resultSource, message: successMsg });
+    toast.success(successMsg);
+    recordOutcome("ok");
+    if (navigator.vibrate) navigator.vibrate(200);
+    reopenIfContinuous();
+  }
+
+  const handleScan = async (rawValue: string) => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setScannerOpen(false);
+
+    const val = rawValue.trim();
+
+    if (!val) {
+      setIsSubmitting(false);
+      focusUsbInput();
+      return;
+    }
+
+    if (!kitId) {
+      toast.error("Selecione um kit de material.");
+      setIsSubmitting(false);
+      focusUsbInput();
+      return;
+    }
+
+    try {
+      if (isVoucherQr(val)) {
+        const msg = "Este é um QR de voucher, não um crachá. Use o crachá do participante.";
+        setResult({ ok: false, message: msg, source: "qr" });
+        toast.error(msg);
+        recordOutcome("error");
+        reopenIfContinuous();
+        return;
+      }
+
+      if (!isOnline()) {
+        const cached = lookupQr(val);
+
+        if (cached.state === "sem_cache") {
+          const msg =
+            "Sem conexão e cache indisponível. Abra o módulo com internet primeiro para baixar os dados.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error("Cache indisponível", { description: msg });
+          recordOutcome("error");
+          return;
+        }
+
+        if (cached.state === "nao_cadastrado") {
+          const msg = "Crachá não encontrado no cache offline.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          return;
+        }
+
+        if (cached.state === "nao_credenciado") {
+          const msg = "Participante sem credencial ativa.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          return;
+        }
+
+        const cachedEntry = cached.entry;
+        if (!cachedEntry.is_active) {
+          const msg = "Participante inativo ou não encontrado.";
+          setResult({ ok: false, message: msg, source: "qr" });
+          toast.error(msg);
+          recordOutcome("error");
+          return;
+        }
+
+        await registerDelivery(
+          cachedEntry.participant_id,
+          cachedEntry.full_name,
+          "qr_scan",
+          "qr",
+        );
+        return;
+      }
+
+      const resolved = await resolveQrCredential(val, { eventId: activeEventId });
+
+      if (!resolved) {
+        const msg = "Crachá não reconhecido.";
+        setResult({ ok: false, message: msg, source: "qr" });
+        toast.error(msg);
+        recordOutcome("error");
+        return;
+      }
+
+      const { data: partData, error: partError } = await (supabase as any)
+        .from("participants")
+        .select("is_active, credentialed_at")
+        .eq("id", resolved.participant_id)
+        .single();
+
+      if (partError || !partData?.is_active) {
+        const msg = "Participante inativo ou não encontrado.";
+        setResult({ ok: false, message: msg, source: "qr" });
+        toast.error(msg);
+        recordOutcome("error");
+        return;
+      }
+
+      if (!partData.credentialed_at) {
+        const msg = "Participante sem credencial ativa.";
+        setResult({ ok: false, message: msg, source: "qr" });
+        toast.error(msg);
+        recordOutcome("error");
+        return;
+      }
+
+      await registerDelivery(
+        resolved.participant_id,
+        resolved.full_name,
+        "qr_scan",
+        "qr",
+      );
+    } catch (err: unknown) {
+      setResult({
+        ok: false,
+        message: `Erro ao registrar: ${getErrorMessage(err)}`,
+      });
+      recordOutcome("error");
+    } finally {
+      setIsSubmitting(false);
+      setManualQuery("");
+      setDebouncedManual("");
+      setManualHits([]);
+      focusUsbInput();
+    }
+  };
+
+  const handleManualPick = async (row: ParticipantManualSearchRow) => {
+    if (isSubmitting) return;
+
+    setManualQuery("");
+    setManualHits([]);
+    setIsSubmitting(true);
+
+    try {
+      if (row.is_active === false) {
+        const msg = "Participante inativo.";
+        setResult({ ok: false, message: msg, source: "manual" });
+        toast.error(msg);
+        recordOutcome("error");
+        return;
+      }
+      await registerDelivery(row.participant_id, row.full_name, "manual", "manual");
+    } catch (err: unknown) {
+      setResult({
+        ok: false,
+        message: `Erro ao registrar: ${getErrorMessage(err)}`,
+      });
+      recordOutcome("error");
+    } finally {
+      setIsSubmitting(false);
+      focusUsbInput();
+    }
+  };
+
+  const currentKit = useMemo(
+    () => kits.find((k) => k.id === kitId) ?? null,
+    [kits, kitId],
+  );
+
+  const hasKit = !!currentKit;
+
+  return (
+    <PwaLayout backTo="/pwa/material/scan" moduleTitle="Entrega de Material">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-25" />
+
+      <main className="relative mx-auto max-w-md space-y-3 p-3">
+        {!activeStage && stages.length > 0 && (
+          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Layers className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-extrabold uppercase tracking-tight text-amber-800 dark:text-amber-400">
+                  Selecione sua Etapa
+                </p>
+                <p className="text-[11px] text-amber-700/80 dark:text-amber-500/80">
+                  Confirme a etapa de trabalho para começar.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              {stages.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setActiveStageId(s.id)}
+                  className="w-full rounded-xl border border-amber-500/40 bg-white/70 dark:bg-amber-900/20 px-4 py-3 text-left flex items-center justify-between active:scale-[0.98] transition-all"
+                >
+                  <span className="font-bold text-sm text-foreground">{s.name}</span>
+                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                    Trabalhar aqui →
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {kits.length === 0 ? (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-center space-y-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Nenhum kit de material cadastrado
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {activeStage
+                ? "Cadastre um kit para esta etapa no painel administrativo."
+                : "Selecione uma etapa para listar os kits."}
+            </p>
+          </div>
+        ) : (
+          <div className="w-full flex items-center gap-3 rounded-2xl border-2 border-emerald-600/60 ring-1 ring-emerald-500/40 bg-card/60 px-4 py-3">
+            <span className="relative inline-flex h-3 w-3 shrink-0 rounded-full bg-emerald-500">
+              <span className="absolute inset-0 inline-flex animate-ping rounded-full bg-emerald-500/60" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400">
+                KIT SELECIONADO
+              </p>
+              <p className="mt-0.5 truncate text-base font-extrabold text-foreground">
+                {currentKit?.name}
+              </p>
+              {currentKit?.description && (
+                <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                  {currentKit.description}
+                </p>
+              )}
+            </div>
+            {kits.length > 1 ? (
+              <select
+                value={kitId}
+                onChange={(e) => setKitId(e.target.value)}
+                className="shrink-0 rounded-md border border-border/70 bg-background/40 px-2 py-1 text-xs font-semibold text-foreground"
+                aria-label="Trocar kit"
+              >
+                {kits.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="shrink-0 inline-flex items-center gap-1 rounded-md border border-border/70 bg-background/40 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <ChevronsUpDown className="h-3 w-3" />
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2">
+          <KpiCard label="Meus Registros" value={myCount} tone="blue" large />
+          <KpiCard label="Total Geral" value={totalToday} tone="default" large />
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <KpiCard label="Kit" value={kitCount} tone="blue" />
+          <KpiCard label="OK" value={telemetry.ok} tone="green" />
+          <KpiCard
+            label="Erro"
+            value={telemetry.error}
+            tone={telemetry.error > 0 ? "red" : "muted"}
+          />
+        </div>
+
+        {!scannerOpen && (
+          <button
+            type="button"
+            onClick={() => hasKit && setScannerOpen(true)}
+            disabled={!hasKit || isSubmitting}
+            className={cn(
+              "w-full rounded-2xl px-4 py-4 text-left transition-all flex items-center gap-3 shadow-app-md",
+              hasKit
+                ? "bg-module text-white hover:brightness-110 active:scale-[0.98]"
+                : "bg-zinc-800/60 text-zinc-400 cursor-not-allowed opacity-70",
+            )}
+          >
+            <div
+              className={cn(
+                "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
+                hasKit ? "bg-white/20" : "bg-zinc-700/50",
+              )}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : hasKit ? (
+                <ScanLine className="h-6 w-6" />
+              ) : (
+                <Lock className="h-6 w-6" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-extrabold leading-tight">
+                {isSubmitting
+                  ? "Processando…"
+                  : hasKit
+                    ? "Escanear Crachá"
+                    : "Kit não disponível"}
+              </p>
+              <p className="text-[11px] font-medium opacity-80 truncate">
+                {hasKit ? currentKit?.name : "Cadastre um kit para começar"}
+              </p>
+            </div>
+          </button>
+        )}
+
+        {scannerOpen && (
+          <QrCodeScanner
+            isOpen={scannerOpen}
+            onClose={() => {
+              setScannerOpen(false);
+              focusUsbInput();
+            }}
+            onScan={handleScan}
+            continuous={prefs.continuousMode}
+            title="Escanear Crachá"
+            variant="inline"
+          />
+        )}
+
+        <div className="space-y-2">
+          <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-[11px] text-blue-700 dark:text-blue-300">
+            <strong>Leitor USB ativo:</strong> conecte o leitor, clique no campo abaixo e passe o crachá. A câmera do celular continua funcionando no botão acima.
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              ref={usbInputRef}
+              autoFocus
+              placeholder="Leitor USB / Nome / CPF…"
+              value={manualQuery}
+              disabled={isSubmitting}
+              onChange={(e) => setManualQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const code = manualQuery.trim();
+                  if (code.length >= 3) {
+                    setManualQuery("");
+                    setDebouncedManual("");
+                    setManualHits([]);
+                    void handleScan(code).finally(() => focusUsbInput());
+                  }
+                }
+              }}
+              onBlur={() => {
+                if (!scannerOpen) focusUsbInput();
+              }}
+              className="h-12 border-border/80 bg-card/90 pl-10 text-base font-mono"
+            />
+          </div>
+
+          {!activeEventId && (
+            <p className="text-center text-[11px] text-amber-600 dark:text-amber-400">
+              Selecione o evento ativo para habilitar a busca.
+            </p>
+          )}
+
+          {activeEventId && debouncedManual.length >= 2 && (
+            <Card className="max-h-44 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
+              <CardContent className="p-0">
+                {manualSearching && (
+                  <div className="flex items-center justify-center gap-2 py-5 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">Buscando…</span>
+                  </div>
+                )}
+
+                {!manualSearching && manualHits.length === 0 && (
+                  <p className="px-4 py-5 text-center text-sm text-muted-foreground">
+                    Nenhum participante encontrado neste evento.
+                  </p>
+                )}
+
+                {!manualSearching &&
+                  manualHits.map((h) => (
+                    <button
+                      key={h.participant_id}
+                      type="button"
+                      onClick={() => void handleManualPick(h)}
+                      disabled={isSubmitting}
+                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {h.full_name}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {h.participant_type}
+                        </p>
+                      </div>
+                      {h.is_active === false && (
+                        <span className="ml-2 shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                          inativo
+                        </span>
+                      )}
+                    </button>
+                  ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {result && (
+          <div
+            className={cn(
+              "flex items-start gap-2 rounded-2xl border px-3 py-2",
+              result.ok
+                ? "border-emerald-500/40 bg-emerald-500/5"
+                : "border-destructive/40 bg-destructive/5",
+            )}
+          >
+            {result.ok ? (
+              <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500" />
+            ) : (
+              <XCircle className="h-5 w-5 shrink-0 text-destructive" />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium leading-snug">{result.message}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/pwa/material/lista")}
+            className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-left active:scale-[0.98] transition-transform"
+          >
+            <ListChecks className="h-4 w-4 text-module shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold leading-tight truncate">Lista de entregas</p>
+              <p className="text-[10px] text-muted-foreground">Histórico do kit</p>
+            </div>
+          </button>
+
+          <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 cursor-pointer">
+            <Settings2 className="h-4 w-4 text-module shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold leading-tight truncate">Modo contínuo</p>
+              <p className="text-[10px] text-muted-foreground">
+                {prefs.continuousMode ? "Reabre câmera após scan" : "Desligado"}
+              </p>
+            </div>
+            <Switch
+              checked={prefs.continuousMode}
+              onCheckedChange={(v) => updatePrefs({ ...prefs, continuousMode: v })}
+              aria-label="Modo contínuo"
+            />
+          </label>
+        </div>
+
+        <SyncStatusLine online={online} />
+      </main>
+    </PwaLayout>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  tone,
+  large,
+}: {
+  label: string;
+  value: number;
+  tone: "default" | "blue" | "green" | "red" | "muted";
+  large?: boolean;
+}) {
+  const valueClass = {
+    default: "text-foreground",
+    blue: "text-blue-400",
+    green: "text-green-400",
+    red: "text-red-400",
+    muted: "text-zinc-500",
+  }[tone];
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border/70 bg-card/60 text-center",
+        large ? "px-3 py-3" : "px-2 py-2",
+      )}
+    >
+      <p
+        className={cn(
+          "font-bold uppercase tracking-wider text-muted-foreground",
+          large ? "text-[10px]" : "text-[9px]",
+        )}
+      >
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-0.5 font-extrabold tabular-nums leading-none",
+          large ? "text-3xl" : "text-2xl",
+          valueClass,
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SyncStatusLine({ online }: { online: boolean }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-xl border px-3 py-1.5",
+        online
+          ? "bg-green-950/30 border-green-900/40"
+          : "bg-amber-950/30 border-amber-900/40",
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "w-1.5 h-1.5 rounded-full animate-pulse",
+            online ? "bg-green-400" : "bg-amber-400",
+          )}
+        />
+        <span
+          className={cn(
+            "text-[11px] font-semibold",
+            online ? "text-green-400" : "text-amber-400",
+          )}
+        >
+          {online ? "Sistema online · Sync ativo" : "Offline · dados em fila"}
+        </span>
+      </div>
+      <Package className="h-3.5 w-3.5 text-zinc-500" />
+    </div>
+  );
+}

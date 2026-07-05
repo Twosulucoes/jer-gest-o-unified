@@ -31,7 +31,7 @@ function resetStuckSyncingItems() {
 
 export type OfflineQueueItem = {
   id: string;
-  module: "alimentacao" | "transporte";
+  module: "alimentacao" | "transporte" | "material";
   data: Record<string, unknown>;
   timestamp: string;
   participantName?: string;
@@ -116,7 +116,7 @@ export type AddToOfflineQueueResult =
   | { item: OfflineQueueItem; deduped: true };
 
 export const addToOfflineQueue = (
-  module: "alimentacao" | "transporte",
+  module: "alimentacao" | "transporte" | "material",
   data: Record<string, unknown>,
   participantName?: string,
 ): AddToOfflineQueueResult => {
@@ -240,6 +240,34 @@ export const syncOfflineQueue = async () => {
           // Falhas permanentes: participante não inscrito na etapa, janela inválida,
           // data errada, fora do horário, sem elegibilidade — nunca vão sincronizar.
           console.warn("[offlineQueue] Consumo offline descartado:", mealRes.reason);
+          const finalQueueBlocked = getOfflineQueue().filter((i) => i.id !== item.id);
+          saveOfflineQueue(finalQueueBlocked);
+          errorCount++;
+          continue;
+        }
+      } else if (item.module === "material") {
+        const matData = item.data as { participant_id: string; kit_id: string; method: string; delivered_by: string };
+        const { data: rpcResult, error: rpcError } = await (supabase as any).rpc("record_material_delivery", {
+          p_participant_id: matData.participant_id,
+          p_kit_id: matData.kit_id,
+          p_method: matData.method,
+          p_delivered_by: matData.delivered_by,
+        });
+
+        if (rpcError) {
+          if (rpcError.code === "23505") {
+            const finalQueueDup = getOfflineQueue().filter((i) => i.id !== item.id);
+            saveOfflineQueue(finalQueueDup);
+            errorCount++;
+            continue;
+          }
+          throw rpcError;
+        }
+
+        const matRes = rpcResult as { ok: boolean; reason?: string };
+        if (!matRes.ok) {
+          // ALREADY_DELIVERED / KIT_NOT_FOUND: nunca vão sincronizar — remove da fila.
+          console.warn("[offlineQueue] Entrega de material offline descartada:", matRes.reason);
           const finalQueueBlocked = getOfflineQueue().filter((i) => i.id !== item.id);
           saveOfflineQueue(finalQueueBlocked);
           errorCount++;

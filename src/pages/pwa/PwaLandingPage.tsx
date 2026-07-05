@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, Building, Gavel, Shield, Layers, IdCard, Download, Calendar, Settings } from "lucide-react";
+import { Loader2, LogOut, Bus, UtensilsCrossed, Trophy, Users, Building, Gavel, Shield, Layers, IdCard, Download, Calendar, Settings, Package } from "lucide-react";
 import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import { isStageOpenToday, stageWindowLabel, stageWindowBadge } from "@/lib/stageDateUtils";
@@ -21,6 +21,7 @@ interface UserProfile {
 const MODULE_CARDS = [
   { role: "transporte", label: "Transporte", icon: Bus, to: "/pwa/transporte", gradient: "from-[hsl(212,84%,36%)] to-[hsl(214,78%,21%)]" },
   { role: "alimentacao", label: "Alimentação", icon: UtensilsCrossed, to: "/pwa/alimentacao", gradient: "from-[hsl(174,87%,34%)] to-[hsl(212,84%,36%)]" },
+  { role: "material", label: "Entrega de Material", icon: Package, to: "/pwa/material", gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]" },
   { role: "alojamento", label: "Alojamento", icon: Building, to: "/pwa/alojamento", gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]" },
   { role: "coordenacao_tecnica", label: "Coord. Técnica", icon: Trophy, to: "/pwa/coordenacao-tecnica", gradient: "from-[hsl(214,78%,21%)] to-[hsl(212,84%,36%)]" },
   { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao", gradient: "from-[hsl(174,87%,34%)] to-[hsl(133,55%,45%)]" },

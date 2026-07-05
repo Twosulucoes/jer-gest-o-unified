@@ -198,6 +198,10 @@ const AlimentacaoBuscarPage = lazy(() => import("@/pages/pwa/alimentacao/Aliment
 const AlimentacaoJanelasPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoJanelasPage"));
 const AlimentacaoListaConsumosPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoListaConsumosPage"));
 const AlimentacaoHistoricoPage = lazy(() => import("@/pages/pwa/alimentacao/AlimentacaoHistoricoPage"));
+const MaterialHomePage = lazy(() => import("@/pages/pwa/material/MaterialHomePage"));
+const MaterialScanPage = lazy(() => import("@/pages/pwa/material/MaterialScanPage"));
+const MaterialListaPage = lazy(() => import("@/pages/pwa/material/MaterialListaPage"));
+const MaterialEntregaPage = lazy(() => import("@/pages/admin/MaterialEntregaPage"));
 const CoordenacaoHomePage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoHomePage"));
 const CoordenacaoAgendaPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoAgendaPage"));
 const CoordenacaoPartidasPage = lazy(() => import("@/pages/pwa/coordenacao/CoordenacaoPartidasPage"));
@@ -379,6 +383,7 @@ export const AppRoutes = () => (
           <Route path="vouchers" element={<VouchersPage />} />
           <Route path="voucher/validar" element={<VoucherValidarPage />} />
           <Route path="vouchers/auditoria" element={<VoucherAuditoriaPage />} />
+          <Route path="material" element={<MaterialEntregaPage />} />
         
           <Route path="relatorios" element={<StageReportsPage />} />
         </Route>
@@ -493,6 +498,9 @@ export const AppRoutes = () => (
         <Route path="alimentacao/janelas" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoJanelasPage /></PwaRouteGuard>} />
         <Route path="alimentacao/consumos" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoListaConsumosPage /></PwaRouteGuard>} />
         <Route path="alimentacao/historico" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHistoricoPage /></PwaRouteGuard>} />
+        <Route path="material" element={<PwaRouteGuard allowedRoles={["material", "admin", "secretaria"]}><MaterialHomePage /></PwaRouteGuard>} />
+        <Route path="material/scan" element={<PwaRouteGuard allowedRoles={["material", "admin", "secretaria"]}><MaterialScanPage /></PwaRouteGuard>} />
+        <Route path="material/lista" element={<PwaRouteGuard allowedRoles={["material", "admin", "secretaria"]}><MaterialListaPage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/agenda" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoAgendaPage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/partidas" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoPartidasPage /></PwaRouteGuard>} />
@@ -527,6 +535,7 @@ export const AppRoutes = () => (
         <Route path="diagnostico/qr" element={<QrDiagnosticoPage />} />
         <Route path="alojamento/*" element={<PwaRouteGuard allowedRoles={["alojamento", "admin", "secretaria"]}><AlojamentoHomePage /></PwaRouteGuard>} />
         <Route path="alimentacao/*" element={<PwaRouteGuard allowedRoles={["alimentacao", "admin", "secretaria"]}><AlimentacaoHomePage /></PwaRouteGuard>} />
+        <Route path="material/*" element={<PwaRouteGuard allowedRoles={["material", "admin", "secretaria"]}><MaterialHomePage /></PwaRouteGuard>} />
         <Route path="transporte/*" element={<PwaRouteGuard allowedRoles={["transporte", "admin", "secretaria"]}><TransporteHomePage /></PwaRouteGuard>} />
         <Route path="coordenacao-tecnica/*" element={<PwaRouteGuard allowedRoles={["coordenacao_tecnica", "admin", "secretaria"]}><CoordenacaoHomePage /></PwaRouteGuard>} />
         <Route path="delegacao/*" element={<PwaRouteGuard allowedRoles={["delegacao", "admin", "secretaria"]}><DelegacaoHomePage /></PwaRouteGuard>} />

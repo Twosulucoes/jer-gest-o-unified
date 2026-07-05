@@ -22,7 +22,7 @@ import {
   Home, Scan, Search, History, ClipboardList, Users,
   Calendar, Bus, Trophy, LayoutDashboard, LayoutGrid, Radio, LogOut,
   Menu, ShieldCheck, AlertCircle, Settings, Layers, Plus,
-  UtensilsCrossed, Building, IdCard, Award
+  UtensilsCrossed, Building, IdCard, Award, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -82,6 +82,7 @@ export default function PwaLayout({
   const moduleConfig = {
     transporte: { title: "Transporte", icon: Bus, scanTo: "/pwa/transporte/scan", homeTo: "/pwa/transporte" },
     alimentacao: { title: "Alimentação", icon: UtensilsCrossed, scanTo: "/pwa/alimentacao/scan", homeTo: "/pwa/alimentacao" },
+    material: { title: "Entrega de Material", icon: Package, scanTo: "/pwa/material/scan", homeTo: "/pwa/material" },
     alojamento: { title: "Alojamento", icon: Building, scanTo: "/pwa/alojamento/scan", homeTo: "/pwa/alojamento" },
     "coordenacao-tecnica": { title: "Coordenação", icon: Trophy, homeTo: "/pwa/coordenacao-tecnica", primaryAction: { icon: Search, to: "/pwa/coordenacao-tecnica/consulta", label: "Consultar" } },
     delegacao: { title: "Delegação", icon: Users, homeTo: "/pwa/delegacao" },
@@ -101,6 +102,7 @@ export default function PwaLayout({
     const all = [
       { role: "transporte", label: "Transporte", icon: Bus, to: "/pwa/transporte" },
       { role: "alimentacao", label: "Alimentação", icon: UtensilsCrossed, to: "/pwa/alimentacao" },
+      { role: "material", label: "Entrega de Material", icon: Package, to: "/pwa/material" },
       { role: "alojamento", label: "Alojamento", icon: Building, to: "/pwa/alojamento" },
       { role: "coordenacao_tecnica", label: "Coord. Técnica", icon: Trophy, to: "/pwa/coordenacao-tecnica" },
       { role: "delegacao", label: "Delegação", icon: Users, to: "/pwa/delegacao" },
