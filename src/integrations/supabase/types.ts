@@ -14352,6 +14352,7 @@ export type Database = {
         | "secretaria"
         | "transporte"
         | "alimentacao"
+        | "material"
         | "coordenacao_tecnica"
         | "delegacao"
         | "alojamento"
@@ -14544,6 +14545,7 @@ export const Constants = {
         "secretaria",
         "transporte",
         "alimentacao",
+        "material",
         "coordenacao_tecnica",
         "delegacao",
         "alojamento",

@@ -2,7 +2,7 @@ import { NavLink, Outlet, useLocation, useNavigate, useParams, Link, Navigate } 
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft, BadgeCheck, Trophy, Building, UtensilsCrossed, Bus,
+  ArrowLeft, BadgeCheck, Trophy, Building, UtensilsCrossed, Bus, Package,
   AlertTriangle, ClipboardList, FileBarChart, Layers, Menu, X,
   ChevronsLeft, ChevronsRight, LogOut, User, Home, ScanLine,
 } from "lucide-react";
@@ -52,6 +52,7 @@ const STAGE_NAV: StageNavItem[] = [
   { label: "Pesquisa de Satisfação", to: "pesquisa", icon: <ClipboardList className="h-4 w-4" />, roles: ALL_OPS },
   { label: "Relatórios da Etapa", to: "relatorios", icon: <FileBarChart className="h-4 w-4" />, roles: ALL_OPS },
   { label: "Vouchers", to: "vouchers", icon: <ClipboardList className="h-4 w-4" />, roles: ALL_OPS },
+  { label: "Entrega de Material", to: "material", icon: <Package className="h-4 w-4" />, roles: [...ALL_OPS, "material"] },
 ];
 
 const KIND_LABELS: Record<string, string> = {

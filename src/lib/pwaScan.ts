@@ -6,7 +6,7 @@
  * Tudo é client-side e tolerante a falhas — nunca lança.
  */
 
-export type ScanModule = "transporte" | "alimentacao" | "alojamento";
+export type ScanModule = "transporte" | "alimentacao" | "alojamento" | "material";
 
 export interface ScanPreferences {
   continuousMode: boolean;

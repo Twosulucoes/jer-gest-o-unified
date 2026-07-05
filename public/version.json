@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "claude/reports-nutrition-audit-Moe21",
-  "commit": "0105c617",
-  "commitFull": "0105c6178ff604256bc6ae8ddf018b597e528682",
-  "buildDate": "2026-05-26T02:36:41.014Z",
+  "branch": "feat/protocolo-entrega-material",
+  "commit": "23459ebf",
+  "commitFull": "23459ebf675c568fe4d9601a9cc5b7de72493ae7",
+  "buildDate": "2026-07-05T22:53:14.863Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
