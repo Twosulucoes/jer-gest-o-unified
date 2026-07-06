@@ -2,7 +2,24 @@ import { useQueries } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const STALE = 30_000;
-const todayISO = () => new Date().toISOString().slice(0, 10);
+
+// Roraima usa o fuso America/Boa_Vista (UTC-4, sem horário de verão).
+// "Hoje" precisa ser o dia-calendário local — usar UTC atribui as refeições
+// servidas à noite (após ~20h local) ao dia seguinte.
+const todayISO = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Boa_Vista",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+// Limites do dia BRT expressos como instantes UTC (offset fixo -04:00).
+const brtDayBounds = (isoDate: string) => {
+  const start = new Date(`${isoDate}T00:00:00-04:00`);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { startISO: start.toISOString(), endISO: end.toISOString() };
+};
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try { return await fn(); } catch { return fallback; }
@@ -51,34 +68,21 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data, error } = await supabase.from("participant_event_stages" as any)
-            .select("participant_id")
-            .eq("event_stage_id", stageId!);
-
+          // Contagem no servidor (RPC) para não sofrer o teto de 1000 linhas
+          // do PostgREST — antes o browser baixava as linhas e contava com
+          // P.length, travando participantes em 1000 e subestimando os
+          // credenciados (que eram derivados apenas desses 1000 IDs).
+          const { data, error } = await supabase.rpc("get_stage_participation_counts", { p_stage_id: stageId! });
           if (error) {
-            console.error("Error fetching participants for stage dashboard:", error);
+            console.error("Error fetching participation counts for stage dashboard:", error);
             throw error;
           }
-          const rows = (data ?? []) as any[];
-          const pIds = rows.map((r: any) => r.participant_id);
-
-          let credentialedCount = 0;
-          if (pIds.length > 0) {
-            const credSet = new Set<string>();
-            for (let i = 0; i < pIds.length; i += 200) {
-              const chunk = pIds.slice(i, i + 200);
-              const { data: creds } = await supabase
-                .from("participant_credentials")
-                .select("participant_id")
-                .in("participant_id", chunk)
-                .eq("status", "active");
-              for (const c of creds ?? []) credSet.add((c as any).participant_id);
-            }
-            credentialedCount = credSet.size;
-          }
-
-          return { rows, credentialedCount };
-        }, { rows: [], credentialedCount: 0 }),
+          const row = (Array.isArray(data) ? data[0] : data) as { participants: number; credentialed: number } | undefined;
+          return {
+            participantsCount: row?.participants ?? 0,
+            credentialedCount: row?.credentialed ?? 0,
+          };
+        }, { participantsCount: 0, credentialedCount: 0 }),
       },
       {
         queryKey: ["stage_dash", "matches", stageId],
@@ -162,7 +166,7 @@ export function useStageDashboardData(stageId?: string | null) {
   const refetchAll = async () => { await Promise.all(queries.map((q) => q.refetch())); };
 
   const [participantsResult, matches, lodgingUnits, lodgingOccupied, mealWindows, refereeIndisponibilities] =
-    queries.map((q) => q.data) as [{ rows: any[]; credentialedCount: number } | undefined, any[], any[], number, any[], any[]];
+    queries.map((q) => q.data) as [{ participantsCount: number; credentialedCount: number } | undefined, any[], any[], number, any[], any[]];
 
   const windowIds = (mealWindows ?? []).map(w => w.id);
 
@@ -188,12 +192,12 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const today = todayISO();
+          const { startISO, endISO } = brtDayBounds(todayISO());
           const { count, error } = await supabase.from("meal_consumptions" as any)
             .select("id", { count: "exact", head: true })
             .in("meal_window_id", windowIds)
-            .gte("consumed_at", `${today}T00:00:00.000Z`)
-            .lt("consumed_at", `${today}T23:59:59.999Z`);
+            .gte("consumed_at", startISO)
+            .lt("consumed_at", endISO);
           if (error) {
             console.error("Error fetching today meal consumptions count:", error);
             throw error;
@@ -208,7 +212,7 @@ export function useStageDashboardData(stageId?: string | null) {
   const mealsTodayCount = (consumptionQuery[1].data ?? 0) as number;
   const isLoadingAll = isLoading || consumptionQuery.some((q) => q.isLoading);
 
-  const P = participantsResult?.rows ?? [];
+  const participantsCount = participantsResult?.participantsCount ?? 0;
   const credentialed = participantsResult?.credentialedCount ?? 0;
   const MA = matches ?? [];
   const LU = lodgingUnits ?? [];
@@ -249,7 +253,7 @@ export function useStageDashboardData(stageId?: string | null) {
 
   const data: StageDashboardData = {
     resumo: {
-      participants: P.length,
+      participants: participantsCount,
       credentialed,
       matches_total: MA.length,
       matches_done: matchesDone,
@@ -265,5 +269,13 @@ export function useStageDashboardData(stageId?: string | null) {
     }
   };
 
-  return { data, isLoading: isLoadingAll, refetchAll, lastUpdated: new Date() };
+  // Horário real da última atualização dos dados (não do último render).
+  const lastUpdatedMs = Math.max(
+    0,
+    ...queries.map((q) => q.dataUpdatedAt || 0),
+    ...consumptionQuery.map((q) => q.dataUpdatedAt || 0),
+  );
+  const lastUpdated = lastUpdatedMs > 0 ? new Date(lastUpdatedMs) : null;
+
+  return { data, isLoading: isLoadingAll, refetchAll, lastUpdated };
 }
