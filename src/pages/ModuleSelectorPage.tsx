@@ -8,7 +8,7 @@ import { useEventContext } from "@/contexts/EventContext";
 import { useStageContext } from "@/contexts/StageContext";
 import {
   Loader2, UtensilsCrossed, Users, Clipboard, Shield, LogOut,
-  LayoutDashboard, Bus, Bed, Trophy, ScanLine, IdCard, Search
+  LayoutDashboard, Bus, Bed, Trophy, ScanLine, IdCard, Search, Package
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +80,15 @@ const MODULE_OPTIONS: ModuleOption[] = [
     description: "Gerenciar check-in e ocupação",
     icon: Bed,
     path: "/pwa/alojamento",
+    gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]",
+    requireStage: true,
+  },
+  {
+    roles: ["material"],
+    label: "Entrega de Material",
+    description: "Protocolo de entrega de material",
+    icon: Package,
+    path: "/pwa/material",
     gradient: "from-[hsl(133,55%,45%)] to-[hsl(174,87%,34%)]",
     requireStage: true,
   },
