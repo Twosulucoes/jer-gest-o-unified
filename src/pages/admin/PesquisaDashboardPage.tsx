@@ -45,10 +45,12 @@ export default function PesquisaDashboardPage() {
   const { data: researchers } = useQuery({
     queryKey: ['pesquisa-researchers-list', eventFilter],
     queryFn: async () => {
-      let query = supabase.from('pesquisa_researchers').select('id, name').eq('active', true).order('name');
+      // Lista todos os pesquisadores (inclusive inativos): coletas de pesquisadores
+      // desativados continuam contando nos totais, então precisam ser filtráveis aqui.
+      let query = supabase.from('pesquisa_researchers').select('id, name, active').order('name');
       if (eventFilter !== 'all') query = query.eq('event_id', eventFilter);
       const { data } = await query;
-      return data || [];
+      return (data || []) as { id: string; name: string; active: boolean }[];
     },
   });
 
@@ -61,7 +63,8 @@ export default function PesquisaDashboardPage() {
         .order('collected_at', { ascending: false })
         .limit(1000);
       if (eventFilter !== 'all') query = query.eq('event_id', eventFilter);
-      if (researcherFilter !== 'all') query = query.eq('researcher_id', researcherFilter);
+      if (researcherFilter === '__public__') query = query.is('researcher_id', null);
+      else if (researcherFilter !== 'all') query = query.eq('researcher_id', researcherFilter);
       if (dateFrom) query = query.gte('collected_at', dateFrom);
       if (dateTo) query = query.lte('collected_at', dateTo + 'T23:59:59');
       const { data } = await query;
@@ -131,7 +134,9 @@ export default function PesquisaDashboardPage() {
         : events?.find((e) => e.id === eventFilter)?.name ?? 'Evento';
       const researcherName = researcherFilter === 'all'
         ? undefined
-        : (researchers as { id: string; name: string }[] | undefined)?.find((r) => r.id === researcherFilter)?.name;
+        : researcherFilter === '__public__'
+          ? 'Coletas públicas'
+          : (researchers as { id: string; name: string }[] | undefined)?.find((r) => r.id === researcherFilter)?.name;
       const blob = await exportPesquisaSatisfacaoPdf(surveys, selectedConfig, {
         eventName,
         researcherName,
@@ -175,7 +180,10 @@ export default function PesquisaDashboardPage() {
           <SelectTrigger className="w-[220px]"><SelectValue placeholder="Pesquisador" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos pesquisadores</SelectItem>
-            {researchers?.map((r: { id: string; name: string }) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+            {researchers?.map((r) => (
+              <SelectItem key={r.id} value={r.id}>{r.name}{r.active ? '' : ' · inativo'}</SelectItem>
+            ))}
+            <SelectItem value="__public__">Coletas públicas (sem pesquisador)</SelectItem>
           </SelectContent>
         </Select>
 
