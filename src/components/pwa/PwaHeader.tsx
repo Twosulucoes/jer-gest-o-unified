@@ -102,16 +102,21 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
             {(subtitle || (activeStage && !hideStage)) && (
               <button
                 onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
-                className="line-clamp-2 text-left text-[11px] uppercase leading-tight tracking-wider text-muted-foreground hover:text-foreground transition-colors active:scale-95 mt-0.5"
+                className="mt-0.5 block w-full text-left text-[11px] uppercase leading-tight tracking-wider text-muted-foreground hover:text-foreground transition-colors active:scale-95"
               >
-                {activeStage && !hideStage && (
-                  <>
-                    <Layers className="h-2.5 w-2.5 mr-1 inline shrink-0 align-[-1px]" />
-                    <span className="font-bold">{activeStage.name}</span>
-                    {subtitle && <span className="mx-1 opacity-40">•</span>}
-                  </>
-                )}
-                {subtitle}
+                {/* line-clamp precisa ficar num <span> e não no <button>:
+                    elementos <button> ignoram display:-webkit-box, então
+                    o clamp não teria efeito e o subtítulo cresceria sem limite. */}
+                <span className="line-clamp-2">
+                  {activeStage && !hideStage && (
+                    <>
+                      <Layers className="h-2.5 w-2.5 mr-1 inline shrink-0 align-[-1px]" />
+                      <span className="font-bold">{activeStage.name}</span>
+                      {subtitle && <span className="mx-1 opacity-40">•</span>}
+                    </>
+                  )}
+                  {subtitle}
+                </span>
               </button>
             )}
           </div>
