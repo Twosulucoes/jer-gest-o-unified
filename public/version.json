@@ -1,9 +1,9 @@
 {
   "appVersion": "0.4.0",
   "environment": "teste",
-  "branch": "feat/protocolo-entrega-material",
-  "commit": "23459ebf",
-  "commitFull": "23459ebf675c568fe4d9601a9cc5b7de72493ae7",
-  "buildDate": "2026-07-05T22:53:14.863Z",
+  "branch": "claude/screen-layout-review-vsw0vv",
+  "commit": "3dc02c91",
+  "commitFull": "3dc02c917df6e6def542babc0ee9742ca2b11625",
+  "buildDate": "2026-07-06T03:04:21.246Z",
   "supabaseProjectRef": "wiwvpokdbklathfkjmzl"
 }
