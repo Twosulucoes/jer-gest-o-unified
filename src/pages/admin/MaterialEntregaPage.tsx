@@ -31,6 +31,7 @@ import {
   School,
   X,
   Radio,
+  Users,
 } from "lucide-react";
 
 interface MaterialKit {
@@ -53,6 +54,36 @@ interface DeliveryRow {
 
 const SEM_ESCOLA = "Sem escola/delegação";
 
+// Todos os perfis (participant_type) do sistema, na ordem de exibição.
+const PARTICIPANT_TYPES: { value: string; label: string }[] = [
+  { value: "athlete", label: "Atleta" },
+  { value: "coach", label: "Técnico" },
+  { value: "head_of_delegation", label: "Chefe de Delegação" },
+  { value: "official", label: "Oficial" },
+  { value: "staff", label: "Staff" },
+  { value: "motorista", label: "Motorista" },
+  { value: "agente_operacao", label: "Agente de Operação" },
+  { value: "logistica", label: "Logística" },
+  { value: "cozinheira", label: "Cozinheira" },
+  { value: "guia", label: "Guia" },
+  { value: "secretaria", label: "Secretaria" },
+  { value: "mesario", label: "Mesário" },
+  { value: "arbitro", label: "Árbitro" },
+  { value: "delegado", label: "Delegado" },
+  { value: "fiscal", label: "Fiscal" },
+  { value: "operador_pesquisa", label: "Operador de Pesquisa" },
+  { value: "tecnico_ti", label: "Técnico de TI" },
+  { value: "terceiro", label: "Terceiro" },
+  { value: "colaborador", label: "Colaborador" },
+];
+
+const PARTICIPANT_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PARTICIPANT_TYPES.map((p) => [p.value, p.label]),
+);
+
+const ptLabel = (v: string | null | undefined) =>
+  (v && PARTICIPANT_TYPE_LABELS[v]) || v || "—";
+
 interface SchoolProgress {
   escola: string;
   delivered: number;
@@ -70,6 +101,8 @@ export default function MaterialEntregaPage() {
   const [kitDialog, setKitDialog] = useState<MaterialKit | "new" | null>(null);
   const [kitName, setKitName] = useState("");
   const [kitDesc, setKitDesc] = useState("");
+  const [restrictEligibility, setRestrictEligibility] = useState(false);
+  const [kitEligibility, setKitEligibility] = useState<Set<string>>(new Set());
   const [selectedKitId, setSelectedKitId] = useState<string>("");
   const [schoolFilter, setSchoolFilter] = useState<string | null>(null);
 
@@ -92,30 +125,85 @@ export default function MaterialEntregaPage() {
 
   const activeKitId = selectedKitId || kits.find((k) => k.is_active)?.id || kits[0]?.id || "";
 
+  const kitIds = useMemo(() => kits.map((k) => k.id), [kits]);
+
+  // Elegibilidade (perfis) de todos os kits — para exibir nos cards e
+  // limitar as contagens de credenciados ao público-alvo do kit.
+  const { data: eligibilityByKit = {} } = useQuery({
+    queryKey: ["material_kit_eligibility_map", kitIds],
+    enabled: kitIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("material_kit_eligibility")
+        .select("kit_id, participant_type")
+        .in("kit_id", kitIds);
+      if (error) throw error;
+      const map: Record<string, string[]> = {};
+      for (const r of (data ?? []) as any[]) {
+        (map[r.kit_id] ??= []).push(r.participant_type);
+      }
+      return map;
+    },
+  });
+
+  // Perfis elegíveis do kit ativo (vazio = todos os perfis).
+  const activeKitTypes = useMemo(
+    () => eligibilityByKit[activeKitId] ?? [],
+    [eligibilityByKit, activeKitId],
+  );
+
   const saveKit = useMutation({
     mutationFn: async () => {
       const name = kitName.trim();
       if (!name) throw new Error("Informe o nome do kit.");
       const { data: { session } } = await supabase.auth.getSession();
+
+      let kitId: string;
       if (kitDialog === "new") {
-        const { error } = await (supabase as any).from("material_kits").insert({
-          event_id: eventId,
-          event_stage_id: stageId || null,
-          name,
-          description: kitDesc.trim() || null,
-          created_by: session?.user.id ?? null,
-        });
+        const { data, error } = await (supabase as any)
+          .from("material_kits")
+          .insert({
+            event_id: eventId,
+            event_stage_id: stageId || null,
+            name,
+            description: kitDesc.trim() || null,
+            created_by: session?.user.id ?? null,
+          })
+          .select("id")
+          .single();
         if (error) throw error;
+        kitId = data.id as string;
       } else if (kitDialog) {
         const { error } = await (supabase as any)
           .from("material_kits")
           .update({ name, description: kitDesc.trim() || null })
           .eq("id", kitDialog.id);
         if (error) throw error;
+        kitId = kitDialog.id;
+      } else {
+        return;
+      }
+
+      // Sincroniza a elegibilidade por perfil (delete-all + re-insert).
+      const desired = restrictEligibility ? [...kitEligibility] : [];
+      const { error: delErr } = await (supabase as any)
+        .from("material_kit_eligibility")
+        .delete()
+        .eq("kit_id", kitId);
+      if (delErr) throw delErr;
+      if (desired.length > 0) {
+        const rows = desired.map((pt) => ({ kit_id: kitId, participant_type: pt }));
+        const { error: insErr } = await (supabase as any)
+          .from("material_kit_eligibility")
+          .insert(rows);
+        if (insErr) throw insErr;
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["material_kits", eventId, stageId] });
+      qc.invalidateQueries({ queryKey: ["material_kit_eligibility_map"] });
+      qc.invalidateQueries({ queryKey: ["material_credentialed_count"] });
+      qc.invalidateQueries({ queryKey: ["material_credentialed_by_school"] });
       toast.success("Kit salvo.");
       setKitDialog(null);
     },
@@ -207,12 +295,26 @@ export default function MaterialEntregaPage() {
   const openNewKit = () => {
     setKitName("");
     setKitDesc("");
+    setRestrictEligibility(false);
+    setKitEligibility(new Set());
     setKitDialog("new");
   };
   const openEditKit = (kit: MaterialKit) => {
     setKitName(kit.name);
     setKitDesc(kit.description || "");
+    const existing = eligibilityByKit[kit.id] ?? [];
+    setRestrictEligibility(existing.length > 0);
+    setKitEligibility(new Set(existing));
     setKitDialog(kit);
+  };
+
+  const toggleEligibilityType = (value: string) => {
+    setKitEligibility((prev) => {
+      const next = new Set(prev);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+      return next;
+    });
   };
 
   const totalDelivered = deliveries.length;
@@ -237,12 +339,13 @@ export default function MaterialEntregaPage() {
     },
   });
 
-  // Universo de quem deveria receber: participantes credenciados e ativos na etapa.
+  // Universo de quem deveria receber: participantes credenciados e ativos
+  // na etapa, limitados aos perfis elegíveis do kit (se houver restrição).
   const { data: credentialedCount = 0 } = useQuery({
-    queryKey: ["material_credentialed_count", eventId, stageId],
+    queryKey: ["material_credentialed_count", eventId, stageId, activeKitTypes],
     enabled: !!eventId && !!stageId,
     queryFn: async () => {
-      const { count, error } = await (supabase as any)
+      let q = (supabase as any)
         .from("participants")
         .select("id, participant_event_stages!inner(event_stage_id, status)", {
           count: "exact",
@@ -252,6 +355,8 @@ export default function MaterialEntregaPage() {
         .not("credentialed_at", "is", null)
         .eq("participant_event_stages.event_stage_id", stageId)
         .eq("participant_event_stages.status", "active");
+      if (activeKitTypes.length > 0) q = q.in("participant_type", activeKitTypes);
+      const { count, error } = await q;
       if (error) throw error;
       return count || 0;
     },
@@ -259,10 +364,10 @@ export default function MaterialEntregaPage() {
 
   // Universo credenciado quebrado por escola (para o "faltam" por escola).
   const { data: credentialedBySchool = null } = useQuery({
-    queryKey: ["material_credentialed_by_school", eventId, stageId],
+    queryKey: ["material_credentialed_by_school", eventId, stageId, activeKitTypes],
     enabled: !!eventId && !!stageId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let q = (supabase as any)
         .from("participants")
         .select(
           "id, participant_event_stages!inner(event_stage_id, status), delegations(institutions(name))",
@@ -271,6 +376,8 @@ export default function MaterialEntregaPage() {
         .not("credentialed_at", "is", null)
         .eq("participant_event_stages.event_stage_id", stageId)
         .eq("participant_event_stages.status", "active");
+      if (activeKitTypes.length > 0) q = q.in("participant_type", activeKitTypes);
+      const { data, error } = await q;
       if (error) throw error;
       const map = new Map<string, number>();
       for (const r of (data ?? []) as any[]) {
@@ -386,6 +493,34 @@ export default function MaterialEntregaPage() {
                       {kit.description}
                     </p>
                   )}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                    {(eligibilityByKit[kit.id]?.length ?? 0) === 0 ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                        <Users className="h-3 w-3" /> Todos os perfis
+                      </span>
+                    ) : (
+                      <>
+                        <Users className="h-3 w-3 text-muted-foreground" />
+                        {eligibilityByKit[kit.id]!.slice(0, 4).map((pt) => (
+                          <Badge
+                            key={pt}
+                            variant="outline"
+                            className="px-1.5 py-0 text-[10px]"
+                          >
+                            {ptLabel(pt)}
+                          </Badge>
+                        ))}
+                        {eligibilityByKit[kit.id]!.length > 4 && (
+                          <Badge
+                            variant="outline"
+                            className="px-1.5 py-0 text-[10px]"
+                          >
+                            +{eligibilityByKit[kit.id]!.length - 4}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </button>
                 {canWrite && (
                   <>
@@ -551,7 +686,7 @@ export default function MaterialEntregaPage() {
                         {d.escola}
                       </td>
                       <td className="py-2 pr-2 text-muted-foreground">
-                        {d.participant_type || "—"}
+                        {ptLabel(d.participant_type)}
                       </td>
                       <td className="py-2 pr-2 text-muted-foreground">
                         {format(new Date(d.delivered_at), "dd/MM HH:mm")}
@@ -611,6 +746,77 @@ export default function MaterialEntregaPage() {
                 onChange={(e) => setKitDesc(e.target.value)}
                 placeholder="Ex: Camiseta, sacola e credencial"
               />
+            </div>
+
+            {/* Público-alvo: quais perfis recebem este kit */}
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Label className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4" /> Quem recebe este kit
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {restrictEligibility
+                      ? "Apenas os perfis marcados poderão receber."
+                      : "Todos os perfis credenciados podem receber."}
+                  </p>
+                </div>
+                <Switch
+                  checked={restrictEligibility}
+                  onCheckedChange={(v) => setRestrictEligibility(v)}
+                  aria-label="Restringir por perfil"
+                />
+              </div>
+
+              {restrictEligibility && (
+                <>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PARTICIPANT_TYPES.map((pt) => {
+                      const active = kitEligibility.has(pt.value);
+                      return (
+                        <button
+                          key={pt.value}
+                          type="button"
+                          onClick={() => toggleEligibilityType(pt.value)}
+                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                            active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background hover:bg-muted"
+                          }`}
+                        >
+                          {pt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <button
+                      type="button"
+                      className="underline-offset-2 hover:underline"
+                      onClick={() =>
+                        setKitEligibility(
+                          new Set(PARTICIPANT_TYPES.map((p) => p.value)),
+                        )
+                      }
+                    >
+                      Selecionar todos
+                    </button>
+                    <button
+                      type="button"
+                      className="underline-offset-2 hover:underline"
+                      onClick={() => setKitEligibility(new Set())}
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                  {kitEligibility.size === 0 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Nenhum perfil marcado: com a restrição ligada, ninguém
+                      poderá receber. Marque ao menos um perfil.
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           </div>
           <DialogFooter>

@@ -358,6 +358,9 @@ export default function MaterialScanPage() {
         case "KIT_NOT_FOUND":
           msg = "Kit não encontrado ou inativo.";
           break;
+        case "NOT_ELIGIBLE":
+          msg = "Este kit não é destinado ao perfil desta credencial.";
+          break;
         default:
           msg = "Não foi possível registrar a entrega. Tente novamente.";
       }
