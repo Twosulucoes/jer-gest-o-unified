@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,15 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Package, Plus, RotateCcw, PackageCheck } from "lucide-react";
+import {
+  Package,
+  Plus,
+  RotateCcw,
+  PackageCheck,
+  School,
+  X,
+  Radio,
+} from "lucide-react";
 
 interface MaterialKit {
   id: string;
@@ -39,6 +48,16 @@ interface DeliveryRow {
   full_name: string;
   cpf: string | null;
   participant_type: string | null;
+  escola: string;
+}
+
+const SEM_ESCOLA = "Sem escola/delegação";
+
+interface SchoolProgress {
+  escola: string;
+  delivered: number;
+  total: number | null;
+  faltam: number | null;
 }
 
 export default function MaterialEntregaPage() {
@@ -52,6 +71,7 @@ export default function MaterialEntregaPage() {
   const [kitName, setKitName] = useState("");
   const [kitDesc, setKitDesc] = useState("");
   const [selectedKitId, setSelectedKitId] = useState<string>("");
+  const [schoolFilter, setSchoolFilter] = useState<string | null>(null);
 
   // ── Kits ────────────────────────────────────────────────
   const { data: kits = [], isLoading: loadingKits } = useQuery({
@@ -125,7 +145,7 @@ export default function MaterialEntregaPage() {
         .from("material_deliveries")
         .select(
           `id, delivered_at, method,
-           participants!inner(participant_type, people!inner(full_name, cpf))`,
+           participants!inner(participant_type, people!inner(full_name, cpf), delegations(institutions(name)))`,
         )
         .eq("kit_id", activeKitId)
         .eq("status", "active")
@@ -138,9 +158,34 @@ export default function MaterialEntregaPage() {
         full_name: r.participants?.people?.full_name || "",
         cpf: r.participants?.people?.cpf || null,
         participant_type: r.participants?.participant_type || null,
+        escola: r.participants?.delegations?.institutions?.name || SEM_ESCOLA,
       })) as DeliveryRow[];
     },
   });
+
+  // Atualização ao vivo: qualquer entrega/estorno neste kit recarrega os dados.
+  useEffect(() => {
+    if (!activeKitId) return;
+    const channel = supabase
+      .channel(`admin_material_deliveries_${activeKitId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "material_deliveries",
+          filter: `kit_id=eq.${activeKitId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["material_deliveries", activeKitId] });
+          qc.invalidateQueries({ queryKey: ["material_revoked_count", activeKitId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [activeKitId, qc]);
 
   const revoke = useMutation({
     mutationFn: async (id: string) => {
@@ -211,6 +256,73 @@ export default function MaterialEntregaPage() {
       return count || 0;
     },
   });
+
+  // Universo credenciado quebrado por escola (para o "faltam" por escola).
+  const { data: credentialedBySchool = null } = useQuery({
+    queryKey: ["material_credentialed_by_school", eventId, stageId],
+    enabled: !!eventId && !!stageId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("participants")
+        .select(
+          "id, participant_event_stages!inner(event_stage_id, status), delegations(institutions(name))",
+        )
+        .eq("is_active", true)
+        .not("credentialed_at", "is", null)
+        .eq("participant_event_stages.event_stage_id", stageId)
+        .eq("participant_event_stages.status", "active");
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const r of (data ?? []) as any[]) {
+        const escola = r.delegations?.institutions?.name || SEM_ESCOLA;
+        map.set(escola, (map.get(escola) ?? 0) + 1);
+      }
+      return map;
+    },
+  });
+
+  // Consolidação por escola: entregues (do kit) x credenciados (da etapa).
+  const schoolProgress = useMemo<SchoolProgress[]>(() => {
+    const delivered = new Map<string, number>();
+    for (const d of deliveries) {
+      delivered.set(d.escola, (delivered.get(d.escola) ?? 0) + 1);
+    }
+
+    const escolas = new Set<string>([...delivered.keys()]);
+    if (credentialedBySchool) {
+      for (const k of credentialedBySchool.keys()) escolas.add(k);
+    }
+
+    const rows: SchoolProgress[] = [...escolas].map((escola) => {
+      const del = delivered.get(escola) ?? 0;
+      const total = credentialedBySchool ? credentialedBySchool.get(escola) ?? 0 : null;
+      return {
+        escola,
+        delivered: del,
+        total,
+        faltam: total === null ? null : Math.max(0, total - del),
+      };
+    });
+
+    rows.sort((a, b) => {
+      // Com universo conhecido, prioriza quem ainda tem pendências.
+      if (a.faltam !== null && b.faltam !== null && b.faltam !== a.faltam) {
+        return b.faltam - a.faltam;
+      }
+      if (b.delivered !== a.delivered) return b.delivered - a.delivered;
+      return a.escola.localeCompare(b.escola, "pt-BR");
+    });
+
+    return rows;
+  }, [deliveries, credentialedBySchool]);
+
+  const filteredDeliveries = useMemo(
+    () =>
+      schoolFilter
+        ? deliveries.filter((d) => d.escola === schoolFilter)
+        : deliveries,
+    [deliveries, schoolFilter],
+  );
 
   const faltam = Math.max(0, credentialedCount - totalDelivered);
 
@@ -297,9 +409,94 @@ export default function MaterialEntregaPage() {
         </CardContent>
       </Card>
 
+      {/* Acompanhamento por escola */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <School className="h-4 w-4" /> Por Escola
+            {activeKit && (
+              <span className="text-sm font-normal text-muted-foreground">
+                · {activeKit.name}
+              </span>
+            )}
+          </CardTitle>
+          <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <Radio className="h-3.5 w-3.5 animate-pulse" /> ao vivo
+          </span>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {loadingDeliveries ? (
+            <Skeleton className="h-24 w-full" />
+          ) : schoolProgress.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Nenhuma entrega registrada ainda para este kit.
+            </p>
+          ) : (
+            <>
+              {!stageId && (
+                <p className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  Selecione uma etapa para ver o total de credenciados e quantos
+                  faltam por escola. Sem etapa, mostramos apenas os entregues.
+                </p>
+              )}
+              {schoolProgress.map((s) => {
+                const isFiltered = schoolFilter === s.escola;
+                const pct =
+                  s.total && s.total > 0
+                    ? Math.min(100, Math.round((s.delivered / s.total) * 100))
+                    : null;
+                return (
+                  <button
+                    key={s.escola}
+                    type="button"
+                    onClick={() =>
+                      setSchoolFilter(isFiltered ? null : s.escola)
+                    }
+                    className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                      isFiltered
+                        ? "border-primary bg-primary/5"
+                        : "hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                        {s.escola}
+                      </p>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {s.total !== null
+                            ? `${s.delivered}/${s.total}`
+                            : `${s.delivered} entregue${s.delivered === 1 ? "" : "s"}`}
+                        </Badge>
+                        {s.faltam !== null && s.faltam > 0 && (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-500/40 text-[10px] text-amber-600 dark:text-amber-400"
+                          >
+                            faltam {s.faltam}
+                          </Badge>
+                        )}
+                        {s.faltam === 0 && (
+                          <Badge className="bg-emerald-600 text-[10px] hover:bg-emerald-600">
+                            completo
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {pct !== null && (
+                      <Progress value={pct} className="mt-2 h-1.5" />
+                    )}
+                  </button>
+                );
+              })}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Relatório de entregas */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <PackageCheck className="h-4 w-4" /> Entregas
             {activeKit && (
@@ -308,13 +505,26 @@ export default function MaterialEntregaPage() {
               </span>
             )}
           </CardTitle>
+          {schoolFilter && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 gap-1 text-xs"
+              onClick={() => setSchoolFilter(null)}
+            >
+              <X className="h-3.5 w-3.5" />
+              <span className="max-w-[10rem] truncate">{schoolFilter}</span>
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-3">
           {loadingDeliveries ? (
             <Skeleton className="h-24 w-full" />
-          ) : deliveries.length === 0 ? (
+          ) : filteredDeliveries.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Nenhuma entrega registrada para este kit.
+              {schoolFilter
+                ? "Nenhuma entrega desta escola para este kit."
+                : "Nenhuma entrega registrada para este kit."}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -322,19 +532,23 @@ export default function MaterialEntregaPage() {
                 <thead>
                   <tr className="border-b text-left text-xs text-muted-foreground">
                     <th className="py-2 pr-2 font-medium">Participante</th>
+                    <th className="py-2 pr-2 font-medium">Escola</th>
                     <th className="py-2 pr-2 font-medium">Tipo</th>
                     <th className="py-2 pr-2 font-medium">Data/Hora</th>
                     <th className="py-2 font-medium text-right">Ação</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {deliveries.map((d) => (
+                  {filteredDeliveries.map((d) => (
                     <tr key={d.id} className="border-b last:border-0">
                       <td className="py-2 pr-2">
                         <p className="font-medium">{d.full_name || "—"}</p>
                         {d.cpf && (
                           <p className="text-xs text-muted-foreground">{d.cpf}</p>
                         )}
+                      </td>
+                      <td className="py-2 pr-2 text-muted-foreground">
+                        {d.escola}
                       </td>
                       <td className="py-2 pr-2 text-muted-foreground">
                         {d.participant_type || "—"}
