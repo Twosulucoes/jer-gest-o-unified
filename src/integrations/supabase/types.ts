@@ -13592,6 +13592,13 @@ export type Database = {
           type: string
         }[]
       }
+      get_stage_participation_counts: {
+        Args: { p_stage_id: string }
+        Returns: {
+          participants: number
+          credentialed: number
+        }[]
+      }
       get_unhandled_referee_indisponibilities: {
         Args: { p_etapa_id: string }
         Returns: {
