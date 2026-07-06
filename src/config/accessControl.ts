@@ -16,6 +16,7 @@ export const ADMIN_ACCESS_ROLES: AppRole[] = [
 export const OPERATIONAL_ROLE_REDIRECT: Partial<Record<AppRole, string>> = {
   transporte: "/pwa/transporte",
   alimentacao: "/pwa/alimentacao",
+  material: "/pwa/material",
   alojamento: "/pwa/alojamento",
   delegacao: "/pwa/delegacao",
   mesario: "/aovivo",
