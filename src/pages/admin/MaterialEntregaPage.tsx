@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useStageScope } from "@/hooks/useStageScope";
+import { useStageModuleKpis } from "@/contexts/StageModuleKpisContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -176,6 +177,53 @@ export default function MaterialEntregaPage() {
     [kits, activeKitId],
   );
 
+  // Contadores para os KPIs do módulo (substituem o cabeçalho global de credenciais)
+  const { data: revokedCount = 0 } = useQuery({
+    queryKey: ["material_revoked_count", activeKitId],
+    enabled: !!activeKitId,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("material_deliveries")
+        .select("id", { count: "exact", head: true })
+        .eq("kit_id", activeKitId)
+        .eq("status", "revoked");
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Universo de quem deveria receber: participantes credenciados e ativos na etapa.
+  const { data: credentialedCount = 0 } = useQuery({
+    queryKey: ["material_credentialed_count", eventId, stageId],
+    enabled: !!eventId && !!stageId,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("participants")
+        .select("id, participant_event_stages!inner(event_stage_id, status)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("is_active", true)
+        .not("credentialed_at", "is", null)
+        .eq("participant_event_stages.event_stage_id", stageId)
+        .eq("participant_event_stages.status", "active");
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const faltam = Math.max(0, credentialedCount - totalDelivered);
+
+  useStageModuleKpis([
+    { label: "Entregues", value: totalDelivered, tone: "success" },
+    ...(stageId
+      ? [{ label: "Faltam", value: faltam, tone: "warning" as const }]
+      : []),
+    ...(revokedCount > 0
+      ? [{ label: "Estornadas", value: revokedCount, tone: "danger" as const }]
+      : []),
+  ]);
+
   return (
     <div className="space-y-4">
       {/* Gestão de Kits */}
@@ -262,25 +310,6 @@ export default function MaterialEntregaPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border bg-muted/30 p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Total entregue
-              </p>
-              <p className="mt-0.5 text-2xl font-extrabold tabular-nums">
-                {totalDelivered}
-              </p>
-            </div>
-            <div className="rounded-lg border bg-muted/30 p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Kit
-              </p>
-              <p className="mt-0.5 truncate text-sm font-semibold pt-1.5">
-                {activeKit?.name || "—"}
-              </p>
-            </div>
-          </div>
-
           {loadingDeliveries ? (
             <Skeleton className="h-24 w-full" />
           ) : deliveries.length === 0 ? (
