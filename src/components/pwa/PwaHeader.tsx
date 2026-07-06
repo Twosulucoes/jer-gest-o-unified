@@ -79,7 +79,7 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
             "linear-gradient(90deg, transparent, hsl(var(--module-accent) / 0.85), transparent)",
         }}
       />
-      <div className="relative flex items-center justify-between gap-2 px-4 h-14">
+      <div className="relative flex items-center justify-between gap-2 px-4 min-h-14 py-2">
         <div className="flex min-w-0 items-center gap-3">
           {(backTo || onBack) && (
             <button
@@ -96,17 +96,17 @@ export function PwaHeader({ title, subtitle, icon: Icon, backTo, onBack, onSignO
             </div>
           )}
           <div className="min-w-0">
-            <p className="truncate font-heading text-base font-bold tracking-tight text-foreground">
+            <p className="line-clamp-2 font-heading text-base font-bold leading-tight tracking-tight text-foreground">
               {title}
             </p>
             {(subtitle || (activeStage && !hideStage)) && (
               <button
                 onClick={() => navigate("/pwa/configuracao", { state: { from: location } })}
-                className="truncate text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors active:scale-95"
+                className="line-clamp-2 text-left text-[11px] uppercase leading-tight tracking-wider text-muted-foreground hover:text-foreground transition-colors active:scale-95 mt-0.5"
               >
                 {activeStage && !hideStage && (
                   <>
-                    <Layers className="h-2.5 w-2.5 inline shrink-0" />
+                    <Layers className="h-2.5 w-2.5 mr-1 inline shrink-0 align-[-1px]" />
                     <span className="font-bold">{activeStage.name}</span>
                     {subtitle && <span className="mx-1 opacity-40">•</span>}
                   </>
