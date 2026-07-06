@@ -1,7 +1,8 @@
 import { pdf, Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import {
-  computeStats, scaleHistogram, dailyCounts, type SurveyRow, type QStat,
+  computeStats, computeHighlights, countBy, dailyCounts,
+  type SurveyRow, type QStat, type ScaleStat,
 } from '@/lib/pesquisa/aggregate';
 import { DEFAULT_SCALE_LABELS, type PesquisaConfig } from '@/lib/pesquisa/config';
 import type { EventBrandingResolved } from '@/hooks/useEventBranding';
@@ -53,6 +54,32 @@ const s = StyleSheet.create({
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   legendItem: { fontSize: 7, color: COLOR.muted },
 
+  // Resumo executivo / listas de destaque
+  satBox: { borderWidth: 0.5, borderColor: COLOR.line, borderRadius: 4, padding: 8, marginBottom: 6, backgroundColor: '#f8fafc', flexDirection: 'row', alignItems: 'center', gap: 10 },
+  satValue: { fontSize: 20, fontWeight: 'bold', color: COLOR.good },
+  satLabel: { fontSize: 8, color: COLOR.muted, textTransform: 'uppercase' },
+  satHint: { fontSize: 7.5, color: COLOR.faint, marginTop: 1 },
+  twoCol: { flexDirection: 'row', gap: 12, marginBottom: 4 },
+  col: { flexGrow: 1, flexBasis: 0 },
+  colTitle: { fontSize: 8, fontWeight: 'bold', color: COLOR.muted, textTransform: 'uppercase', marginBottom: 3 },
+  hlRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  hlDot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
+  hlLabel: { flexGrow: 1, flexBasis: 0, fontSize: 8.5 },
+  hlVal: { fontSize: 8.5, fontWeight: 'bold', width: 44, textAlign: 'right' },
+
+  // Tabela-resumo de escalas
+  sumHead: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#333', backgroundColor: '#fafafa', paddingVertical: 3, marginTop: 2 },
+  sumRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 0.5, borderBottomColor: COLOR.line, paddingVertical: 3 },
+  sumQ: { flexGrow: 1, flexBasis: 0, fontSize: 8.5, paddingRight: 6 },
+  sumAvg: { width: 52, textAlign: 'right', fontSize: 8.5, fontWeight: 'bold' },
+  sumN: { width: 40, textAlign: 'right', fontSize: 8, color: COLOR.muted },
+  sumHeadCell: { fontSize: 7.5, fontWeight: 'bold', color: COLOR.muted },
+
+  // Lista chave/valor (resumo de coletas)
+  kvRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 1.5, borderBottomWidth: 0.5, borderBottomColor: COLOR.line },
+  kvLabel: { fontSize: 8, flexGrow: 1, flexBasis: 0, paddingRight: 6 },
+  kvVal: { fontSize: 8, fontWeight: 'bold', width: 34, textAlign: 'right' },
+
   q: { marginBottom: 9 },
   qLabel: { fontSize: 9, marginBottom: 3 },
   qRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
@@ -94,25 +121,57 @@ function Bar({ ratio, color, width }: { ratio: number; color: string; width?: nu
   );
 }
 
-function ScaleBlock({ stat, surveys }: { stat: Extract<QStat, { type: 'scale' }>; surveys: SurveyRow[] }) {
-  const hist = scaleHistogram(stat.key, surveys, stat.scaleMax);
-  const maxCount = Math.max(1, ...hist);
-  const color = scaleColor(stat.avg, stat.scaleMax);
+/** Tabela-resumo compacta de perguntas de escala (uma linha por pergunta). */
+function ScaleSummaryTable({ stats }: { stats: ScaleStat[] }) {
+  if (stats.length === 0) return null;
   return (
     <View style={s.q} wrap={false}>
-      <Text style={s.qLabel}>{stat.label}</Text>
-      <View style={s.qRow}>
-        <Bar ratio={stat.avg / stat.scaleMax} color={color} />
-        <Text style={s.valTag}>{stat.avg.toFixed(2)} / {stat.scaleMax}</Text>
+      <View style={s.sumHead}>
+        <Text style={[s.sumQ, s.sumHeadCell]}>Pergunta</Text>
+        <View style={[s.barTrack, { flexGrow: 0, width: 100, backgroundColor: 'transparent' }]} />
+        <Text style={[s.sumAvg, s.sumHeadCell]}>Média</Text>
+        <Text style={[s.sumN, s.sumHeadCell]}>Nº</Text>
       </View>
-      {hist.map((c, i) => (
-        <View key={i} style={s.qRow}>
-          <Text style={s.distRowLabelSm}>{i + 1}</Text>
-          <Bar ratio={c / maxCount} color={COLOR.primary} />
-          <Text style={s.valTag}>{c} ({pct(c, stat.count)}%)</Text>
+      {stats.map((stat) => (
+        <View key={stat.key} style={s.sumRow}>
+          <Text style={s.sumQ}>{stat.label}</Text>
+          <Bar ratio={stat.avg / stat.scaleMax} color={scaleColor(stat.avg, stat.scaleMax)} width={100} />
+          <Text style={s.sumAvg}>{stat.avg.toFixed(2)}/{stat.scaleMax}</Text>
+          <Text style={s.sumN}>{stat.count}</Text>
         </View>
       ))}
-      <Text style={s.caption}>{stat.count} resposta(s)</Text>
+    </View>
+  );
+}
+
+/** Lista curta de destaques (pontos fortes / de atenção). */
+function HighlightList({ title, items }: { title: string; items: ScaleStat[] }) {
+  if (items.length === 0) return null;
+  return (
+    <View style={s.col}>
+      <Text style={s.colTitle}>{title}</Text>
+      {items.map((it) => (
+        <View key={it.key} style={s.hlRow}>
+          <View style={[s.hlDot, { backgroundColor: scaleColor(it.avg, it.scaleMax) }]} />
+          <Text style={s.hlLabel}>{it.label}</Text>
+          <Text style={[s.hlVal, { color: scaleColor(it.avg, it.scaleMax) }]}>{it.avg.toFixed(2)}/{it.scaleMax}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Lista chave/valor agregada (ex.: coletas por pesquisador / local). */
+function KVList({ title, items }: { title: string; items: { label: string; count: number }[] }) {
+  return (
+    <View style={s.col}>
+      <Text style={s.colTitle}>{title}</Text>
+      {items.map((it) => (
+        <View key={it.label} style={s.kvRow}>
+          <Text style={s.kvLabel}>{it.label}</Text>
+          <Text style={s.kvVal}>{it.count}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -216,7 +275,21 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
     period ? `Período: ${period}` : null,
   ].filter(Boolean).join('   ·   ');
 
-  let currentSection: string | null = null;
+  const highlights = stats ? computeHighlights(stats) : null;
+
+  // Agrupa as perguntas por seção, preservando a ordem de aparição.
+  const groups: { key: string; label: string | null; stats: QStat[] }[] = [];
+  const groupIndex = new Map<string, number>();
+  stats?.qStats.forEach((st) => {
+    const secKey = sectionOfKey.get(st.key) ?? '__geral__';
+    let idx = groupIndex.get(secKey);
+    if (idx === undefined) {
+      idx = groups.length;
+      groupIndex.set(secKey, idx);
+      groups.push({ key: secKey, label: sectionLabel.get(secKey) ?? null, stats: [] });
+    }
+    groups[idx].stats.push(st);
+  });
 
   const logos = (meta.branding?.logos || []).filter((l) => l.active).slice(0, 3);
   const brandTitle = meta.branding?.nome_oficial || meta.branding?.fallbackEventName;
@@ -252,6 +325,10 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
                 <Text style={s.kpiValue}>{stats.total}</Text>
               </View>
               <View style={s.kpi}>
+                <Text style={s.kpiLabel}>Índice de satisfação</Text>
+                <Text style={s.kpiValue}>{highlights?.satisfactionPct != null ? `${highlights.satisfactionPct}%` : '—'}</Text>
+              </View>
+              <View style={s.kpi}>
                 <Text style={s.kpiLabel}>Média geral (escalas)</Text>
                 <Text style={s.kpiValue}>{stats.overallAvg ?? '—'}</Text>
               </View>
@@ -260,6 +337,17 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
                 <Text style={s.kpiValue}>{stats.today}</Text>
               </View>
             </View>
+
+            {/* Resumo executivo: pontos fortes e de atenção */}
+            {highlights && (highlights.best.length > 0 || highlights.worst.length > 0) ? (
+              <>
+                <Text style={s.sectionTitle}>Resumo executivo</Text>
+                <View style={s.twoCol}>
+                  <HighlightList title="Pontos fortes" items={highlights.best} />
+                  <HighlightList title="Pontos de atenção" items={highlights.worst} />
+                </View>
+              </>
+            ) : null}
 
             <Text style={s.sectionTitle}>Coletas por dia</Text>
             <TrendChart data={dailyCounts(surveys)} />
@@ -272,38 +360,32 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
               </View>
             ) : null}
 
-            {stats.qStats.map((stat) => {
-              const sec = sectionOfKey.get(stat.key) ?? null;
-              const header = sec && sec !== currentSection
-                ? <Text key={`sec-${stat.key}`} style={s.sectionTitle}>{sectionLabel.get(sec) ?? sec}</Text>
-                : null;
-              if (sec) currentSection = sec;
-              const block =
-                stat.type === 'scale' ? <ScaleBlock key={stat.key} stat={stat} surveys={surveys} />
-                : stat.type === 'choice' ? <ChoiceBlock key={stat.key} stat={stat} />
-                : stat.type === 'boolean' ? <BooleanBlock key={stat.key} stat={stat} />
-                : <TextBlock key={stat.key} stat={stat} />;
-              return header ? <View key={`grp-${stat.key}`}>{header}{block}</View> : block;
+            {/* Resultados por seção: tabela-resumo de escalas + distribuições/comentários */}
+            {groups.map((g) => {
+              const scaleStats = g.stats.filter((st): st is ScaleStat => st.type === 'scale');
+              const others = g.stats.filter((st) => st.type !== 'scale');
+              return (
+                <View key={g.key}>
+                  {/* Mantém o título da seção junto da tabela-resumo (evita cabeçalho órfão). */}
+                  <View wrap={false}>
+                    {g.label ? <Text style={s.sectionTitle}>{g.label}</Text> : null}
+                    <ScaleSummaryTable stats={scaleStats} />
+                  </View>
+                  {others.map((stat) =>
+                    stat.type === 'choice' ? <ChoiceBlock key={stat.key} stat={stat} />
+                    : stat.type === 'boolean' ? <BooleanBlock key={stat.key} stat={stat} />
+                    : <TextBlock key={stat.key} stat={stat} />
+                  )}
+                </View>
+              );
             })}
 
-            <Text style={s.sectionTitle}>Coletas ({stats.total})</Text>
-            <View style={s.thRow}>
-              <Text style={[s.th, { width: '24%' }]}>Data/Hora</Text>
-              <Text style={[s.th, { width: '28%' }]}>Pesquisador</Text>
-              <Text style={[s.th, { width: '30%' }]}>Local</Text>
-              <Text style={[s.th, { width: '18%' }]}>Modo</Text>
+            {/* Resumo de coletas (agregado, substitui a listagem linha-a-linha) */}
+            <Text style={s.sectionTitle}>Resumo de coletas ({stats.total})</Text>
+            <View style={s.twoCol}>
+              <KVList title="Por pesquisador" items={countBy(surveys, (r) => r.pesquisa_researchers?.name).slice(0, 8)} />
+              <KVList title="Por local" items={countBy(surveys, (r) => r.application_location || r.pesquisa_events?.location).slice(0, 8)} />
             </View>
-            {surveys.slice(0, 80).map((row) => (
-              <View key={row.id} style={s.tr} wrap={false}>
-                <Text style={[s.td, { width: '24%' }]}>{format(new Date(row.collected_at), 'dd/MM/yyyy HH:mm')}</Text>
-                <Text style={[s.td, { width: '28%' }]}>{row.pesquisa_researchers?.name || '—'}</Text>
-                <Text style={[s.td, { width: '30%' }]}>{row.application_location || row.pesquisa_events?.location || '—'}</Text>
-                <Text style={[s.td, { width: '18%' }]}>{row.mode || '—'}</Text>
-              </View>
-            ))}
-            {surveys.length > 80 ? (
-              <Text style={s.caption}>Exibindo as 80 coletas mais recentes de {surveys.length}.</Text>
-            ) : null}
           </>
         )}
 

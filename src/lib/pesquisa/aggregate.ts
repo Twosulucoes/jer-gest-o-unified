@@ -114,6 +114,51 @@ export function computeStats(surveys: SurveyRow[], config: PesquisaConfig | null
   return { total, today, overallAvg, qStats, scaleStats, recentComments };
 }
 
+// ---------------------------------------------------------------------------
+// Consolidação para o relatório (resumo executivo + agrupamentos)
+// ---------------------------------------------------------------------------
+
+export type ScaleStat = Extract<QStat, { type: 'scale' }>;
+
+export interface PesquisaHighlights {
+  /** Índice de satisfação geral (0..100): média das razões avg/scaleMax das escalas. */
+  satisfactionPct: number | null;
+  /** Perguntas de escala mais bem avaliadas (razão avg/scaleMax desc). */
+  best: ScaleStat[];
+  /** Perguntas de escala com pior avaliação, sem repetir as de `best`. */
+  worst: ScaleStat[];
+}
+
+/** Destaques do relatório (pontos fortes / de atenção) a partir das estatísticas. */
+export function computeHighlights(stats: PesquisaStats, topN = 3): PesquisaHighlights {
+  const scales = stats.scaleStats;
+  if (scales.length === 0) return { satisfactionPct: null, best: [], worst: [] };
+
+  const ratio = (s: ScaleStat) => (s.scaleMax > 0 ? s.avg / s.scaleMax : 0);
+  const ranked = [...scales].sort((a, b) => ratio(b) - ratio(a));
+
+  const satisfactionPct = Math.round((ranked.reduce((a, s) => a + ratio(s), 0) / ranked.length) * 100);
+
+  const best = ranked.slice(0, topN);
+  const bestKeys = new Set(best.map((s) => s.key));
+  const worst = [...ranked].reverse().filter((s) => !bestKeys.has(s.key)).slice(0, topN);
+
+  return { satisfactionPct, best, worst };
+}
+
+/** Contagem agregada de coletas por um seletor (ex.: pesquisador, local), ordenada desc. */
+export function countBy(surveys: SurveyRow[], selector: (s: SurveyRow) => string | null | undefined): { label: string; count: number }[] {
+  const map = new Map<string, number>();
+  surveys.forEach((s) => {
+    const raw = selector(s);
+    const label = raw && String(raw).trim() !== '' ? String(raw) : '—';
+    map.set(label, (map.get(label) ?? 0) + 1);
+  });
+  return [...map.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 /** Distribuição de uma pergunta de escala: contagem por valor 1..scaleMax. */
 export function scaleHistogram(key: string, surveys: SurveyRow[], scaleMax: number): number[] {
   const hist = new Array(scaleMax).fill(0) as number[];
