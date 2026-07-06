@@ -77,14 +77,20 @@ const ROLES = [
     description: "Gestão operacional de frotas, rotas e horários via aplicativo.",
     areas: ["Logística", "Transporte App"]
   },
-  { 
-    value: "alimentacao", 
-    label: "Alimentação (PWA)", 
+  {
+    value: "alimentacao",
+    label: "Alimentação (PWA)",
     description: "Controle de acesso a refeitórios e consumo de refeições via QR Code.",
     areas: ["Refeitório", "Consumo App"]
   },
-  { 
-    value: "alojamento", 
+  {
+    value: "material",
+    label: "Entrega de Material (PWA)",
+    description: "Registro de entrega de kits/materiais aos participantes via leitura de crachá.",
+    areas: ["Entrega App", "Protocolo"]
+  },
+  {
+    value: "alojamento",
     label: "Alojamento (PWA)", 
     description: "Gestão de ocupação, check-in e check-out em unidades de alojamento.",
     areas: ["Alojamento App", "Ocupação"]
