@@ -62,6 +62,7 @@ function MaterialDocument({ data, meta }: { data: MaterialReportData; meta: Meta
 
   const totalEntregues = data.kits.reduce((s, k) => s + k.delivered, 0);
   const totalEstornadas = data.kits.reduce((s, k) => s + k.revoked, 0);
+  const totalNaoVinculadas = data.deliveries.filter((d) => !d.linked).length;
   const kitsAtivos = data.kits.filter((k) => k.is_active).length;
 
   return (
@@ -89,6 +90,11 @@ function MaterialDocument({ data, meta }: { data: MaterialReportData; meta: Meta
           <View style={s.kpi}>
             <Text style={s.kpiLabel}>Entregues</Text>
             <Text style={s.kpiValue}>{totalEntregues}</Text>
+            <Text style={{ fontSize: 6, color: "#888" }}>inclui crachás não vinculados</Text>
+          </View>
+          <View style={s.kpi}>
+            <Text style={s.kpiLabel}>Não Vinculadas</Text>
+            <Text style={[s.kpiValue, { color: "#d97706" }]}>{totalNaoVinculadas}</Text>
           </View>
           <View style={s.kpi}>
             <Text style={s.kpiLabel}>Estornadas</Text>
@@ -148,10 +154,12 @@ function MaterialDocument({ data, meta }: { data: MaterialReportData; meta: Meta
         </View>
         {data.deliveries.map((d, i) => (
           <View key={d.id} style={i % 2 === 0 ? s.tr : s.trAlt}>
-            <Text style={[s.td, { width: "26%" }]}>{d.full_name || "—"}</Text>
+            <Text style={[d.linked ? s.td : s.tdAmber, { width: "26%" }]}>
+              {d.linked ? d.full_name || "—" : `Crachá não vinculado (${d.qr_code})`}
+            </Text>
             <Text style={[s.td, { width: "20%" }]}>{d.escola}</Text>
             <Text style={[s.td, { width: "16%" }]}>{d.kit_name}</Text>
-            <Text style={[s.td, { width: "13%" }]}>{ptLabel(d.participant_type)}</Text>
+            <Text style={[s.td, { width: "13%" }]}>{d.linked ? ptLabel(d.participant_type) : "—"}</Text>
             <Text style={[s.td, { width: "15%" }]}>{fmtDateTime(d.delivered_at)}</Text>
             <Text style={[d.status === "active" ? s.tdGreen : s.tdRed, { width: "10%", textAlign: "center" }]}>
               {d.status === "active" ? "Entregue" : "Estornada"}
