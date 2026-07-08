@@ -154,7 +154,7 @@ Deno.serve(async (req: Request) => {
       .select("role")
       .eq("user_id", operatorId);
     const roles = (roleRows ?? []).map((r: any) => r.role);
-    const ALLOWED_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento", "super_admin"];
+    const ALLOWED_ROLES = ["admin", "secretaria", "coordenacao_tecnica", "transporte", "alimentacao", "alojamento", "super_admin", "material"];
     
     if (!roles.some((r: string) => ALLOWED_ROLES.includes(r))) {
       return jsonResponse({ error: "Forbidden" }, 403);
