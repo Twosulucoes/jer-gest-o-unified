@@ -805,7 +805,7 @@ export default function MaterialScanPage() {
             onScan={handleScan}
             continuous={prefs.continuousMode}
             title="Escanear Crachá"
-            variant="inline"
+            variant="fullscreen"
           />
         )}
 
