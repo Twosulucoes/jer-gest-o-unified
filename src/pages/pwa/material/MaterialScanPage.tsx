@@ -133,14 +133,22 @@ export default function MaterialScanPage() {
   };
 
   /**
-   * A confirmação (sucesso, duplicidade ou erro) fica na tela até o
-   * operador fechar — evita que a câmera em tela cheia cubra a mensagem
-   * automaticamente antes de ser lida (era o comportamento anterior, com
-   * reabertura por timer no modo contínuo).
+   * Duplicidade/erro fica na tela até o operador fechar — evita que a
+   * câmera em tela cheia cubra a mensagem automaticamente antes de ser lida.
    */
   const dismissResult = () => {
     setResult(null);
     if (prefs.continuousMode) setScannerOpen(true);
+  };
+
+  /**
+   * Nova entrega com sucesso: não exige fechar — mostra a confirmação e já
+   * reabre a câmera (fluxo rápido). Só duplicidade/erro usam dismissResult.
+   */
+  const autoContinueOnSuccess = () => {
+    if (prefs.continuousMode) {
+      setTimeout(() => setScannerOpen(true), prefs.reopenDelayMs);
+    }
   };
 
   const getErrorMessage = (err: unknown) => {
@@ -337,6 +345,7 @@ export default function MaterialScanPage() {
       setResult({ ok: true, source: resultSource, message: successMsg });
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
+      autoContinueOnSuccess();
       return;
     }
 
@@ -386,6 +395,7 @@ export default function MaterialScanPage() {
     setResult({ ok: true, source: resultSource, message: successMsg });
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
+    autoContinueOnSuccess();
   }
 
   /**
@@ -433,6 +443,7 @@ export default function MaterialScanPage() {
       setResult({ ok: true, source: "qr", message: successMsg });
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
+      autoContinueOnSuccess();
       return;
     }
 
@@ -472,6 +483,7 @@ export default function MaterialScanPage() {
     setResult({ ok: true, source: "qr", message: successMsg });
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
+    autoContinueOnSuccess();
   }
 
   const handleScan = async (rawValue: string) => {
@@ -909,18 +921,15 @@ export default function MaterialScanPage() {
                   <p className="text-sm font-medium leading-snug">{result.message}</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={dismissResult}
-                className={cn(
-                  "h-10 w-full rounded-lg text-xs font-bold uppercase tracking-wide active:scale-[0.98] transition-transform",
-                  result.ok
-                    ? "bg-emerald-600 text-white"
-                    : "bg-destructive text-destructive-foreground",
-                )}
-              >
-                Fechar
-              </button>
+              {!result.ok && (
+                <button
+                  type="button"
+                  onClick={dismissResult}
+                  className="h-10 w-full rounded-lg bg-destructive text-xs font-bold uppercase tracking-wide text-destructive-foreground active:scale-[0.98] transition-transform"
+                >
+                  Fechar
+                </button>
+              )}
             </div>
           )
         )}
