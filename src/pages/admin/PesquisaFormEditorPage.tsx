@@ -338,13 +338,40 @@ export default function PesquisaFormEditorPage() {
                         <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sempre visível" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Sempre visível</SelectItem>
-                          {otherQuestions(q).filter((c) => c.type === 'boolean' || c.type === 'single_choice').map((c) => (
+                          {otherQuestions(q).filter((c) => c.type === 'boolean' || c.type === 'single_choice' || c.type === 'scale').map((c) => (
                             <SelectItem key={c.key} value={c.key}>{c.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       {q.visibleIf && (() => {
                         const ctrl = config.questions.find((c) => c.key === q.visibleIf!.key);
+                        // Escala: multi-seleção de notas (1..scaleMax), gravadas como números.
+                        if (ctrl?.type === 'scale') {
+                          const max = ctrl.scaleMax ?? 5;
+                          const selected = q.visibleIf!.values;
+                          const toggle = (n: number) => {
+                            const has = selected.some((v) => v === n);
+                            const next = has ? selected.filter((v) => v !== n) : [...selected, n];
+                            next.sort((a, b) => Number(a) - Number(b));
+                            updateQuestion(q.key, { visibleIf: { key: q.visibleIf!.key, values: next } });
+                          };
+                          return (
+                            <div className="flex flex-wrap items-center gap-1">
+                              {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
+                                <Button
+                                  key={n}
+                                  type="button"
+                                  variant={selected.some((v) => v === n) ? 'default' : 'outline'}
+                                  size="icon"
+                                  className="h-8 w-8 text-xs"
+                                  onClick={() => toggle(n)}
+                                >
+                                  {n}
+                                </Button>
+                              ))}
+                            </div>
+                          );
+                        }
                         const cur = q.visibleIf!.values[0];
                         const setVal = (raw: string) => {
                           const val: string | boolean = ctrl?.type === 'boolean' ? raw === 'true' : raw;
