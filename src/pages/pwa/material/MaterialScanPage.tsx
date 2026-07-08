@@ -132,12 +132,15 @@ export default function MaterialScanPage() {
     saveScanPreferences(MODULE, next, userId);
   };
 
-  const reopenIfContinuous = () => {
-    if (!prefs.continuousMode) {
-      focusUsbInput();
-      return;
-    }
-    setTimeout(() => setScannerOpen(true), prefs.reopenDelayMs);
+  /**
+   * A confirmação (sucesso, duplicidade ou erro) fica na tela até o
+   * operador fechar — evita que a câmera em tela cheia cubra a mensagem
+   * automaticamente antes de ser lida (era o comportamento anterior, com
+   * reabertura por timer no modo contínuo).
+   */
+  const dismissResult = () => {
+    setResult(null);
+    if (prefs.continuousMode) setScannerOpen(true);
   };
 
   const getErrorMessage = (err: unknown) => {
@@ -323,19 +326,17 @@ export default function MaterialScanPage() {
           participantName || "esta pessoa"
         }`;
         setResult({ ok: false, message: dedupMsg, source: resultSource, variant: "duplicate" });
-        toast.warning(dedupMsg, { duration: 6000 });
         recordOutcome("error");
         if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
-        reopenIfContinuous();
         return;
       }
 
-      const successMsg = `Material registrado (offline): ${participantName || ""}`;
+      const successMsg = `Material registrado (offline): ${
+        participantName || ""
+      } — sincroniza quando houver internet.`;
       setResult({ ok: true, source: resultSource, message: successMsg });
-      toast.info("Registrado offline. Sincronize quando houver internet.");
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
-      reopenIfContinuous();
       return;
     }
 
@@ -375,24 +376,16 @@ export default function MaterialScanPage() {
         source: resultSource,
         variant: isDuplicate ? "duplicate" : undefined,
       });
-      if (isDuplicate) {
-        toast.warning(msg, { duration: 6000 });
-        if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
-      } else {
-        toast.error(msg);
-      }
+      if (isDuplicate && navigator.vibrate) navigator.vibrate([100, 80, 100]);
       recordOutcome("error");
-      reopenIfContinuous();
       return;
     }
 
     const prefix = method === "manual" ? "Busca manual · " : "";
     const successMsg = `${prefix}Material entregue: ${participantName || ""}`;
     setResult({ ok: true, source: resultSource, message: successMsg });
-    toast.success(successMsg);
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
-    reopenIfContinuous();
   }
 
   /**
@@ -431,19 +424,15 @@ export default function MaterialScanPage() {
       if (enqueueResult.deduped) {
         const dedupMsg = `JÁ ENTREGUE (pendente offline neste aparelho) — crachá ${qrCode}`;
         setResult({ ok: false, message: dedupMsg, source: "qr", variant: "duplicate" });
-        toast.warning(dedupMsg, { duration: 6000 });
         recordOutcome("error");
         if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
-        reopenIfContinuous();
         return;
       }
 
-      const successMsg = `Material entregue (offline) — crachá não vinculado: ${qrCode}`;
+      const successMsg = `Material entregue (offline) — crachá não vinculado: ${qrCode}. Nome será associado após sincronizar.`;
       setResult({ ok: true, source: "qr", message: successMsg });
-      toast.info("Registrado offline. Nome será associado depois da sincronização.");
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
-      reopenIfContinuous();
       return;
     }
 
@@ -474,25 +463,15 @@ export default function MaterialScanPage() {
         source: "qr",
         variant: isDuplicate ? "duplicate" : undefined,
       });
-      if (isDuplicate) {
-        toast.warning(msg, { duration: 6000 });
-        if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
-      } else {
-        toast.error(msg);
-      }
+      if (isDuplicate && navigator.vibrate) navigator.vibrate([100, 80, 100]);
       recordOutcome("error");
-      reopenIfContinuous();
       return;
     }
 
-    const successMsg = `Material entregue — crachá não vinculado: ${qrCode}`;
+    const successMsg = `Material entregue — crachá não vinculado: ${qrCode}. Nome será associado quando o crachá for reconciliado.`;
     setResult({ ok: true, source: "qr", message: successMsg });
-    toast.success(successMsg, {
-      description: "Nome será associado quando o crachá for reconciliado.",
-    });
     recordOutcome("ok");
     if (navigator.vibrate) navigator.vibrate(200);
-    reopenIfContinuous();
   }
 
   const handleScan = async (rawValue: string) => {
@@ -520,9 +499,7 @@ export default function MaterialScanPage() {
       if (isVoucherQr(val)) {
         const msg = "Este é um QR de voucher, não um crachá. Use o crachá do participante.";
         setResult({ ok: false, message: msg, source: "qr" });
-        toast.error(msg);
         recordOutcome("error");
-        reopenIfContinuous();
         return;
       }
 
@@ -543,7 +520,6 @@ export default function MaterialScanPage() {
         if (cached.state === "nao_credenciado") {
           const msg = "Participante sem credencial ativa.";
           setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg);
           recordOutcome("error");
           return;
         }
@@ -552,7 +528,6 @@ export default function MaterialScanPage() {
         if (!cachedEntry.is_active) {
           const msg = "Participante inativo ou não encontrado.";
           setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg);
           recordOutcome("error");
           return;
         }
@@ -582,7 +557,6 @@ export default function MaterialScanPage() {
       if (partError || !partData?.is_active) {
         const msg = "Participante inativo ou não encontrado.";
         setResult({ ok: false, message: msg, source: "qr" });
-        toast.error(msg);
         recordOutcome("error");
         return;
       }
@@ -590,7 +564,6 @@ export default function MaterialScanPage() {
       if (!partData.credentialed_at) {
         const msg = "Participante sem credencial ativa.";
         setResult({ ok: false, message: msg, source: "qr" });
-        toast.error(msg);
         recordOutcome("error");
         return;
       }
@@ -627,7 +600,6 @@ export default function MaterialScanPage() {
       if (row.is_active === false) {
         const msg = "Participante inativo.";
         setResult({ ok: false, message: msg, source: "manual" });
-        toast.error(msg);
         recordOutcome("error");
         return;
       }
@@ -897,35 +869,58 @@ export default function MaterialScanPage() {
         </div>
 
         {result?.variant === "duplicate" ? (
-          <div className="flex items-center gap-3 rounded-2xl border-2 border-amber-500/70 bg-amber-500/15 px-4 py-3 animate-in zoom-in-95 duration-200">
-            <AlertTriangle className="h-8 w-8 shrink-0 text-amber-500" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
-                Atenção
-              </p>
-              <p className="text-base font-extrabold leading-snug text-amber-900 dark:text-amber-100">
-                {result.message}
-              </p>
+          <div className="flex flex-col gap-3 rounded-2xl border-2 border-amber-500/70 bg-amber-500/15 px-4 py-3 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-8 w-8 shrink-0 text-amber-500" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                  Atenção
+                </p>
+                <p className="text-base font-extrabold leading-snug text-amber-900 dark:text-amber-100">
+                  {result.message}
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={dismissResult}
+              className="h-11 w-full rounded-xl bg-amber-600 text-sm font-black uppercase tracking-wide text-white active:scale-[0.98] transition-transform"
+            >
+              Fechar
+            </button>
           </div>
         ) : (
           result && (
             <div
               className={cn(
-                "flex items-start gap-2 rounded-2xl border px-3 py-2",
+                "flex flex-col gap-2 rounded-2xl border px-3 py-2.5",
                 result.ok
                   ? "border-emerald-500/40 bg-emerald-500/5"
                   : "border-destructive/40 bg-destructive/5",
               )}
             >
-              {result.ok ? (
-                <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500" />
-              ) : (
-                <XCircle className="h-5 w-5 shrink-0 text-destructive" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium leading-snug">{result.message}</p>
+              <div className="flex items-start gap-2">
+                {result.ok ? (
+                  <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500" />
+                ) : (
+                  <XCircle className="h-5 w-5 shrink-0 text-destructive" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium leading-snug">{result.message}</p>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={dismissResult}
+                className={cn(
+                  "h-10 w-full rounded-lg text-xs font-bold uppercase tracking-wide active:scale-[0.98] transition-transform",
+                  result.ok
+                    ? "bg-emerald-600 text-white"
+                    : "bg-destructive text-destructive-foreground",
+                )}
+              >
+                Fechar
+              </button>
             </div>
           )
         )}
@@ -948,7 +943,9 @@ export default function MaterialScanPage() {
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold leading-tight truncate">Modo contínuo</p>
               <p className="text-[10px] text-muted-foreground">
-                {prefs.continuousMode ? "Reabre câmera após scan" : "Desligado"}
+                {prefs.continuousMode
+                  ? "Reabre câmera ao fechar a confirmação"
+                  : "Desligado"}
               </p>
             </div>
             <Switch
