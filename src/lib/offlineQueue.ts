@@ -118,6 +118,10 @@ function findDuplicateMealItem(
  * uq_material_deliveries_active na sincronização). Sem isso, o operador
  * bipava a mesma pessoa 2x e via "sucesso" nas duas, gerando confusão física
  * mesmo que o banco depois aceite só uma.
+ *
+ * Cobre também o caso "crachá não reconhecido" (sem participant_id, só
+ * qr_code) — dedup por `kit_id + qr_code`, espelhando o UNIQUE
+ * (qr_code, kit_id) de material_deliveries_unlinked.
  */
 function findDuplicateMaterialItem(
   queue: OfflineQueueItem[],
@@ -125,14 +129,29 @@ function findDuplicateMaterialItem(
 ): OfflineQueueItem | undefined {
   const kitId = (data as any)?.kit_id;
   const participantId = (data as any)?.participant_id;
-  if (!kitId || !participantId) return undefined;
-  return queue.find(
-    (item) =>
-      item.module === "material" &&
-      item.status !== "conflict" &&
-      (item.data as any)?.kit_id === kitId &&
-      (item.data as any)?.participant_id === participantId,
-  );
+  const qrCode = (data as any)?.qr_code;
+
+  if (kitId && participantId) {
+    return queue.find(
+      (item) =>
+        item.module === "material" &&
+        item.status !== "conflict" &&
+        (item.data as any)?.kit_id === kitId &&
+        (item.data as any)?.participant_id === participantId,
+    );
+  }
+
+  if (kitId && qrCode) {
+    return queue.find(
+      (item) =>
+        item.module === "material" &&
+        item.status !== "conflict" &&
+        (item.data as any)?.kit_id === kitId &&
+        (item.data as any)?.qr_code === qrCode,
+    );
+  }
+
+  return undefined;
 }
 
 export type AddToOfflineQueueResult =
@@ -277,13 +296,29 @@ export const syncOfflineQueue = async () => {
           continue;
         }
       } else if (item.module === "material") {
-        const matData = item.data as { participant_id: string; kit_id: string; method: string; delivered_by: string };
-        const { data: rpcResult, error: rpcError } = await (supabase as any).rpc("record_material_delivery", {
-          p_participant_id: matData.participant_id,
-          p_kit_id: matData.kit_id,
-          p_method: matData.method,
-          p_delivered_by: matData.delivered_by,
-        });
+        const matData = item.data as {
+          participant_id?: string;
+          qr_code?: string;
+          kit_id: string;
+          method: string;
+          delivered_by: string;
+        };
+
+        // Crachá não reconhecido no momento do scan offline: grava o código
+        // bruto para reconciliação posterior, em vez de bloquear a entrega.
+        const { data: rpcResult, error: rpcError } = matData.participant_id
+          ? await (supabase as any).rpc("record_material_delivery", {
+              p_participant_id: matData.participant_id,
+              p_kit_id: matData.kit_id,
+              p_method: matData.method,
+              p_delivered_by: matData.delivered_by,
+            })
+          : await (supabase as any).rpc("record_material_delivery_unlinked", {
+              p_qr_code: matData.qr_code,
+              p_kit_id: matData.kit_id,
+              p_method: matData.method,
+              p_delivered_by: matData.delivered_by,
+            });
 
         if (rpcError) {
           if (rpcError.code === "23505") {
