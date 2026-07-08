@@ -189,12 +189,18 @@ export default function MaterialScanPage() {
       return;
     }
     const fetchCount = async () => {
-      const { count } = await (supabase as any)
-        .from("material_deliveries")
-        .select("*", { count: "exact", head: true })
-        .eq("kit_id", kitId)
-        .eq("status", "active");
-      setKitCount(count || 0);
+      const [linkedRes, unlinkedRes] = await Promise.all([
+        (supabase as any)
+          .from("material_deliveries")
+          .select("*", { count: "exact", head: true })
+          .eq("kit_id", kitId)
+          .eq("status", "active"),
+        (supabase as any)
+          .from("material_deliveries_unlinked")
+          .select("*", { count: "exact", head: true })
+          .eq("kit_id", kitId),
+      ]);
+      setKitCount((linkedRes.count || 0) + (unlinkedRes.count || 0));
     };
     void fetchCount();
 
@@ -206,6 +212,16 @@ export default function MaterialScanPage() {
           event: "*",
           schema: "public",
           table: "material_deliveries",
+          filter: `kit_id=eq.${kitId}`,
+        },
+        () => void fetchCount(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "material_deliveries_unlinked",
           filter: `kit_id=eq.${kitId}`,
         },
         () => void fetchCount(),
@@ -226,21 +242,38 @@ export default function MaterialScanPage() {
     let cancelled = false;
     const kitIds = kits.map((k) => k.id);
     (async () => {
-      const { count: total } = await (supabase as any)
-        .from("material_deliveries")
-        .select("id", { count: "exact", head: true })
-        .in("kit_id", kitIds)
-        .eq("status", "active");
-      if (!cancelled) setTotalToday(total || 0);
-
-      if (userId) {
-        const { count: mine } = await (supabase as any)
+      const [linkedTotal, unlinkedTotal] = await Promise.all([
+        (supabase as any)
           .from("material_deliveries")
           .select("id", { count: "exact", head: true })
           .in("kit_id", kitIds)
-          .eq("status", "active")
-          .eq("delivered_by", userId);
-        if (!cancelled) setMyCount(mine || 0);
+          .eq("status", "active"),
+        (supabase as any)
+          .from("material_deliveries_unlinked")
+          .select("id", { count: "exact", head: true })
+          .in("kit_id", kitIds),
+      ]);
+      if (!cancelled) {
+        setTotalToday((linkedTotal.count || 0) + (unlinkedTotal.count || 0));
+      }
+
+      if (userId) {
+        const [linkedMine, unlinkedMine] = await Promise.all([
+          (supabase as any)
+            .from("material_deliveries")
+            .select("id", { count: "exact", head: true })
+            .in("kit_id", kitIds)
+            .eq("status", "active")
+            .eq("delivered_by", userId),
+          (supabase as any)
+            .from("material_deliveries_unlinked")
+            .select("id", { count: "exact", head: true })
+            .in("kit_id", kitIds)
+            .eq("delivered_by", userId),
+        ]);
+        if (!cancelled) {
+          setMyCount((linkedMine.count || 0) + (unlinkedMine.count || 0));
+        }
       }
     })();
     return () => {
