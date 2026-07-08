@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, BarChart3, Trophy, Receipt, BadgeCheck, ClipboardList, Layers } from "lucide-react";
+import { FileText, BarChart3, Trophy, Receipt, BadgeCheck, ClipboardList, Layers, PackageCheck } from "lucide-react";
 
 interface ReportEntry {
   key: string;
@@ -68,6 +68,14 @@ const REPORTS: ReportEntry[] = [
     icon: <ClipboardList className="h-6 w-6 text-primary" />,
     status: "available",
     to: "/admin/relatorios/execucao-fisica",
+  },
+  {
+    key: "material",
+    title: "Entregas de Material",
+    description: "Progresso de entrega dos kits de material por escola/delegação, com pendências e estornos. Exportação PDF e Excel.",
+    icon: <PackageCheck className="h-6 w-6 text-primary" />,
+    status: "available",
+    to: "/admin/relatorios/material",
   },
 ];
 
