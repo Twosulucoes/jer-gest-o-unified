@@ -5622,6 +5622,208 @@ export type Database = {
           },
         ]
       }
+      material_deliveries: {
+        Row: {
+          created_at: string
+          delivered_at: string
+          delivered_by: string
+          id: string
+          kit_id: string
+          method: string
+          notes: string | null
+          participant_id: string
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string
+          delivered_by: string
+          id?: string
+          kit_id: string
+          method?: string
+          notes?: string | null
+          participant_id: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string
+          delivered_by?: string
+          id?: string
+          kit_id?: string
+          method?: string
+          notes?: string | null
+          participant_id?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_deliveries_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "material_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_deliveries_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_deliveries_unlinked: {
+        Row: {
+          delivered_at: string
+          delivered_by: string | null
+          id: string
+          kit_id: string
+          method: string
+          qr_code: string
+        }
+        Insert: {
+          delivered_at?: string
+          delivered_by?: string | null
+          id?: string
+          kit_id: string
+          method?: string
+          qr_code: string
+        }
+        Update: {
+          delivered_at?: string
+          delivered_by?: string | null
+          id?: string
+          kit_id?: string
+          method?: string
+          qr_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_deliveries_unlinked_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "material_kits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      material_kits: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          event_id: string
+          event_stage_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_id: string
+          event_stage_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_id?: string
+          event_stage_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_kits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta2_competicoes"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_completo"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_dia"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_etapa"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_janela"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_por_operador"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_erros_sync"
+            referencedColumns: ["etapa_id"]
+          },
+          {
+            foreignKeyName: "material_kits_event_stage_id_fkey"
+            columns: ["event_stage_id"]
+            isOneToOne: false
+            referencedRelation: "vw_osc_meta1_por_etapa"
+            referencedColumns: ["event_stage_id"]
+          },
+        ]
+      }
       meal_audit_logs: {
         Row: {
           action: string
@@ -13595,8 +13797,8 @@ export type Database = {
       get_stage_participation_counts: {
         Args: { p_stage_id: string }
         Returns: {
-          participants: number
           credentialed: number
+          participants: number
         }[]
       }
       get_unhandled_referee_indisponibilities: {
@@ -13809,6 +14011,24 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      record_material_delivery: {
+        Args: {
+          p_delivered_by?: string
+          p_kit_id: string
+          p_method?: string
+          p_participant_id: string
+        }
+        Returns: Json
+      }
+      record_material_delivery_unlinked: {
+        Args: {
+          p_delivered_by?: string
+          p_kit_id: string
+          p_method?: string
+          p_qr_code: string
+        }
+        Returns: Json
+      }
       record_meal_consumption: {
         Args: {
           p_meal_window_id: string
@@ -13867,6 +14087,10 @@ export type Database = {
           p_consumption_id: string
           p_reason: Database["public"]["Enums"]["meal_consumption_reverse_reason"]
         }
+        Returns: Json
+      }
+      revoke_material_delivery: {
+        Args: { p_delivery_id: string; p_reason?: string }
         Returns: Json
       }
       revoke_voucher_batch_v1: {
@@ -14359,7 +14583,6 @@ export type Database = {
         | "secretaria"
         | "transporte"
         | "alimentacao"
-        | "material"
         | "coordenacao_tecnica"
         | "delegacao"
         | "alojamento"
@@ -14368,6 +14591,7 @@ export type Database = {
         | "coordenador_modalidade"
         | "mesario"
         | "super_admin"
+        | "material"
       bulletin_status: "rascunho" | "publicado" | "cancelado"
       incident_module: "transporte" | "alimentacao" | "alojamento" | "outro"
       incident_status: "pending" | "in_progress" | "resolved"
@@ -14552,7 +14776,6 @@ export const Constants = {
         "secretaria",
         "transporte",
         "alimentacao",
-        "material",
         "coordenacao_tecnica",
         "delegacao",
         "alojamento",
@@ -14561,6 +14784,7 @@ export const Constants = {
         "coordenador_modalidade",
         "mesario",
         "super_admin",
+        "material",
       ],
       bulletin_status: ["rascunho", "publicado", "cancelado"],
       incident_module: ["transporte", "alimentacao", "alojamento", "outro"],
@@ -14622,4 +14846,3 @@ export const Constants = {
     },
   },
 } as const
-

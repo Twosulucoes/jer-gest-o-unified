@@ -380,6 +380,95 @@ export default function MaterialScanPage() {
     reopenIfContinuous();
   }
 
+  /**
+   * Crachá não reconhecido (não achou participante nem no cache offline,
+   * nem via resolveQrCredential online). Em vez de bloquear a entrega —
+   * o que pararia a fila física —, grava o código bruto lido para
+   * reconciliação posterior (import de credencial externa), igual ao
+   * padrão já usado em Alimentação (`meal_consumptions_unlinked`).
+   */
+  async function registerDeliveryUnlinked(qrCode: string) {
+    if (!kitId) {
+      toast.error("Selecione um kit de material.");
+      return;
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user.id) {
+      setResult({ ok: false, message: "Sessão expirada. Faça login novamente." });
+      recordOutcome("error");
+      return;
+    }
+
+    const payload = {
+      qr_code: qrCode,
+      kit_id: kitId,
+      method: "qr_scan",
+      delivered_by: session.user.id,
+    };
+
+    if (!isOnline()) {
+      const enqueueResult = addToOfflineQueue("material", payload);
+
+      if (enqueueResult.deduped) {
+        const dedupMsg = `Já existe registro offline pendente para o crachá ${qrCode} neste kit.`;
+        setResult({ ok: false, message: dedupMsg, source: "qr" });
+        toast.info(dedupMsg);
+        recordOutcome("error");
+        reopenIfContinuous();
+        return;
+      }
+
+      const successMsg = `Material entregue (offline) — crachá não vinculado: ${qrCode}`;
+      setResult({ ok: true, source: "qr", message: successMsg });
+      toast.info("Registrado offline. Nome será associado depois da sincronização.");
+      recordOutcome("ok");
+      if (navigator.vibrate) navigator.vibrate(200);
+      reopenIfContinuous();
+      return;
+    }
+
+    const { data: rpcResult, error: rpcError } = await (supabase as any).rpc(
+      "record_material_delivery_unlinked",
+      {
+        p_qr_code: qrCode,
+        p_kit_id: kitId,
+        p_method: "qr_scan",
+        p_delivered_by: session.user.id,
+      },
+    );
+
+    if (rpcError) throw rpcError;
+
+    const res = rpcResult as { ok: boolean; reason?: string };
+
+    if (!res.ok) {
+      const msg =
+        res.reason === "ALREADY_DELIVERED"
+          ? `Este crachá já recebeu material neste kit: ${qrCode}`
+          : res.reason === "KIT_NOT_FOUND"
+            ? "Kit não encontrado ou inativo."
+            : "Não foi possível registrar a entrega. Tente novamente.";
+      setResult({ ok: false, message: msg, source: "qr" });
+      toast.error(msg);
+      recordOutcome("error");
+      reopenIfContinuous();
+      return;
+    }
+
+    const successMsg = `Material entregue — crachá não vinculado: ${qrCode}`;
+    setResult({ ok: true, source: "qr", message: successMsg });
+    toast.success(successMsg, {
+      description: "Nome será associado quando o crachá for reconciliado.",
+    });
+    recordOutcome("ok");
+    if (navigator.vibrate) navigator.vibrate(200);
+    reopenIfContinuous();
+  }
+
   const handleScan = async (rawValue: string) => {
     if (isSubmitting) return;
 
@@ -415,19 +504,13 @@ export default function MaterialScanPage() {
         const cached = lookupQr(val);
 
         if (cached.state === "sem_cache") {
-          const msg =
-            "Sem conexão e cache indisponível. Abra o módulo com internet primeiro para baixar os dados.";
-          setResult({ ok: false, message: msg, source: "qr" });
-          toast.error("Cache indisponível", { description: msg });
-          recordOutcome("error");
+          toast.warning("Cache indisponível — registrando crachá para reconciliar depois.");
+          await registerDeliveryUnlinked(val);
           return;
         }
 
         if (cached.state === "nao_cadastrado") {
-          const msg = "Crachá não encontrado no cache offline.";
-          setResult({ ok: false, message: msg, source: "qr" });
-          toast.error(msg);
-          recordOutcome("error");
+          await registerDeliveryUnlinked(val);
           return;
         }
 
@@ -460,10 +543,7 @@ export default function MaterialScanPage() {
       const resolved = await resolveQrCredential(val, { eventId: activeEventId });
 
       if (!resolved) {
-        const msg = "Crachá não reconhecido.";
-        setResult({ ok: false, message: msg, source: "qr" });
-        toast.error(msg);
-        recordOutcome("error");
+        await registerDeliveryUnlinked(val);
         return;
       }
 
