@@ -52,6 +52,25 @@ interface MaterialKit {
 
 const MODULE = "material" as const;
 
+/**
+ * Internet "capenga" (navigator.onLine=true mas a requisição trava/falha) não
+ * pode deixar a chamada pendurada indefinidamente — sem prazo, o operador
+ * acaba recarregando a página no meio do envio e o registro se perde sem
+ * nunca cair na fila offline. Após o timeout, a chamada original pode ainda
+ * completar em segundo plano; isso é seguro porque tanto o INSERT nativo
+ * (ON CONFLICT DO NOTHING) quanto o retry via fila offline são idempotentes.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("TIMEOUT_REDE")), ms),
+    ),
+  ]);
+}
+
+const RPC_TIMEOUT_MS = 8000;
+
 export default function MaterialScanPage() {
   const navigate = useNavigate();
 
@@ -355,7 +374,7 @@ export default function MaterialScanPage() {
       delivered_by: session.user.id,
     };
 
-    if (!isOnline()) {
+    const enqueueAndShowOfflineResult = () => {
       const enqueueResult = addToOfflineQueue(
         "material",
         payload,
@@ -379,56 +398,68 @@ export default function MaterialScanPage() {
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
       autoContinueOnSuccess();
+    };
+
+    if (!isOnline()) {
+      enqueueAndShowOfflineResult();
       return;
     }
 
-    const { data: rpcResult, error: rpcError } = await (supabase as any).rpc(
-      "record_material_delivery",
-      {
-        p_participant_id: participantId,
-        p_kit_id: kitId,
-        p_method: method,
-        p_delivered_by: session.user.id,
-      },
-    );
+    try {
+      const { data: rpcResult, error: rpcError } = await withTimeout(
+        (supabase as any).rpc("record_material_delivery", {
+          p_participant_id: participantId,
+          p_kit_id: kitId,
+          p_method: method,
+          p_delivered_by: session.user.id,
+        }),
+        RPC_TIMEOUT_MS,
+      );
 
-    if (rpcError) throw rpcError;
+      if (rpcError) throw rpcError;
 
-    const res = rpcResult as { ok: boolean; reason?: string };
+      const res = rpcResult as { ok: boolean; reason?: string };
 
-    if (!res.ok) {
-      const isDuplicate = res.reason === "ALREADY_DELIVERED";
-      let msg: string;
-      switch (res.reason) {
-        case "ALREADY_DELIVERED":
-          msg = `JÁ ENTREGUE: ${participantName || "esta pessoa"} já recebeu este kit.`;
-          break;
-        case "KIT_NOT_FOUND":
-          msg = "Kit não encontrado ou inativo.";
-          break;
-        case "NOT_ELIGIBLE":
-          msg = "Este kit não é destinado ao perfil desta credencial.";
-          break;
-        default:
-          msg = "Não foi possível registrar a entrega. Tente novamente.";
+      if (!res.ok) {
+        const isDuplicate = res.reason === "ALREADY_DELIVERED";
+        let msg: string;
+        switch (res.reason) {
+          case "ALREADY_DELIVERED":
+            msg = `JÁ ENTREGUE: ${participantName || "esta pessoa"} já recebeu este kit.`;
+            break;
+          case "KIT_NOT_FOUND":
+            msg = "Kit não encontrado ou inativo.";
+            break;
+          case "NOT_ELIGIBLE":
+            msg = "Este kit não é destinado ao perfil desta credencial.";
+            break;
+          default:
+            msg = "Não foi possível registrar a entrega. Tente novamente.";
+        }
+        setResult({
+          ok: false,
+          message: msg,
+          source: resultSource,
+          variant: isDuplicate ? "duplicate" : undefined,
+        });
+        if (isDuplicate && navigator.vibrate) navigator.vibrate([100, 80, 100]);
+        recordOutcome("error");
+        return;
       }
-      setResult({
-        ok: false,
-        message: msg,
-        source: resultSource,
-        variant: isDuplicate ? "duplicate" : undefined,
-      });
-      if (isDuplicate && navigator.vibrate) navigator.vibrate([100, 80, 100]);
-      recordOutcome("error");
-      return;
-    }
 
-    const prefix = method === "manual" ? "Busca manual · " : "";
-    const successMsg = `${prefix}Material entregue: ${participantName || ""}`;
-    setResult({ ok: true, source: resultSource, message: successMsg });
-    recordOutcome("ok");
-    if (navigator.vibrate) navigator.vibrate(200);
-    autoContinueOnSuccess();
+      const prefix = method === "manual" ? "Busca manual · " : "";
+      const successMsg = `${prefix}Material entregue: ${participantName || ""}`;
+      setResult({ ok: true, source: resultSource, message: successMsg });
+      recordOutcome("ok");
+      if (navigator.vibrate) navigator.vibrate(200);
+      autoContinueOnSuccess();
+    } catch (networkErr) {
+      // Falha/timeout de rede real (não resposta de negócio do servidor) —
+      // nunca perde o registro: cai no mesmo caminho de fila offline usado
+      // quando já se sabia estar sem internet.
+      console.warn("[material] Falha de rede ao registrar entrega, enfileirando:", networkErr);
+      enqueueAndShowOfflineResult();
+    }
   }
 
   /**
@@ -461,7 +492,7 @@ export default function MaterialScanPage() {
       delivered_by: session.user.id,
     };
 
-    if (!isOnline()) {
+    const enqueueAndShowOfflineResult = () => {
       const enqueueResult = addToOfflineQueue("material", payload);
 
       if (enqueueResult.deduped) {
@@ -477,46 +508,58 @@ export default function MaterialScanPage() {
       recordOutcome("ok");
       if (navigator.vibrate) navigator.vibrate(200);
       autoContinueOnSuccess();
+    };
+
+    if (!isOnline()) {
+      enqueueAndShowOfflineResult();
       return;
     }
 
-    const { data: rpcResult, error: rpcError } = await (supabase as any).rpc(
-      "record_material_delivery_unlinked",
-      {
-        p_qr_code: qrCode,
-        p_kit_id: kitId,
-        p_method: "qr_scan",
-        p_delivered_by: session.user.id,
-      },
-    );
+    try {
+      const { data: rpcResult, error: rpcError } = await withTimeout(
+        (supabase as any).rpc("record_material_delivery_unlinked", {
+          p_qr_code: qrCode,
+          p_kit_id: kitId,
+          p_method: "qr_scan",
+          p_delivered_by: session.user.id,
+        }),
+        RPC_TIMEOUT_MS,
+      );
 
-    if (rpcError) throw rpcError;
+      if (rpcError) throw rpcError;
 
-    const res = rpcResult as { ok: boolean; reason?: string };
+      const res = rpcResult as { ok: boolean; reason?: string };
 
-    if (!res.ok) {
-      const isDuplicate = res.reason === "ALREADY_DELIVERED";
-      const msg = isDuplicate
-        ? `JÁ ENTREGUE — crachá não vinculado: ${qrCode}`
-        : res.reason === "KIT_NOT_FOUND"
-          ? "Kit não encontrado ou inativo."
-          : "Não foi possível registrar a entrega. Tente novamente.";
-      setResult({
-        ok: false,
-        message: msg,
-        source: "qr",
-        variant: isDuplicate ? "duplicate" : undefined,
-      });
-      if (isDuplicate && navigator.vibrate) navigator.vibrate([100, 80, 100]);
-      recordOutcome("error");
-      return;
+      if (!res.ok) {
+        const isDuplicate = res.reason === "ALREADY_DELIVERED";
+        const msg = isDuplicate
+          ? `JÁ ENTREGUE — crachá não vinculado: ${qrCode}`
+          : res.reason === "KIT_NOT_FOUND"
+            ? "Kit não encontrado ou inativo."
+            : "Não foi possível registrar a entrega. Tente novamente.";
+        setResult({
+          ok: false,
+          message: msg,
+          source: "qr",
+          variant: isDuplicate ? "duplicate" : undefined,
+        });
+        if (isDuplicate && navigator.vibrate) navigator.vibrate([100, 80, 100]);
+        recordOutcome("error");
+        return;
+      }
+
+      const successMsg = `Material entregue — crachá não vinculado: ${qrCode}. Nome será associado quando o crachá for reconciliado.`;
+      setResult({ ok: true, source: "qr", message: successMsg });
+      recordOutcome("ok");
+      if (navigator.vibrate) navigator.vibrate(200);
+      autoContinueOnSuccess();
+    } catch (networkErr) {
+      console.warn(
+        "[material] Falha de rede ao registrar entrega não vinculada, enfileirando:",
+        networkErr,
+      );
+      enqueueAndShowOfflineResult();
     }
-
-    const successMsg = `Material entregue — crachá não vinculado: ${qrCode}. Nome será associado quando o crachá for reconciliado.`;
-    setResult({ ok: true, source: "qr", message: successMsg });
-    recordOutcome("ok");
-    if (navigator.vibrate) navigator.vibrate(200);
-    autoContinueOnSuccess();
   }
 
   const handleScan = async (rawValue: string) => {
@@ -586,18 +629,55 @@ export default function MaterialScanPage() {
         return;
       }
 
-      const resolved = await resolveQrCredential(val, { eventId: activeEventId });
+      let resolved: Awaited<ReturnType<typeof resolveQrCredential>>;
+      try {
+        resolved = await withTimeout(
+          resolveQrCredential(val, { eventId: activeEventId }),
+          RPC_TIMEOUT_MS,
+        );
+      } catch (resolveErr) {
+        // Rede falhou ao tentar identificar o crachá — não descarta o scan:
+        // grava o código bruto para reconciliar depois, igual a "não
+        // reconhecido" (é exatamente o que está acontecendo: não conseguimos
+        // saber quem é agora).
+        console.warn(
+          "[material] Falha de rede ao resolver credencial, tratando como não vinculado:",
+          resolveErr,
+        );
+        await registerDeliveryUnlinked(val);
+        return;
+      }
 
       if (!resolved) {
         await registerDeliveryUnlinked(val);
         return;
       }
 
-      const { data: partData, error: partError } = await (supabase as any)
-        .from("participants")
-        .select("is_active, credentialed_at")
-        .eq("id", resolved.participant_id)
-        .single();
+      let partData: { is_active: boolean; credentialed_at: string | null } | null = null;
+      let partError: unknown = null;
+      try {
+        const partRes = await withTimeout(
+          (supabase as any)
+            .from("participants")
+            .select("is_active, credentialed_at")
+            .eq("id", resolved.participant_id)
+            .single(),
+          RPC_TIMEOUT_MS,
+        );
+        partData = partRes.data;
+        partError = partRes.error;
+      } catch (checkErr) {
+        // Já sabemos quem é — só não deu pra confirmar elegibilidade agora
+        // por causa da rede. Segue com a entrega; o trigger no banco valida
+        // is_active/credencial no momento em que sincronizar (defesa em
+        // profundidade já existente, independente do caminho de escrita).
+        console.warn(
+          "[material] Falha de rede ao checar elegibilidade, registrando mesmo assim:",
+          checkErr,
+        );
+        await registerDelivery(resolved.participant_id, resolved.full_name, "qr_scan", "qr");
+        return;
+      }
 
       if (partError || !partData?.is_active) {
         const msg = "Participante inativo ou não encontrado.";
