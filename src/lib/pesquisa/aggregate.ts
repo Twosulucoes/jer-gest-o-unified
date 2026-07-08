@@ -180,3 +180,93 @@ export function dailyCounts(surveys: SurveyRow[]): { day: string; label: string;
     .sort((a, b) => (a[0] < b[0] ? -1 : 1))
     .map(([day, count]) => ({ day, label: format(new Date(day + 'T12:00:00'), 'dd/MM'), count }));
 }
+
+// ---------------------------------------------------------------------------
+// Cruzamento de dados (dados cruzados) — satisfação por dimensão de perfil.
+// Usado pelo relatório consolidado (pesquisaSatisfacaoPdfExporter).
+// ---------------------------------------------------------------------------
+
+/** Perguntas de escala do config, ordenadas (para colunas da matriz). */
+export function scaleQuestionsOf(config: PesquisaConfig | null): PesquisaQuestion[] {
+  if (!config) return [];
+  return [...config.questions].filter((q) => q.type === 'scale').sort((a, b) => a.order - b.order);
+}
+
+/**
+ * Dimensões de cruzamento: perguntas single_choice a usar como eixo (linhas).
+ * Por padrão as da seção `perfil` (idade, sexo, município, tipo), na ordem do config.
+ */
+export function dimensionQuestions(config: PesquisaConfig | null): PesquisaQuestion[] {
+  if (!config) return [];
+  const ordered = [...config.questions].sort((a, b) => a.order - b.order);
+  const perfil = ordered.filter((q) => q.type === 'single_choice' && q.section === 'perfil');
+  // Fallback: se a seção `perfil` não existir, usa todas as single_choice.
+  return perfil.length > 0 ? perfil : ordered.filter((q) => q.type === 'single_choice');
+}
+
+export interface CrossTabRow {
+  value: string;                          // valor da opção
+  label: string;                          // rótulo da opção
+  count: number;                          // nº de coletas neste subgrupo
+  overallAvg: number | null;              // média geral das escalas no subgrupo
+  satisfactionPct: number | null;         // índice de satisfação (0..100) no subgrupo
+  perScale: Record<string, number | null>; // scaleKey -> média no subgrupo
+}
+
+export interface CrossTab {
+  key: string;                                        // pergunta-dimensão
+  label: string;
+  scaleKeys: { key: string; label: string; scaleMax: number }[];
+  rows: CrossTabRow[];
+}
+
+/** Média de escala e satisfação (0..100) de um subgrupo, a partir de suas escalas. */
+function scaleSummary(
+  scaleQs: PesquisaQuestion[],
+  subset: SurveyRow[],
+): { overallAvg: number | null; satisfactionPct: number | null; perScale: Record<string, number | null> } {
+  const perScale: Record<string, number | null> = {};
+  const ratios: number[] = [];
+  const avgs: number[] = [];
+  scaleQs.forEach((q) => {
+    const st = aggregateQuestion(q, subset) as Extract<QStat, { type: 'scale' }>;
+    if (st.count > 0) {
+      perScale[q.key] = st.avg;
+      avgs.push(st.avg);
+      if (st.scaleMax > 0) ratios.push(st.avg / st.scaleMax);
+    } else {
+      perScale[q.key] = null;
+    }
+  });
+  const overallAvg = avgs.length ? +(avgs.reduce((a, b) => a + b, 0) / avgs.length).toFixed(2) : null;
+  const satisfactionPct = ratios.length
+    ? Math.round((ratios.reduce((a, b) => a + b, 0) / ratios.length) * 100)
+    : null;
+  return { overallAvg, satisfactionPct, perScale };
+}
+
+/**
+ * Tabelas de cruzamento: para cada dimensão de perfil, uma linha por opção com
+ * o nº de coletas, a satisfação e a média por pergunta de escala.
+ * Só opções com pelo menos uma coleta entram. Retorna [] sem config.
+ */
+export function crossTabsByProfile(surveys: SurveyRow[], config: PesquisaConfig | null): CrossTab[] {
+  if (!config || surveys.length === 0) return [];
+  const scaleQs = scaleQuestionsOf(config);
+  if (scaleQs.length === 0) return [];
+  const scaleKeys = scaleQs.map((q) => ({ key: q.key, label: q.label, scaleMax: q.scaleMax ?? 5 }));
+
+  return dimensionQuestions(config).map((dim) => {
+    const opts = dim.options ?? [];
+    const rows: CrossTabRow[] = opts
+      .map((opt) => {
+        const subset = surveys.filter((s) => s.answers?.[dim.key] === opt.value);
+        if (subset.length === 0) return null;
+        const summary = scaleSummary(scaleQs, subset);
+        return { value: opt.value, label: opt.label, count: subset.length, ...summary };
+      })
+      .filter((r): r is CrossTabRow => r !== null)
+      .sort((a, b) => b.count - a.count);
+    return { key: dim.key, label: dim.label, scaleKeys, rows };
+  }).filter((ct) => ct.rows.length > 0);
+}

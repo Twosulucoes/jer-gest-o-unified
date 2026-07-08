@@ -1,8 +1,8 @@
 import { pdf, Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import {
-  computeStats, computeHighlights, countBy, dailyCounts,
-  type SurveyRow, type QStat, type ScaleStat,
+  computeStats, computeHighlights, countBy, dailyCounts, scaleHistogram, crossTabsByProfile,
+  type SurveyRow, type QStat, type ScaleStat, type CrossTab,
 } from '@/lib/pesquisa/aggregate';
 import { DEFAULT_SCALE_LABELS, type PesquisaConfig } from '@/lib/pesquisa/config';
 import type { EventBrandingResolved } from '@/hooks/useEventBranding';
@@ -90,6 +90,23 @@ const s = StyleSheet.create({
   distRowLabelSm: { fontSize: 8, color: COLOR.muted, width: 18, textAlign: 'center' },
   caption: { fontSize: 7, color: COLOR.faint, marginTop: 1 },
 
+  // Distribuição de notas (histograma por pergunta de escala)
+  distTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 },
+  distAvgTag: { fontSize: 8, fontWeight: 'bold', color: COLOR.ink },
+  distNoteLabel: { fontSize: 7.5, color: COLOR.muted, width: 88 },
+
+  // Matriz de cruzamento (escala × dimensão)
+  mHead: { flexDirection: 'row', alignItems: 'flex-end', borderBottomWidth: 1, borderBottomColor: '#333', backgroundColor: '#fafafa', paddingVertical: 3 },
+  mRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 0.5, borderBottomColor: COLOR.line, paddingVertical: 2.5 },
+  mDim: { flexGrow: 1, flexBasis: 0, fontSize: 7.5, paddingRight: 4 },
+  mDimHead: { flexGrow: 1, flexBasis: 0, fontSize: 7, fontWeight: 'bold', color: COLOR.muted },
+  mN: { width: 24, fontSize: 7.5, textAlign: 'right' },
+  mNHead: { width: 24, fontSize: 7, fontWeight: 'bold', color: COLOR.muted, textAlign: 'right' },
+  mCell: { width: 30, fontSize: 7.5, textAlign: 'right', fontWeight: 'bold' },
+  mCellHead: { width: 30, fontSize: 6.5, color: COLOR.muted, textAlign: 'right' },
+  mSatHead: { width: 34, fontSize: 7, fontWeight: 'bold', color: COLOR.muted, textAlign: 'right' },
+  mSat: { width: 34, fontSize: 7.5, fontWeight: 'bold', textAlign: 'right' },
+
   comment: { borderLeftWidth: 2, borderLeftColor: COLOR.primary, paddingLeft: 6, marginBottom: 5 },
   commentMeta: { fontSize: 7, color: COLOR.muted },
   commentText: { fontSize: 8.5, marginTop: 1 },
@@ -138,6 +155,80 @@ function ScaleSummaryTable({ stats }: { stats: ScaleStat[] }) {
           <Bar ratio={stat.avg / stat.scaleMax} color={scaleColor(stat.avg, stat.scaleMax)} width={100} />
           <Text style={s.sumAvg}>{stat.avg.toFixed(2)}/{stat.scaleMax}</Text>
           <Text style={s.sumN}>{stat.count}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Histograma de notas (1..scaleMax) de uma pergunta de escala. */
+function ScaleDistributionBlock({
+  stat, surveys, scaleLabels,
+}: {
+  stat: ScaleStat;
+  surveys: SurveyRow[];
+  scaleLabels: { value: number; emoji?: string; label: string }[];
+}) {
+  const hist = scaleHistogram(stat.key, surveys, stat.scaleMax);
+  const totalResp = hist.reduce((a, b) => a + b, 0);
+  if (totalResp === 0) return null;
+  const maxCount = Math.max(1, ...hist);
+  const labelOf = (n: number) => scaleLabels.find((l) => l.value === n)?.label ?? '';
+  return (
+    <View style={s.q} wrap={false}>
+      <View style={s.distTitleRow}>
+        <Text style={s.qLabel}>{stat.label}</Text>
+        <Text style={s.distAvgTag}>Média {stat.avg.toFixed(2)}/{stat.scaleMax}</Text>
+      </View>
+      {hist.map((count, i) => {
+        const note = i + 1;
+        return (
+          <View key={note} style={s.qRow}>
+            <Text style={s.distNoteLabel}>{note} — {labelOf(note)}</Text>
+            <Bar ratio={count / maxCount} color={scaleColor(note, stat.scaleMax)} />
+            <Text style={s.valTag}>{count} ({pct(count, totalResp)}%)</Text>
+          </View>
+        );
+      })}
+      <Text style={s.caption}>{totalResp} resposta(s)</Text>
+    </View>
+  );
+}
+
+/** Tabela de cruzamento: satisfação/média por pergunta de escala em cada opção da dimensão. */
+function CrossMatrixTable({ ct }: { ct: CrossTab }) {
+  if (ct.rows.length === 0) return null;
+  // Abreviação do cabeçalho de cada escala (mantém legível na matriz estreita).
+  const abbr = (label: string) => {
+    const clean = label.replace(/\?.*$/, '').replace(/\(.*?\)/g, '').trim();
+    return clean.length > 18 ? clean.slice(0, 17) + '…' : clean;
+  };
+  return (
+    <View style={s.q} wrap={false}>
+      <Text style={s.qLabel}>{ct.label}</Text>
+      <View style={s.mHead}>
+        <Text style={s.mDimHead}>Opção</Text>
+        <Text style={s.mNHead}>Nº</Text>
+        <Text style={s.mSatHead}>Satisf.</Text>
+        {ct.scaleKeys.map((sk) => (
+          <Text key={sk.key} style={s.mCellHead}>{abbr(sk.label)}</Text>
+        ))}
+      </View>
+      {ct.rows.map((r) => (
+        <View key={r.value} style={s.mRow}>
+          <Text style={s.mDim}>{r.label}</Text>
+          <Text style={s.mN}>{r.count}</Text>
+          <Text style={[s.mSat, { color: r.satisfactionPct != null ? scaleColor(r.satisfactionPct, 100) : COLOR.faint }]}>
+            {r.satisfactionPct != null ? `${r.satisfactionPct}%` : '—'}
+          </Text>
+          {ct.scaleKeys.map((sk) => {
+            const v = r.perScale[sk.key];
+            return (
+              <Text key={sk.key} style={[s.mCell, { color: v != null ? scaleColor(v, sk.scaleMax) : COLOR.faint }]}>
+                {v != null ? v.toFixed(1) : '—'}
+              </Text>
+            );
+          })}
         </View>
       ))}
     </View>
@@ -276,6 +367,7 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
   ].filter(Boolean).join('   ·   ');
 
   const highlights = stats ? computeHighlights(stats) : null;
+  const crossTabs = crossTabsByProfile(surveys, config);
 
   // Agrupa as perguntas por seção, preservando a ordem de aparição.
   const groups: { key: string; label: string | null; stats: QStat[] }[] = [];
@@ -360,7 +452,7 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
               </View>
             ) : null}
 
-            {/* Resultados por seção: tabela-resumo de escalas + distribuições/comentários */}
+            {/* Resultados por seção: tabela-resumo de escalas + distribuições de notas + demais perguntas */}
             {groups.map((g) => {
               const scaleStats = g.stats.filter((st): st is ScaleStat => st.type === 'scale');
               const others = g.stats.filter((st) => st.type !== 'scale');
@@ -371,6 +463,10 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
                     {g.label ? <Text style={s.sectionTitle}>{g.label}</Text> : null}
                     <ScaleSummaryTable stats={scaleStats} />
                   </View>
+                  {/* Distribuição das notas (1..scaleMax) por pergunta de escala */}
+                  {scaleStats.map((stat) => (
+                    <ScaleDistributionBlock key={stat.key} stat={stat} surveys={surveys} scaleLabels={scaleLabels} />
+                  ))}
                   {others.map((stat) =>
                     stat.type === 'choice' ? <ChoiceBlock key={stat.key} stat={stat} />
                     : stat.type === 'boolean' ? <BooleanBlock key={stat.key} stat={stat} />
@@ -379,6 +475,17 @@ function ReportDocument({ surveys, config, meta }: { surveys: SurveyRow[]; confi
                 </View>
               );
             })}
+
+            {/* Análise cruzada (dados cruzados): satisfação por dimensão de perfil */}
+            {crossTabs.length > 0 ? (
+              <>
+                <Text style={s.sectionTitle} break>Análise Cruzada (Dados Cruzados)</Text>
+                <Text style={s.caption}>
+                  Satisfação (índice 0–100) e média por pergunta de escala, segmentadas por perfil do respondente.
+                </Text>
+                {crossTabs.map((ct) => <CrossMatrixTable key={ct.key} ct={ct} />)}
+              </>
+            ) : null}
 
             {/* Resumo de coletas (agregado, substitui a listagem linha-a-linha) */}
             <Text style={s.sectionTitle}>Resumo de coletas ({stats.total})</Text>

@@ -14,7 +14,8 @@ import { useStageModuleKpis } from '@/contexts/StageModuleKpisContext';
 import { useEventBranding } from '@/hooks/useEventBranding';
 import { coerceConfig, isConfigV2, type PesquisaConfig } from '@/lib/pesquisa/config';
 import { computeStats, boolLabel, type SurveyRow } from '@/lib/pesquisa/aggregate';
-import { exportPesquisaSatisfacaoPdf } from './relatorios/pesquisaSatisfacaoPdfExporter';
+import { exportPesquisaSatisfacaoPdf, type PesquisaReportMeta } from './relatorios/pesquisaSatisfacaoPdfExporter';
+import { exportPesquisaListagemPdf } from './relatorios/pesquisaListagemPdfExporter';
 
 export default function PesquisaDashboardPage() {
 
@@ -22,7 +23,7 @@ export default function PesquisaDashboardPage() {
   const [researcherFilter, setResearcherFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<'consolidado' | 'listagem' | null>(null);
 
   // Esconde os KPIs globais da etapa (vinculados/credenciados/pendentes) — não se aplicam à pesquisa.
   useStageModuleKpis([], true);
@@ -125,37 +126,59 @@ export default function PesquisaDashboardPage() {
     URL.revokeObjectURL(url);
   };
 
+  const buildPdfMeta = (): PesquisaReportMeta => {
+    const eventName = eventFilter === 'all'
+      ? 'Todos os eventos'
+      : events?.find((e) => e.id === eventFilter)?.name ?? 'Evento';
+    const researcherName = researcherFilter === 'all'
+      ? undefined
+      : researcherFilter === '__public__'
+        ? 'Coletas públicas'
+        : (researchers as { id: string; name: string }[] | undefined)?.find((r) => r.id === researcherFilter)?.name;
+    return {
+      eventName,
+      researcherName,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      generatedAt: new Date(),
+      branding: branding ?? null,
+    };
+  };
+
+  const downloadPdf = (blob: Blob, prefix: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${prefix}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportPdf = async () => {
     if (!surveys || surveys.length === 0) return;
     try {
-      setExporting(true);
-      const eventName = eventFilter === 'all'
-        ? 'Todos os eventos'
-        : events?.find((e) => e.id === eventFilter)?.name ?? 'Evento';
-      const researcherName = researcherFilter === 'all'
-        ? undefined
-        : researcherFilter === '__public__'
-          ? 'Coletas públicas'
-          : (researchers as { id: string; name: string }[] | undefined)?.find((r) => r.id === researcherFilter)?.name;
-      const blob = await exportPesquisaSatisfacaoPdf(surveys, selectedConfig, {
-        eventName,
-        researcherName,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        generatedAt: new Date(),
-        branding: branding ?? null,
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pesquisa_satisfacao_${new Date().toISOString().slice(0, 10)}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success('Relatório PDF gerado');
+      setExporting('consolidado');
+      const blob = await exportPesquisaSatisfacaoPdf(surveys, selectedConfig, buildPdfMeta());
+      downloadPdf(blob, 'pesquisa_satisfacao');
+      toast.success('Relatório consolidado gerado');
     } catch (e: unknown) {
       toast.error('Falha ao gerar PDF: ' + (e instanceof Error ? e.message : 'erro desconhecido'));
     } finally {
-      setExporting(false);
+      setExporting(null);
+    }
+  };
+
+  const handleExportListagem = async () => {
+    if (!surveys || surveys.length === 0) return;
+    try {
+      setExporting('listagem');
+      const blob = await exportPesquisaListagemPdf(surveys, selectedConfig, buildPdfMeta());
+      downloadPdf(blob, 'pesquisa_listagem');
+      toast.success('Listagem de coletas gerada');
+    } catch (e: unknown) {
+      toast.error('Falha ao gerar PDF: ' + (e instanceof Error ? e.message : 'erro desconhecido'));
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -194,8 +217,12 @@ export default function PesquisaDashboardPage() {
           <Download className="h-4 w-4 mr-2" /> Exportar CSV
         </Button>
 
-        <Button onClick={handleExportPdf} disabled={!surveys?.length || exporting}>
-          <FileText className="h-4 w-4 mr-2" /> {exporting ? 'Gerando...' : 'Exportar PDF'}
+        <Button onClick={handleExportPdf} disabled={!surveys?.length || exporting !== null}>
+          <FileText className="h-4 w-4 mr-2" /> {exporting === 'consolidado' ? 'Gerando...' : 'PDF Consolidado'}
+        </Button>
+
+        <Button variant="outline" onClick={handleExportListagem} disabled={!surveys?.length || exporting !== null}>
+          <FileText className="h-4 w-4 mr-2" /> {exporting === 'listagem' ? 'Gerando...' : 'PDF Listagem'}
         </Button>
       </div>
 
