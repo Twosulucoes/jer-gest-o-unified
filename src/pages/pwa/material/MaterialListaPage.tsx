@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, Search, RotateCcw, Package, User } from "lucide-react";
+import { Loader2, Search, RotateCcw, Package, User, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useEventContext } from "@/contexts/EventContext";
@@ -24,6 +24,9 @@ interface DeliveryRow {
   full_name: string;
   cpf: string | null;
   participant_type: string | null;
+  /** false = crachá não reconhecido no momento do scan (material_deliveries_unlinked). */
+  linked: boolean;
+  qr_code?: string | null;
 }
 
 function getInitials(name: string) {
@@ -71,25 +74,54 @@ export default function MaterialListaPage() {
       return;
     }
     setLoading(true);
-    const { data } = await (supabase as any)
-      .from("material_deliveries")
-      .select(
-        `id, delivered_at, method,
-         participants!inner(participant_type, people!inner(full_name, cpf))`,
-      )
-      .eq("kit_id", kitId)
-      .eq("status", "active")
-      .order("delivered_at", { ascending: false });
 
-    const mapped: DeliveryRow[] = ((data ?? []) as any[]).map((r) => ({
+    // Junta entregas vinculadas (participante identificado) com as de crachá
+    // não reconhecido (material_deliveries_unlinked) — sem isso, o registro
+    // existe no banco mas nunca aparece nesta lista/contagem, mesmo tendo
+    // sido feito no momento do scan.
+    const [linkedRes, unlinkedRes] = await Promise.all([
+      (supabase as any)
+        .from("material_deliveries")
+        .select(
+          `id, delivered_at, method,
+           participants!inner(participant_type, people!inner(full_name, cpf))`,
+        )
+        .eq("kit_id", kitId)
+        .eq("status", "active")
+        .order("delivered_at", { ascending: false }),
+      (supabase as any)
+        .from("material_deliveries_unlinked")
+        .select("id, delivered_at, method, qr_code")
+        .eq("kit_id", kitId)
+        .order("delivered_at", { ascending: false }),
+    ]);
+
+    const linkedRows: DeliveryRow[] = ((linkedRes.data ?? []) as any[]).map((r) => ({
       id: r.id,
       delivered_at: r.delivered_at,
       method: r.method,
       full_name: r.participants?.people?.full_name || "",
       cpf: r.participants?.people?.cpf || null,
       participant_type: r.participants?.participant_type || null,
+      linked: true,
     }));
-    setRows(mapped);
+
+    const unlinkedRows: DeliveryRow[] = ((unlinkedRes.data ?? []) as any[]).map((r) => ({
+      id: r.id,
+      delivered_at: r.delivered_at,
+      method: r.method,
+      full_name: "",
+      cpf: null,
+      participant_type: null,
+      linked: false,
+      qr_code: r.qr_code,
+    }));
+
+    const merged = [...linkedRows, ...unlinkedRows].sort(
+      (a, b) => new Date(b.delivered_at).getTime() - new Date(a.delivered_at).getTime(),
+    );
+
+    setRows(merged);
     setLoading(false);
   }, [kitId]);
 
@@ -108,6 +140,16 @@ export default function MaterialListaPage() {
           event: "*",
           schema: "public",
           table: "material_deliveries",
+          filter: `kit_id=eq.${kitId}`,
+        },
+        () => void fetchRows(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "material_deliveries_unlinked",
           filter: `kit_id=eq.${kitId}`,
         },
         () => void fetchRows(),
@@ -144,9 +186,13 @@ export default function MaterialListaPage() {
     if (!q) return rows;
     return rows.filter(
       (r) =>
-        r.full_name.toLowerCase().includes(q) || (r.cpf || "").includes(q),
+        r.full_name.toLowerCase().includes(q) ||
+        (r.cpf || "").includes(q) ||
+        (r.qr_code || "").toLowerCase().includes(q),
     );
   }, [rows, query]);
+
+  const unlinkedCount = useMemo(() => rows.filter((r) => !r.linked).length, [rows]);
 
   return (
     <PwaLayout backTo="/pwa/material/scan" moduleTitle="Entregas de Material">
@@ -171,6 +217,7 @@ export default function MaterialListaPage() {
             <Package className="h-4 w-4 text-module" />
             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               {rows.length} entregas
+              {unlinkedCount > 0 ? ` · ${unlinkedCount} não vinculadas` : ""}
             </span>
           </div>
           {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -195,31 +242,67 @@ export default function MaterialListaPage() {
         ) : (
           <div className="space-y-2">
             {filtered.map((r) => (
-              <Card key={r.id} className="border-border/80 bg-card/95">
+              <Card
+                key={r.id}
+                className={cn(
+                  "border-border/80 bg-card/95",
+                  !r.linked && "border-amber-500/40 bg-amber-500/5",
+                )}
+              >
                 <CardContent className="flex items-center gap-3 p-3">
                   <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarFallback className="text-xs bg-[hsl(var(--module-accent)/0.15)] text-[hsl(var(--module-accent))]">
-                      {r.full_name ? getInitials(r.full_name) : <User className="h-4 w-4" />}
+                    <AvatarFallback
+                      className={cn(
+                        "text-xs",
+                        r.linked
+                          ? "bg-[hsl(var(--module-accent)/0.15)] text-[hsl(var(--module-accent))]"
+                          : "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+                      )}
+                    >
+                      {r.linked ? (
+                        r.full_name ? (
+                          getInitials(r.full_name)
+                        ) : (
+                          <User className="h-4 w-4" />
+                        )
+                      ) : (
+                        <AlertTriangle className="h-4 w-4" />
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{r.full_name || "—"}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {r.participant_type || "—"} ·{" "}
-                      {format(new Date(r.delivered_at), "dd/MM HH:mm")}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleRevoke(r.id, r.full_name || "esta pessoa")}
-                    className={cn(
-                      "shrink-0 inline-flex items-center gap-1 rounded-lg border border-destructive/40 bg-destructive/5",
-                      "px-2.5 py-1.5 text-[11px] font-semibold text-destructive active:scale-[0.97] transition-transform",
+                    {r.linked ? (
+                      <>
+                        <p className="text-sm font-medium truncate">{r.full_name || "—"}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {r.participant_type || "—"} ·{" "}
+                          {format(new Date(r.delivered_at), "dd/MM HH:mm")}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium truncate text-amber-700 dark:text-amber-300">
+                          Crachá não vinculado
+                        </p>
+                        <p className="text-[11px] font-mono text-muted-foreground truncate">
+                          {r.qr_code} · {format(new Date(r.delivered_at), "dd/MM HH:mm")}
+                        </p>
+                      </>
                     )}
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Estornar
-                  </button>
+                  </div>
+                  {r.linked && (
+                    <button
+                      type="button"
+                      onClick={() => void handleRevoke(r.id, r.full_name || "esta pessoa")}
+                      className={cn(
+                        "shrink-0 inline-flex items-center gap-1 rounded-lg border border-destructive/40 bg-destructive/5",
+                        "px-2.5 py-1.5 text-[11px] font-semibold text-destructive active:scale-[0.97] transition-transform",
+                      )}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      Estornar
+                    </button>
+                  )}
                 </CardContent>
               </Card>
             ))}
