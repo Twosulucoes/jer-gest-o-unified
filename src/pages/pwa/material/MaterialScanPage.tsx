@@ -8,6 +8,7 @@ import {
   ScanLine,
   CheckCircle,
   XCircle,
+  AlertTriangle,
   Search,
   Loader2,
   User,
@@ -89,6 +90,8 @@ export default function MaterialScanPage() {
     ok: boolean;
     message: string;
     source?: "qr" | "manual";
+    /** Destaque visual maior — já foi entregue (evita passar despercebido na fila). */
+    variant?: "duplicate";
   } | null>(null);
 
   const [manualQuery, setManualQuery] = useState("");
@@ -316,12 +319,13 @@ export default function MaterialScanPage() {
       );
 
       if (enqueueResult.deduped) {
-        const dedupMsg = `Já existe registro offline pendente para ${
+        const dedupMsg = `JÁ ENTREGUE (pendente offline neste aparelho): ${
           participantName || "esta pessoa"
-        } neste kit.`;
-        setResult({ ok: false, message: dedupMsg, source: resultSource });
-        toast.info(dedupMsg);
+        }`;
+        setResult({ ok: false, message: dedupMsg, source: resultSource, variant: "duplicate" });
+        toast.warning(dedupMsg, { duration: 6000 });
         recordOutcome("error");
+        if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
         reopenIfContinuous();
         return;
       }
@@ -350,10 +354,11 @@ export default function MaterialScanPage() {
     const res = rpcResult as { ok: boolean; reason?: string };
 
     if (!res.ok) {
+      const isDuplicate = res.reason === "ALREADY_DELIVERED";
       let msg: string;
       switch (res.reason) {
         case "ALREADY_DELIVERED":
-          msg = "Material já entregue a esta pessoa.";
+          msg = `JÁ ENTREGUE: ${participantName || "esta pessoa"} já recebeu este kit.`;
           break;
         case "KIT_NOT_FOUND":
           msg = "Kit não encontrado ou inativo.";
@@ -364,8 +369,18 @@ export default function MaterialScanPage() {
         default:
           msg = "Não foi possível registrar a entrega. Tente novamente.";
       }
-      setResult({ ok: false, message: msg, source: resultSource });
-      toast.error(msg);
+      setResult({
+        ok: false,
+        message: msg,
+        source: resultSource,
+        variant: isDuplicate ? "duplicate" : undefined,
+      });
+      if (isDuplicate) {
+        toast.warning(msg, { duration: 6000 });
+        if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
+      } else {
+        toast.error(msg);
+      }
       recordOutcome("error");
       reopenIfContinuous();
       return;
@@ -414,10 +429,11 @@ export default function MaterialScanPage() {
       const enqueueResult = addToOfflineQueue("material", payload);
 
       if (enqueueResult.deduped) {
-        const dedupMsg = `Já existe registro offline pendente para o crachá ${qrCode} neste kit.`;
-        setResult({ ok: false, message: dedupMsg, source: "qr" });
-        toast.info(dedupMsg);
+        const dedupMsg = `JÁ ENTREGUE (pendente offline neste aparelho) — crachá ${qrCode}`;
+        setResult({ ok: false, message: dedupMsg, source: "qr", variant: "duplicate" });
+        toast.warning(dedupMsg, { duration: 6000 });
         recordOutcome("error");
+        if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
         reopenIfContinuous();
         return;
       }
@@ -446,14 +462,24 @@ export default function MaterialScanPage() {
     const res = rpcResult as { ok: boolean; reason?: string };
 
     if (!res.ok) {
-      const msg =
-        res.reason === "ALREADY_DELIVERED"
-          ? `Este crachá já recebeu material neste kit: ${qrCode}`
-          : res.reason === "KIT_NOT_FOUND"
-            ? "Kit não encontrado ou inativo."
-            : "Não foi possível registrar a entrega. Tente novamente.";
-      setResult({ ok: false, message: msg, source: "qr" });
-      toast.error(msg);
+      const isDuplicate = res.reason === "ALREADY_DELIVERED";
+      const msg = isDuplicate
+        ? `JÁ ENTREGUE — crachá não vinculado: ${qrCode}`
+        : res.reason === "KIT_NOT_FOUND"
+          ? "Kit não encontrado ou inativo."
+          : "Não foi possível registrar a entrega. Tente novamente.";
+      setResult({
+        ok: false,
+        message: msg,
+        source: "qr",
+        variant: isDuplicate ? "duplicate" : undefined,
+      });
+      if (isDuplicate) {
+        toast.warning(msg, { duration: 6000 });
+        if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
+      } else {
+        toast.error(msg);
+      }
       recordOutcome("error");
       reopenIfContinuous();
       return;
@@ -779,7 +805,7 @@ export default function MaterialScanPage() {
             onScan={handleScan}
             continuous={prefs.continuousMode}
             title="Escanear Crachá"
-            variant="inline"
+            variant="fullscreen"
           />
         )}
 
@@ -870,24 +896,38 @@ export default function MaterialScanPage() {
           )}
         </div>
 
-        {result && (
-          <div
-            className={cn(
-              "flex items-start gap-2 rounded-2xl border px-3 py-2",
-              result.ok
-                ? "border-emerald-500/40 bg-emerald-500/5"
-                : "border-destructive/40 bg-destructive/5",
-            )}
-          >
-            {result.ok ? (
-              <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500" />
-            ) : (
-              <XCircle className="h-5 w-5 shrink-0 text-destructive" />
-            )}
+        {result?.variant === "duplicate" ? (
+          <div className="flex items-center gap-3 rounded-2xl border-2 border-amber-500/70 bg-amber-500/15 px-4 py-3 animate-in zoom-in-95 duration-200">
+            <AlertTriangle className="h-8 w-8 shrink-0 text-amber-500" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium leading-snug">{result.message}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                Atenção
+              </p>
+              <p className="text-base font-extrabold leading-snug text-amber-900 dark:text-amber-100">
+                {result.message}
+              </p>
             </div>
           </div>
+        ) : (
+          result && (
+            <div
+              className={cn(
+                "flex items-start gap-2 rounded-2xl border px-3 py-2",
+                result.ok
+                  ? "border-emerald-500/40 bg-emerald-500/5"
+                  : "border-destructive/40 bg-destructive/5",
+              )}
+            >
+              {result.ok ? (
+                <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500" />
+              ) : (
+                <XCircle className="h-5 w-5 shrink-0 text-destructive" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium leading-snug">{result.message}</p>
+              </div>
+            </div>
+          )
         )}
 
         <div className="grid grid-cols-2 gap-2">
