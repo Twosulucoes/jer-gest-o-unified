@@ -260,7 +260,8 @@ export default function MaterialScanPage() {
     }
     let cancelled = false;
     const kitIds = kits.map((k) => k.id);
-    (async () => {
+
+    const fetchTotals = async () => {
       const [linkedTotal, unlinkedTotal] = await Promise.all([
         (supabase as any)
           .from("material_deliveries")
@@ -294,11 +295,33 @@ export default function MaterialScanPage() {
           setMyCount((linkedMine.count || 0) + (unlinkedMine.count || 0));
         }
       }
-    })();
+    };
+
+    void fetchTotals();
+
+    // Sem filtro por kit_id: cobre qualquer kit da etapa, não só o
+    // selecionado neste aparelho — assim "Total Geral"/"Meus Registros"
+    // ficam automáticos em TODOS os aparelhos, mesmo quando cada operador
+    // está trabalhando um kit diferente ao mesmo tempo.
+    const channel = supabase
+      .channel(`material_totals_${activeEventId}_${stageId ?? "all"}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "material_deliveries" },
+        () => void fetchTotals(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "material_deliveries_unlinked" },
+        () => void fetchTotals(),
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      void supabase.removeChannel(channel);
     };
-  }, [activeEventId, kits, userId, kitCount]);
+  }, [activeEventId, stageId, kits, userId]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);

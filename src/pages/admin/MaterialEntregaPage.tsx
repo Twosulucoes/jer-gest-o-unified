@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,6 +32,10 @@ import {
   X,
   Radio,
   Users,
+  AlertTriangle,
+  Undo2,
+  UserX,
+  Search,
 } from "lucide-react";
 
 interface MaterialKit {
@@ -44,8 +48,35 @@ interface MaterialKit {
 
 interface DeliveryRow {
   id: string;
+  participant_id: string;
   delivered_at: string;
   method: string;
+  full_name: string;
+  cpf: string | null;
+  participant_type: string | null;
+  escola: string;
+}
+
+interface UnlinkedDeliveryRow {
+  id: string;
+  qr_code: string;
+  delivered_at: string;
+  method: string;
+}
+
+interface RevokedDeliveryRow {
+  id: string;
+  delivered_at: string;
+  revoked_at: string | null;
+  revoke_reason: string | null;
+  full_name: string;
+  cpf: string | null;
+  participant_type: string | null;
+  escola: string;
+}
+
+interface PendingParticipantRow {
+  id: string;
   full_name: string;
   cpf: string | null;
   participant_type: string | null;
@@ -204,6 +235,7 @@ export default function MaterialEntregaPage() {
       qc.invalidateQueries({ queryKey: ["material_kit_eligibility_map"] });
       qc.invalidateQueries({ queryKey: ["material_credentialed_count"] });
       qc.invalidateQueries({ queryKey: ["material_credentialed_by_school"] });
+      qc.invalidateQueries({ queryKey: ["material_credentialed_participants"] });
       toast.success("Kit salvo.");
       setKitDialog(null);
     },
@@ -232,7 +264,7 @@ export default function MaterialEntregaPage() {
       const { data, error } = await (supabase as any)
         .from("material_deliveries")
         .select(
-          `id, delivered_at, method,
+          `id, participant_id, delivered_at, method,
            participants!inner(participant_type, people!inner(full_name, cpf), delegations(institutions(name)))`,
         )
         .eq("kit_id", activeKitId)
@@ -241,6 +273,7 @@ export default function MaterialEntregaPage() {
       if (error) throw error;
       return ((data ?? []) as any[]).map((r) => ({
         id: r.id,
+        participant_id: r.participant_id,
         delivered_at: r.delivered_at,
         method: r.method,
         full_name: r.participants?.people?.full_name || "",
@@ -251,7 +284,52 @@ export default function MaterialEntregaPage() {
     },
   });
 
-  // Atualização ao vivo: qualquer entrega/estorno neste kit recarrega os dados.
+  // Crachá não reconhecido no momento do scan — não identifica participante,
+  // fica pendente de reconciliação (ver PR do fluxo "não vinculado" do PWA).
+  const { data: unlinkedDeliveries = [], isLoading: loadingUnlinked } = useQuery({
+    queryKey: ["material_deliveries_unlinked", activeKitId],
+    enabled: !!activeKitId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("material_deliveries_unlinked")
+        .select("id, qr_code, delivered_at, method")
+        .eq("kit_id", activeKitId)
+        .order("delivered_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as UnlinkedDeliveryRow[];
+    },
+  });
+
+  const { data: revokedDeliveries = [], isLoading: loadingRevoked } = useQuery({
+    queryKey: ["material_revoked_deliveries", activeKitId],
+    enabled: !!activeKitId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("material_deliveries")
+        .select(
+          `id, delivered_at, revoked_at, revoke_reason,
+           participants!inner(participant_type, people!inner(full_name, cpf), delegations(institutions(name)))`,
+        )
+        .eq("kit_id", activeKitId)
+        .eq("status", "revoked")
+        .order("revoked_at", { ascending: false });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        id: r.id,
+        delivered_at: r.delivered_at,
+        revoked_at: r.revoked_at,
+        revoke_reason: r.revoke_reason,
+        full_name: r.participants?.people?.full_name || "",
+        cpf: r.participants?.people?.cpf || null,
+        participant_type: r.participants?.participant_type || null,
+        escola: r.participants?.delegations?.institutions?.name || SEM_ESCOLA,
+      })) as RevokedDeliveryRow[];
+    },
+  });
+
+  // Atualização ao vivo: qualquer entrega/estorno/crachá não vinculado
+  // neste kit recarrega os dados (as duas tabelas de entrega precisam
+  // estar na publicação supabase_realtime — ver migration correspondente).
   useEffect(() => {
     if (!activeKitId) return;
     const channel = supabase
@@ -266,7 +344,19 @@ export default function MaterialEntregaPage() {
         },
         () => {
           qc.invalidateQueries({ queryKey: ["material_deliveries", activeKitId] });
-          qc.invalidateQueries({ queryKey: ["material_revoked_count", activeKitId] });
+          qc.invalidateQueries({ queryKey: ["material_revoked_deliveries", activeKitId] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "material_deliveries_unlinked",
+          filter: `kit_id=eq.${activeKitId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["material_deliveries_unlinked", activeKitId] });
         },
       )
       .subscribe();
@@ -287,6 +377,7 @@ export default function MaterialEntregaPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["material_deliveries", activeKitId] });
+      qc.invalidateQueries({ queryKey: ["material_revoked_deliveries", activeKitId] });
       toast.success("Entrega estornada.");
     },
     onError: (e: any) => toast.error(e.message || "Erro ao estornar."),
@@ -317,7 +408,8 @@ export default function MaterialEntregaPage() {
     });
   };
 
-  const totalDelivered = deliveries.length;
+  const totalDeliveredLinked = deliveries.length;
+  const totalDelivered = totalDeliveredLinked + unlinkedDeliveries.length;
 
   const activeKit = useMemo(
     () => kits.find((k) => k.id === activeKitId) ?? null,
@@ -325,19 +417,7 @@ export default function MaterialEntregaPage() {
   );
 
   // Contadores para os KPIs do módulo (substituem o cabeçalho global de credenciais)
-  const { data: revokedCount = 0 } = useQuery({
-    queryKey: ["material_revoked_count", activeKitId],
-    enabled: !!activeKitId,
-    queryFn: async () => {
-      const { count, error } = await (supabase as any)
-        .from("material_deliveries")
-        .select("id", { count: "exact", head: true })
-        .eq("kit_id", activeKitId)
-        .eq("status", "revoked");
-      if (error) throw error;
-      return count || 0;
-    },
-  });
+  const revokedCount = revokedDeliveries.length;
 
   // Universo de quem deveria receber: participantes credenciados e ativos
   // na etapa, limitados aos perfis elegíveis do kit (se houver restrição).
@@ -361,6 +441,43 @@ export default function MaterialEntregaPage() {
       return count || 0;
     },
   });
+
+  // Lista completa dos credenciados/elegíveis (para a lista "quem falta"
+  // — diferente de credentialedCount/credentialedBySchool, que só agregam).
+  const { data: credentialedParticipants = [], isLoading: loadingPending } = useQuery({
+    queryKey: ["material_credentialed_participants", eventId, stageId, activeKitTypes],
+    enabled: !!eventId && !!stageId,
+    queryFn: async () => {
+      let q = (supabase as any)
+        .from("participants")
+        .select(
+          `id, participant_type, participant_event_stages!inner(event_stage_id, status),
+           people!inner(full_name, cpf), delegations(institutions(name))`,
+        )
+        .eq("is_active", true)
+        .not("credentialed_at", "is", null)
+        .eq("participant_event_stages.event_stage_id", stageId)
+        .eq("participant_event_stages.status", "active");
+      if (activeKitTypes.length > 0) q = q.in("participant_type", activeKitTypes);
+      const { data, error } = await q;
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((p) => ({
+        id: p.id,
+        full_name: p.people?.full_name || "",
+        cpf: p.people?.cpf || null,
+        participant_type: p.participant_type,
+        escola: p.delegations?.institutions?.name || SEM_ESCOLA,
+      })) as PendingParticipantRow[];
+    },
+  });
+
+  // Quem falta receber = credenciado/elegível, mas sem entrega VINCULADA
+  // ativa neste kit. (Crachás não vinculados não identificam participante,
+  // então não dá pra excluí-los daqui até serem reconciliados.)
+  const pendingParticipants = useMemo(() => {
+    const deliveredIds = new Set(deliveries.map((d) => d.participant_id));
+    return credentialedParticipants.filter((p) => !deliveredIds.has(p.id));
+  }, [credentialedParticipants, deliveries]);
 
   // Universo credenciado quebrado por escola (para o "faltam" por escola).
   const { data: credentialedBySchool = null } = useQuery({
@@ -431,7 +548,10 @@ export default function MaterialEntregaPage() {
     [deliveries, schoolFilter],
   );
 
-  const faltam = Math.max(0, credentialedCount - totalDelivered);
+  // Baseado só em entregas VINCULADAS: crachá não reconhecido não identifica
+  // o participante, então não dá pra tirá-lo da lista de "quem falta" até
+  // ser reconciliado (ver seção "Crachás não vinculados" abaixo).
+  const faltam = Math.max(0, credentialedCount - totalDeliveredLinked);
 
   useStageModuleKpis([
     { label: "Entregues", value: totalDelivered, tone: "success" },
@@ -441,10 +561,98 @@ export default function MaterialEntregaPage() {
     ...(revokedCount > 0
       ? [{ label: "Estornadas", value: revokedCount, tone: "danger" as const }]
       : []),
+    ...(unlinkedDeliveries.length > 0
+      ? [{ label: "Não vinculados", value: unlinkedDeliveries.length, tone: "warning" as const }]
+      : []),
   ]);
+
+  // Refs para os KPIs clicáveis rolarem até a seção correspondente.
+  const entreguesRef = useRef<HTMLDivElement>(null);
+  const faltamRef = useRef<HTMLDivElement>(null);
+  const estornadasRef = useRef<HTMLDivElement>(null);
+  const naoVinculadosRef = useRef<HTMLDivElement>(null);
+  const scrollTo = (ref: React.RefObject<HTMLDivElement>) =>
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const [pendingFilter, setPendingFilter] = useState("");
+  const filteredPending = useMemo(() => {
+    const q = pendingFilter.trim().toLowerCase();
+    if (!q) return pendingParticipants;
+    return pendingParticipants.filter(
+      (p) => p.full_name.toLowerCase().includes(q) || (p.cpf || "").includes(q),
+    );
+  }, [pendingParticipants, pendingFilter]);
 
   return (
     <div className="space-y-4">
+      {/* KPIs clicáveis — cada um rola até a lista correspondente */}
+      {activeKitId && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <button
+            type="button"
+            onClick={() => scrollTo(entreguesRef)}
+            className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-left transition-colors hover:bg-emerald-500/10"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              Entregues
+            </p>
+            <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-emerald-700 dark:text-emerald-400">
+              {totalDelivered}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {totalDeliveredLinked} identificados
+              {unlinkedDeliveries.length > 0 && ` + ${unlinkedDeliveries.length} não vinc.`}
+            </p>
+          </button>
+
+          {stageId && (
+            <button
+              type="button"
+              onClick={() => scrollTo(faltamRef)}
+              className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-colors hover:bg-amber-500/10"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                Faltam
+              </p>
+              <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-amber-700 dark:text-amber-400">
+                {faltam}
+              </p>
+              <p className="text-[10px] text-muted-foreground">de {credentialedCount} credenciados</p>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => scrollTo(estornadasRef)}
+            disabled={revokedCount === 0}
+            className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-left transition-colors hover:bg-destructive/10 disabled:cursor-default disabled:opacity-60 disabled:hover:bg-destructive/5"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wider text-destructive">
+              Estornadas
+            </p>
+            <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-destructive">
+              {revokedCount}
+            </p>
+            <p className="text-[10px] text-muted-foreground">entregas desfeitas</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => scrollTo(naoVinculadosRef)}
+            disabled={unlinkedDeliveries.length === 0}
+            className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-colors hover:bg-amber-500/10 disabled:cursor-default disabled:opacity-60 disabled:hover:bg-amber-500/5"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              Não vinculados
+            </p>
+            <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-amber-700 dark:text-amber-400">
+              {unlinkedDeliveries.length}
+            </p>
+            <p className="text-[10px] text-muted-foreground">crachá não reconhecido</p>
+          </button>
+        </div>
+      )}
+
       {/* Gestão de Kits */}
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -630,7 +838,7 @@ export default function MaterialEntregaPage() {
       </Card>
 
       {/* Relatório de entregas */}
-      <Card>
+      <Card ref={entreguesRef}>
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <PackageCheck className="h-4 w-4" /> Entregas
@@ -710,6 +918,180 @@ export default function MaterialEntregaPage() {
                             <RotateCcw className="mr-1 h-3.5 w-3.5" /> Estornar
                           </Button>
                         )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quem falta receber o kit */}
+      {stageId && (
+        <Card ref={faltamRef}>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Faltam Receber
+              {activeKit && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  · {activeKit.name}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Credenciados/elegíveis sem entrega vinculada ativa neste kit. Crachás
+              não vinculados não identificam a pessoa, então não são descontados
+              daqui até serem reconciliados.
+            </p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou CPF…"
+                value={pendingFilter}
+                onChange={(e) => setPendingFilter(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {loadingPending ? (
+              <Skeleton className="h-24 w-full" />
+            ) : filteredPending.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                {pendingParticipants.length === 0
+                  ? "Todo mundo já recebeu o kit."
+                  : "Nenhum resultado para essa busca."}
+              </p>
+            ) : (
+              <div className="max-h-96 overflow-y-auto overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-muted-foreground">
+                      <th className="py-2 pr-2 font-medium">Participante</th>
+                      <th className="py-2 pr-2 font-medium">Escola</th>
+                      <th className="py-2 font-medium">Tipo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPending.map((p) => (
+                      <tr key={p.id} className="border-b last:border-0">
+                        <td className="py-2 pr-2">
+                          <p className="font-medium">{p.full_name || "—"}</p>
+                          {p.cpf && (
+                            <p className="text-xs text-muted-foreground">{p.cpf}</p>
+                          )}
+                        </td>
+                        <td className="py-2 pr-2 text-muted-foreground">{p.escola}</td>
+                        <td className="py-2 text-muted-foreground">
+                          {ptLabel(p.participant_type)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Entregas estornadas */}
+      <Card ref={estornadasRef}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Undo2 className="h-4 w-4 text-destructive" /> Entregas Estornadas
+            {activeKit && (
+              <span className="text-sm font-normal text-muted-foreground">
+                · {activeKit.name}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingRevoked ? (
+            <Skeleton className="h-16 w-full" />
+          ) : revokedDeliveries.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Nenhuma entrega estornada para este kit.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">Participante</th>
+                    <th className="py-2 pr-2 font-medium">Escola</th>
+                    <th className="py-2 pr-2 font-medium">Entregue em</th>
+                    <th className="py-2 font-medium">Estornado em</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {revokedDeliveries.map((r) => (
+                    <tr key={r.id} className="border-b last:border-0">
+                      <td className="py-2 pr-2">
+                        <p className="font-medium">{r.full_name || "—"}</p>
+                        {r.cpf && (
+                          <p className="text-xs text-muted-foreground">{r.cpf}</p>
+                        )}
+                      </td>
+                      <td className="py-2 pr-2 text-muted-foreground">{r.escola}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">
+                        {format(new Date(r.delivered_at), "dd/MM HH:mm")}
+                      </td>
+                      <td className="py-2 text-muted-foreground">
+                        {r.revoked_at ? format(new Date(r.revoked_at), "dd/MM HH:mm") : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Crachás não vinculados (não reconhecidos no momento do scan) */}
+      <Card ref={naoVinculadosRef}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Crachás
+            Não Vinculados
+            {activeKit && (
+              <span className="text-sm font-normal text-muted-foreground">
+                · {activeKit.name}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            O material foi entregue, mas o crachá não foi reconhecido no momento
+            do scan (offline sem cache, ou código sem vínculo). Reconcilie via
+            importação de credencial externa para associar o nome.
+          </p>
+          {loadingUnlinked ? (
+            <Skeleton className="h-16 w-full" />
+          ) : unlinkedDeliveries.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Nenhum crachá não vinculado para este kit.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">Código do crachá</th>
+                    <th className="py-2 font-medium">Entregue em</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unlinkedDeliveries.map((u) => (
+                    <tr key={u.id} className="border-b last:border-0">
+                      <td className="py-2 pr-2 font-mono">{u.qr_code}</td>
+                      <td className="py-2 text-muted-foreground">
+                        {format(new Date(u.delivered_at), "dd/MM HH:mm")}
                       </td>
                     </tr>
                   ))}
