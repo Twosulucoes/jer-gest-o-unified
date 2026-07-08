@@ -111,6 +111,30 @@ function findDuplicateMealItem(
   );
 }
 
+/**
+ * Mesmo princípio da dedup de alimentação, aplicado à entrega de material.
+ * Evita que o MESMO aparelho, offline, empilhe duas entregas do mesmo
+ * `kit_id + participant_id` (que colidiriam no UNIQUE
+ * uq_material_deliveries_active na sincronização). Sem isso, o operador
+ * bipava a mesma pessoa 2x e via "sucesso" nas duas, gerando confusão física
+ * mesmo que o banco depois aceite só uma.
+ */
+function findDuplicateMaterialItem(
+  queue: OfflineQueueItem[],
+  data: Record<string, unknown>,
+): OfflineQueueItem | undefined {
+  const kitId = (data as any)?.kit_id;
+  const participantId = (data as any)?.participant_id;
+  if (!kitId || !participantId) return undefined;
+  return queue.find(
+    (item) =>
+      item.module === "material" &&
+      item.status !== "conflict" &&
+      (item.data as any)?.kit_id === kitId &&
+      (item.data as any)?.participant_id === participantId,
+  );
+}
+
 export type AddToOfflineQueueResult =
   | { item: OfflineQueueItem; deduped: false }
   | { item: OfflineQueueItem; deduped: true };
@@ -124,6 +148,13 @@ export const addToOfflineQueue = (
 
   if (module === "alimentacao") {
     const existing = findDuplicateMealItem(queue, data);
+    if (existing) {
+      return { item: existing, deduped: true };
+    }
+  }
+
+  if (module === "material") {
+    const existing = findDuplicateMaterialItem(queue, data);
     if (existing) {
       return { item: existing, deduped: true };
     }
