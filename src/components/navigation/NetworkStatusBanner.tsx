@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { WifiOff, RefreshCw, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { syncOfflineQueue } from "@/lib/offlineQueue";
+import { syncVoucherQueue } from "@/lib/voucherOffline";
+import { syncIncidentQueue } from "@/lib/incidentOffline";
 
 /**
  * Global Network Status Banner.
@@ -42,8 +46,41 @@ export function NetworkStatusBanner() {
     };
   }, []);
 
-  const handleRetry = () => {
-    window.location.reload();
+  const [retrying, setRetrying] = useState(false);
+
+  /**
+   * NÃO faz window.location.reload(). Um reload em plena operação de campo
+   * (scanner aberto, formulário em preenchimento) descartava qualquer coisa
+   * em andamento — inclusive uma tentativa de registro que ainda não tinha
+   * caído na fila offline, resultando em perda silenciosa de dados quando a
+   * internet falhava bem no momento do toque em "Tentar Reconectar".
+   * Em vez disso, reavalia a conectividade real e força a sincronização da
+   * fila local (o app já sincroniza sozinho ao reconectar — isto só acelera
+   * e dá feedback imediato ao operador).
+   */
+  const handleRetry = async () => {
+    if (retrying) return;
+    setRetrying(true);
+    try {
+      setIsOnline(navigator.onLine);
+      if (!navigator.onLine) {
+        toast.error("Ainda sem conexão.");
+        return;
+      }
+      const [materialMealResult, voucherResult, incidentResult] = await Promise.all([
+        syncOfflineQueue(),
+        syncVoucherQueue(),
+        syncIncidentQueue(),
+      ]);
+      const total = materialMealResult.count + voucherResult.count + incidentResult.synced;
+      toast.success(
+        total > 0
+          ? `${total} registro(s) sincronizados.`
+          : "Conexão restabelecida.",
+      );
+    } finally {
+      setRetrying(false);
+    }
   };
 
   if (isOnline && !isSlow) return null;
@@ -73,14 +110,15 @@ export function NetworkStatusBanner() {
           </div>
         </div>
         
-        <Button 
-          onClick={handleRetry} 
-          variant="secondary" 
-          size="sm" 
-          className="w-full bg-white text-black hover:bg-white/90 font-bold h-9"
+        <Button
+          onClick={() => void handleRetry()}
+          disabled={retrying}
+          variant="secondary"
+          size="sm"
+          className="w-full bg-white text-black hover:bg-white/90 font-bold h-9 disabled:opacity-70"
         >
-          <RefreshCw className="mr-2 h-3.5 w-3.5" />
-          Tentar Reconectar
+          <RefreshCw className={cn("mr-2 h-3.5 w-3.5", retrying && "animate-spin")} />
+          {retrying ? "Verificando…" : "Tentar Reconectar"}
         </Button>
       </div>
     </div>
