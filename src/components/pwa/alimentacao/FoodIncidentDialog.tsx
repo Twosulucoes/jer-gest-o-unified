@@ -83,8 +83,14 @@ export function FoodIncidentDialog({
         ? `Janela ${chosenWindow.label}`
         : "Ocorrência geral - Alimentação";
 
-      // Resolve event_stage_id: prioriza a janela; senão, primeira etapa ativa do evento.
-      let eventStageId: string | null = chosenWindow?.event_stage_id ?? null;
+      // Resolve event_stage_id: prioriza a janela; senão, a etapa em que o
+      // operador está de fato (prop stageId); só cai para "primeira etapa
+      // ativa do evento" se nem isso estiver disponível. Antes ignorava
+      // `stageId` por completo — em evento com múltiplas etapas ativas ao
+      // mesmo tempo, uma ocorrência geral (sem janela selecionada) sempre
+      // ia parar na etapa de menor sort_order, não na etapa real do
+      // operador, e "sumia" do painel da etapa correta.
+      let eventStageId: string | null = chosenWindow?.event_stage_id ?? stageId ?? null;
       if (!eventStageId) {
         const { data: stage } = await supabase
           .from("event_stages")

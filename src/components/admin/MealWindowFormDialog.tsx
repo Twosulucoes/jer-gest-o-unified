@@ -31,6 +31,15 @@ const windowSchema = z.object({
   capacity: z.coerce.number().min(0).optional().nullable(),
   is_active: z.boolean(),
   restrict_eligibility: z.boolean(),
+}).refine((data) => !data.start_time || !data.end_time || data.end_time > data.start_time, {
+  // mealWindowStatus.ts (src/lib/mealWindowStatus.ts) assume start_time/
+  // end_time no mesmo service_date, sem suporte a janela atravessando a
+  // meia-noite — se end_time <= start_time, o cálculo de "encerrada" trata
+  // o fim como um instante ANTERIOR ao início no mesmo dia, então a janela
+  // aparece "Encerrada" assim que deveria abrir. Uma refeição noturna que
+  // cruza a meia-noite precisa ser cadastrada como duas janelas separadas.
+  message: "Hora de fim deve ser depois da hora de início (janelas não podem atravessar a meia-noite — cadastre como duas janelas separadas se necessário)",
+  path: ["end_time"],
 });
 
 export type MealWindowFormValues = z.infer<typeof windowSchema> & { eligibility_rules?: any[] };
