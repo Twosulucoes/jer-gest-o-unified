@@ -18,6 +18,8 @@ import {
   Settings2,
   Layers,
   Package,
+  Usb,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -87,7 +89,6 @@ export default function MaterialScanPage() {
 
   const [kits, setKits] = useState<MaterialKit[]>([]);
   const [kitId, setKitId] = useState("");
-  const [kitCount, setKitCount] = useState(0);
   const [totalToday, setTotalToday] = useState(0);
   const [myCount, setMyCount] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -117,14 +118,25 @@ export default function MaterialScanPage() {
   const [debouncedManual, setDebouncedManual] = useState("");
   const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
   const [manualSearching, setManualSearching] = useState(false);
+  // Busca manual/leitor USB fica escondida atrás de uma ação explícita por
+  // padrão — a maioria dos scans é câmera. Some usuário com leitor USB, o
+  // campo fica sempre visível e focado (é o alvo da "digitação" do leitor).
+  const [manualSearchOpen, setManualSearchOpen] = useState(false);
+  const showManualSearch = manualSearchOpen || !!prefs.usbReaderMode;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Só refoca automaticamente o campo quando há leitor USB conectado — em
+   * celular (padrão), forçar foco nesse input abre o teclado virtual sozinho
+   * e empurra a tela (era a causa do "teclado abre/rola" reportado).
+   */
   const focusUsbInput = useCallback(() => {
+    if (!prefs.usbReaderMode) return;
     setTimeout(() => {
       if (!scannerOpen) usbInputRef.current?.focus();
     }, 150);
-  }, [scannerOpen]);
+  }, [scannerOpen, prefs.usbReaderMode]);
 
   useEffect(() => {
     if (!scannerOpen) focusUsbInput();
@@ -201,56 +213,6 @@ export default function MaterialScanPage() {
     if (kitId && kits.some((k) => k.id === kitId)) return;
     if (kits.length > 0) setKitId(kits[0].id);
   }, [kits]);
-
-  useEffect(() => {
-    if (!kitId) {
-      setKitCount(0);
-      return;
-    }
-    const fetchCount = async () => {
-      const [linkedRes, unlinkedRes] = await Promise.all([
-        (supabase as any)
-          .from("material_deliveries")
-          .select("*", { count: "exact", head: true })
-          .eq("kit_id", kitId)
-          .eq("status", "active"),
-        (supabase as any)
-          .from("material_deliveries_unlinked")
-          .select("*", { count: "exact", head: true })
-          .eq("kit_id", kitId),
-      ]);
-      setKitCount((linkedRes.count || 0) + (unlinkedRes.count || 0));
-    };
-    void fetchCount();
-
-    const channel = supabase
-      .channel(`material_deliveries_${kitId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "material_deliveries",
-          filter: `kit_id=eq.${kitId}`,
-        },
-        () => void fetchCount(),
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "material_deliveries_unlinked",
-          filter: `kit_id=eq.${kitId}`,
-        },
-        () => void fetchCount(),
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [kitId]);
 
   useEffect(() => {
     if (!activeEventId || kits.length === 0) {
@@ -760,6 +722,9 @@ export default function MaterialScanPage() {
       recordOutcome("error");
     } finally {
       setIsSubmitting(false);
+      // Sem leitor USB, a busca foi aberta pra essa escolha pontual — fecha
+      // depois de escolher, em vez de deixar o campo aberto ocupando espaço.
+      if (!prefs.usbReaderMode) setManualSearchOpen(false);
       focusUsbInput();
     }
   };
@@ -777,16 +742,16 @@ export default function MaterialScanPage() {
 
       <main className="relative mx-auto max-w-md space-y-3 p-3">
         {!activeStage && stages.length > 0 && (
-          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4 space-y-3">
+          <div className="rounded-2xl border-2 border-warning/50 bg-warning/10 p-4 space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-                <Layers className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <div className="h-8 w-8 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
+                <Layers className="h-4 w-4 text-warning" />
               </div>
               <div>
-                <p className="text-sm font-extrabold uppercase tracking-tight text-amber-800 dark:text-amber-400">
+                <p className="text-sm font-extrabold uppercase tracking-tight text-warning">
                   Selecione sua Etapa
                 </p>
-                <p className="text-[11px] text-amber-700/80 dark:text-amber-500/80">
+                <p className="text-[11px] text-warning/80">
                   Confirme a etapa de trabalho para começar.
                 </p>
               </div>
@@ -797,10 +762,10 @@ export default function MaterialScanPage() {
                   key={s.id}
                   type="button"
                   onClick={() => setActiveStageId(s.id)}
-                  className="w-full rounded-xl border border-amber-500/40 bg-white/70 dark:bg-amber-900/20 px-4 py-3 text-left flex items-center justify-between active:scale-[0.98] transition-all"
+                  className="w-full rounded-xl border border-warning/40 bg-warning/10 hover:bg-warning/15 px-4 py-3 text-left flex items-center justify-between active:scale-[0.98] transition-all"
                 >
                   <span className="font-bold text-sm text-foreground">{s.name}</span>
-                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                  <span className="text-[11px] font-semibold text-warning">
                     Trabalhar aqui →
                   </span>
                 </button>
@@ -810,8 +775,8 @@ export default function MaterialScanPage() {
         )}
 
         {kits.length === 0 ? (
-          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-center space-y-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+          <div className="rounded-2xl border border-warning/40 bg-warning/5 px-4 py-3 text-center space-y-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-warning">
               Nenhum kit de material cadastrado
             </p>
             <p className="text-[11px] text-muted-foreground">
@@ -821,12 +786,12 @@ export default function MaterialScanPage() {
             </p>
           </div>
         ) : (
-          <div className="w-full flex items-center gap-3 rounded-2xl border-2 border-emerald-600/60 ring-1 ring-emerald-500/40 bg-card/60 px-4 py-3">
-            <span className="relative inline-flex h-3 w-3 shrink-0 rounded-full bg-emerald-500">
-              <span className="absolute inset-0 inline-flex animate-ping rounded-full bg-emerald-500/60" />
+          <div className="w-full flex items-center gap-3 rounded-2xl border-2 border-success/60 ring-1 ring-success/40 bg-card/60 px-4 py-3">
+            <span className="relative inline-flex h-3 w-3 shrink-0 rounded-full bg-success">
+              <span className="absolute inset-0 inline-flex animate-ping rounded-full bg-success/60" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-success">
                 KIT SELECIONADO
               </p>
               <p className="mt-0.5 truncate text-base font-extrabold text-foreground">
@@ -860,18 +825,8 @@ export default function MaterialScanPage() {
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          <KpiCard label="Meus Registros" value={myCount} tone="blue" large />
-          <KpiCard label="Total Geral" value={totalToday} tone="default" large />
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <KpiCard label="Kit" value={kitCount} tone="blue" />
-          <KpiCard label="OK" value={telemetry.ok} tone="green" />
-          <KpiCard
-            label="Erro"
-            value={telemetry.error}
-            tone={telemetry.error > 0 ? "red" : "muted"}
-          />
+          <KpiCard label="Meus Registros" value={myCount} tone="accent" />
+          <KpiCard label="Total Geral" value={totalToday} tone="default" />
         </div>
 
         {!scannerOpen && (
@@ -883,13 +838,13 @@ export default function MaterialScanPage() {
               "w-full rounded-2xl px-4 py-4 text-left transition-all flex items-center gap-3 shadow-app-md",
               hasKit
                 ? "bg-module text-white hover:brightness-110 active:scale-[0.98]"
-                : "bg-zinc-800/60 text-zinc-400 cursor-not-allowed opacity-70",
+                : "bg-muted text-muted-foreground cursor-not-allowed opacity-70",
             )}
           >
             <div
               className={cn(
                 "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
-                hasKit ? "bg-white/20" : "bg-zinc-700/50",
+                hasKit ? "bg-white/20" : "bg-muted-foreground/10",
               )}
             >
               {isSubmitting ? (
@@ -930,101 +885,133 @@ export default function MaterialScanPage() {
         )}
 
         <div className="space-y-2">
-          <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-[11px] text-blue-700 dark:text-blue-300">
-            <strong>Leitor USB ativo:</strong> conecte o leitor, clique no campo abaixo e passe o crachá. A câmera do celular continua funcionando no botão acima.
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              ref={usbInputRef}
-              autoFocus
-              placeholder="Leitor USB / Nome / CPF…"
-              value={manualQuery}
-              disabled={isSubmitting}
-              onChange={(e) => setManualQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const code = manualQuery.trim();
-                  if (code.length >= 3) {
-                    setManualQuery("");
-                    setDebouncedManual("");
-                    setManualHits([]);
-                    void handleScan(code).finally(() => focusUsbInput());
-                  }
-                }
-              }}
-              onBlur={() => {
-                if (!scannerOpen) focusUsbInput();
-              }}
-              className="h-12 border-border/80 bg-card/90 pl-10 text-base font-mono"
-            />
-          </div>
-
-          {!activeEventId && (
-            <p className="text-center text-[11px] text-amber-600 dark:text-amber-400">
-              Selecione o evento ativo para habilitar a busca.
-            </p>
+          {!showManualSearch && (
+            <button
+              type="button"
+              onClick={() => setManualSearchOpen(true)}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-card/40 px-3 py-2.5 text-xs font-semibold text-muted-foreground active:scale-[0.98] transition-transform"
+            >
+              <Search className="h-3.5 w-3.5" />
+              Busca manual por nome ou CPF
+            </button>
           )}
 
-          {activeEventId && debouncedManual.length >= 2 && (
-            <Card className="max-h-44 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
-              <CardContent className="p-0">
-                {manualSearching && (
-                  <div className="flex items-center justify-center gap-2 py-5 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">Buscando…</span>
-                  </div>
-                )}
+          {showManualSearch && (
+            <>
+              {prefs.usbReaderMode && (
+                <div className="rounded-xl border border-info/30 bg-info/5 px-3 py-2 text-[11px] text-info">
+                  <strong>Leitor USB ativo:</strong> conecte o leitor, clique no campo abaixo e passe o crachá. A câmera do celular continua funcionando no botão acima.
+                </div>
+              )}
 
-                {!manualSearching && manualHits.length === 0 && (
-                  <p className="px-4 py-5 text-center text-sm text-muted-foreground">
-                    Nenhum participante encontrado neste evento.
-                  </p>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  ref={usbInputRef}
+                  autoFocus
+                  placeholder={prefs.usbReaderMode ? "Leitor USB / Nome / CPF…" : "Nome ou CPF…"}
+                  value={manualQuery}
+                  disabled={isSubmitting}
+                  onChange={(e) => setManualQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const code = manualQuery.trim();
+                      if (code.length >= 3) {
+                        setManualQuery("");
+                        setDebouncedManual("");
+                        setManualHits([]);
+                        void handleScan(code).finally(() => focusUsbInput());
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!scannerOpen) focusUsbInput();
+                  }}
+                  className="h-12 border-border/80 bg-card/90 pl-10 pr-10 text-base font-mono"
+                />
+                {!prefs.usbReaderMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualSearchOpen(false);
+                      setManualQuery("");
+                      setDebouncedManual("");
+                      setManualHits([]);
+                    }}
+                    aria-label="Fechar busca manual"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 )}
+              </div>
 
-                {!manualSearching &&
-                  manualHits.map((h) => (
-                    <button
-                      key={h.participant_id}
-                      type="button"
-                      onClick={() => void handleManualPick(h)}
-                      disabled={isSubmitting}
-                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
-                        <User className="h-4 w-4" />
+              {!activeEventId && (
+                <p className="text-center text-[11px] text-warning">
+                  Selecione o evento ativo para habilitar a busca.
+                </p>
+              )}
+
+              {activeEventId && debouncedManual.length >= 2 && (
+                <Card className="max-h-44 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
+                  <CardContent className="p-0">
+                    {manualSearching && (
+                      <div className="flex items-center justify-center gap-2 py-5 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="text-sm">Buscando…</span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {h.full_name}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {h.participant_type}
-                        </p>
-                      </div>
-                      {h.is_active === false && (
-                        <span className="ml-2 shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                          inativo
-                        </span>
-                      )}
-                    </button>
-                  ))}
-              </CardContent>
-            </Card>
+                    )}
+
+                    {!manualSearching && manualHits.length === 0 && (
+                      <p className="px-4 py-5 text-center text-sm text-muted-foreground">
+                        Nenhum participante encontrado neste evento.
+                      </p>
+                    )}
+
+                    {!manualSearching &&
+                      manualHits.map((h) => (
+                        <button
+                          key={h.participant_id}
+                          type="button"
+                          onClick={() => void handleManualPick(h)}
+                          disabled={isSubmitting}
+                          className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {h.full_name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {h.participant_type}
+                            </p>
+                          </div>
+                          {h.is_active === false && (
+                            <span className="ml-2 shrink-0 rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+                              inativo
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
 
         {result?.variant === "duplicate" ? (
-          <div className="flex flex-col gap-3 rounded-2xl border-2 border-amber-500/70 bg-amber-500/15 px-4 py-3 animate-in zoom-in-95 duration-200">
+          <div className="flex flex-col gap-3 rounded-2xl border-2 border-warning/70 bg-warning/15 px-4 py-3 animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 shrink-0 text-amber-500" />
+              <AlertTriangle className="h-8 w-8 shrink-0 text-warning" />
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
+                <p className="text-[10px] font-black uppercase tracking-widest text-warning">
                   Atenção
                 </p>
-                <p className="text-base font-extrabold leading-snug text-amber-900 dark:text-amber-100">
+                <p className="text-base font-extrabold leading-snug text-foreground">
                   {result.message}
                 </p>
               </div>
@@ -1032,7 +1019,7 @@ export default function MaterialScanPage() {
             <button
               type="button"
               onClick={dismissResult}
-              className="h-11 w-full rounded-xl bg-amber-600 text-sm font-black uppercase tracking-wide text-white active:scale-[0.98] transition-transform"
+              className="h-11 w-full rounded-xl bg-warning text-sm font-black uppercase tracking-wide text-warning-foreground active:scale-[0.98] transition-transform"
             >
               Fechar
             </button>
@@ -1043,13 +1030,13 @@ export default function MaterialScanPage() {
               className={cn(
                 "flex flex-col gap-2 rounded-2xl border px-3 py-2.5",
                 result.ok
-                  ? "border-emerald-500/40 bg-emerald-500/5"
+                  ? "border-success/40 bg-success/5"
                   : "border-destructive/40 bg-destructive/5",
               )}
             >
               <div className="flex items-start gap-2">
                 {result.ok ? (
-                  <CheckCircle className="h-5 w-5 shrink-0 text-emerald-500" />
+                  <CheckCircle className="h-5 w-5 shrink-0 text-success" />
                 ) : (
                   <XCircle className="h-5 w-5 shrink-0 text-destructive" />
                 )}
@@ -1101,6 +1088,23 @@ export default function MaterialScanPage() {
           </label>
         </div>
 
+        <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 cursor-pointer">
+          <Usb className="h-4 w-4 text-module shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold leading-tight truncate">Leitor USB conectado</p>
+            <p className="text-[10px] text-muted-foreground">
+              {prefs.usbReaderMode
+                ? "Campo de captura sempre visível e focado"
+                : "Desligado — recomendado no celular"}
+            </p>
+          </div>
+          <Switch
+            checked={!!prefs.usbReaderMode}
+            onCheckedChange={(v) => updatePrefs({ ...prefs, usbReaderMode: v })}
+            aria-label="Leitor USB conectado"
+          />
+        </label>
+
         <SyncStatusLine online={online} />
       </main>
     </PwaLayout>
@@ -1111,43 +1115,19 @@ function KpiCard({
   label,
   value,
   tone,
-  large,
 }: {
   label: string;
   value: number;
-  tone: "default" | "blue" | "green" | "red" | "muted";
-  large?: boolean;
+  tone: "default" | "accent";
 }) {
-  const valueClass = {
-    default: "text-foreground",
-    blue: "text-blue-400",
-    green: "text-green-400",
-    red: "text-red-400",
-    muted: "text-zinc-500",
-  }[tone];
+  const valueClass = tone === "accent" ? "text-module" : "text-foreground";
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-border/70 bg-card/60 text-center",
-        large ? "px-3 py-3" : "px-2 py-2",
-      )}
-    >
-      <p
-        className={cn(
-          "font-bold uppercase tracking-wider text-muted-foreground",
-          large ? "text-[10px]" : "text-[9px]",
-        )}
-      >
+    <div className="rounded-xl border border-border/70 bg-card/60 px-3 py-3 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p
-        className={cn(
-          "mt-0.5 font-extrabold tabular-nums leading-none",
-          large ? "text-3xl" : "text-2xl",
-          valueClass,
-        )}
-      >
+      <p className={cn("mt-0.5 text-3xl font-extrabold tabular-nums leading-none", valueClass)}>
         {value}
       </p>
     </div>
@@ -1159,28 +1139,26 @@ function SyncStatusLine({ online }: { online: boolean }) {
     <div
       className={cn(
         "flex items-center justify-between rounded-xl border px-3 py-1.5",
-        online
-          ? "bg-green-950/30 border-green-900/40"
-          : "bg-amber-950/30 border-amber-900/40",
+        online ? "bg-success/10 border-success/20" : "bg-warning/10 border-warning/20",
       )}
     >
       <div className="flex items-center gap-2">
         <span
           className={cn(
             "w-1.5 h-1.5 rounded-full animate-pulse",
-            online ? "bg-green-400" : "bg-amber-400",
+            online ? "bg-success" : "bg-warning",
           )}
         />
         <span
           className={cn(
             "text-[11px] font-semibold",
-            online ? "text-green-400" : "text-amber-400",
+            online ? "text-success" : "text-warning",
           )}
         >
           {online ? "Sistema online · Sync ativo" : "Offline · dados em fila"}
         </span>
       </div>
-      <Package className="h-3.5 w-3.5 text-zinc-500" />
+      <Package className="h-3.5 w-3.5 text-muted-foreground" />
     </div>
   );
 }

@@ -11,6 +11,11 @@ export type ScanModule = "transporte" | "alimentacao" | "alojamento" | "material
 export interface ScanPreferences {
   continuousMode: boolean;
   reopenDelayMs: number;
+  /** Leitor de código de barras USB conectado neste aparelho (kiosk/mesa) —
+   * só então faz sentido manter um campo de texto sempre focado esperando a
+   * "digitação" do leitor. Em celular (padrão), fica desligado para não abrir
+   * o teclado virtual sozinho. */
+  usbReaderMode?: boolean;
 }
 
 export interface ScanTelemetry {
@@ -23,6 +28,7 @@ export interface ScanTelemetry {
 const DEFAULT_PREFS: ScanPreferences = {
   continuousMode: true,
   reopenDelayMs: 450,
+  usbReaderMode: false,
 };
 
 export const REOPEN_DELAY_OPTIONS = [
@@ -67,6 +73,7 @@ export function loadScanPreferences(module: ScanModule, userId?: string | null):
     return {
       continuousMode: parsed.continuousMode ?? DEFAULT_PREFS.continuousMode,
       reopenDelayMs: parsed.reopenDelayMs ?? DEFAULT_PREFS.reopenDelayMs,
+      usbReaderMode: parsed.usbReaderMode ?? DEFAULT_PREFS.usbReaderMode,
     };
   } catch {
     return { ...DEFAULT_PREFS };

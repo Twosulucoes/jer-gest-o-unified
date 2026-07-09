@@ -36,6 +36,7 @@ import {
   Undo2,
   UserX,
   Search,
+  Copy,
 } from "lucide-react";
 
 interface MaterialKit {
@@ -81,6 +82,18 @@ interface PendingParticipantRow {
   cpf: string | null;
   participant_type: string | null;
   escola: string;
+}
+
+interface DuplicateAttemptRow {
+  id: string;
+  created_at: string;
+  linked: boolean;
+  full_name: string;
+  cpf: string | null;
+  participant_type: string | null;
+  escola: string;
+  qr_code: string | null;
+  operator_name: string | null;
 }
 
 const SEM_ESCOLA = "Sem escola/delegação";
@@ -327,6 +340,107 @@ export default function MaterialEntregaPage() {
     },
   });
 
+  // Tentativas de reentrega (crachá já entregue neste kit) — gravadas pela
+  // RPC em audit_events (action='duplicate_delivery_attempt'), ver migration
+  // 20260709100000_material_duplicate_delivery_audit.
+  const { data: duplicateAttemptsRaw = [], isLoading: loadingDuplicates } = useQuery({
+    queryKey: ["material_duplicate_attempts", activeKitId],
+    enabled: !!activeKitId,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("audit_events")
+        .select("id, created_at, created_by, table_name, record_id, payload")
+        .eq("action", "duplicate_delivery_attempt")
+        .eq("payload->>kit_id", activeKitId)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  // Nome do participante das tentativas com crachá vinculado (busca pela
+  // entrega já existente, referenciada em record_id/payload.existing_delivery_id).
+  const linkedAttemptDeliveryIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          duplicateAttemptsRaw
+            .filter((r) => r.table_name === "material_deliveries")
+            .map((r) => r.record_id as string),
+        ),
+      ),
+    [duplicateAttemptsRaw],
+  );
+
+  const { data: attemptParticipantsById = {} } = useQuery({
+    queryKey: ["material_duplicate_attempt_participants", linkedAttemptDeliveryIds],
+    enabled: linkedAttemptDeliveryIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("material_deliveries")
+        .select(
+          "id, participants!inner(participant_type, people!inner(full_name, cpf), delegations(institutions(name)))",
+        )
+        .in("id", linkedAttemptDeliveryIds);
+      if (error) throw error;
+      const map: Record<
+        string,
+        { full_name: string; cpf: string | null; participant_type: string | null; escola: string }
+      > = {};
+      for (const r of (data ?? []) as any[]) {
+        map[r.id] = {
+          full_name: r.participants?.people?.full_name || "",
+          cpf: r.participants?.people?.cpf || null,
+          participant_type: r.participants?.participant_type || null,
+          escola: r.participants?.delegations?.institutions?.name || SEM_ESCOLA,
+        };
+      }
+      return map;
+    },
+  });
+
+  // Nome de quem operou o scan que gerou a tentativa.
+  const attemptOperatorIds = useMemo(
+    () => Array.from(new Set(duplicateAttemptsRaw.map((r) => r.created_by).filter(Boolean))),
+    [duplicateAttemptsRaw],
+  );
+
+  const { data: attemptOperatorNamesById = {} } = useQuery({
+    queryKey: ["material_duplicate_attempt_operators", attemptOperatorIds],
+    enabled: attemptOperatorIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", attemptOperatorIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const r of data ?? []) map[r.id] = r.full_name;
+      return map;
+    },
+  });
+
+  const duplicateAttempts = useMemo<DuplicateAttemptRow[]>(
+    () =>
+      duplicateAttemptsRaw.map((r) => {
+        const linked = r.table_name === "material_deliveries";
+        const participant = linked ? attemptParticipantsById[r.record_id] : null;
+        return {
+          id: r.id,
+          created_at: r.created_at,
+          linked,
+          full_name: participant?.full_name || "",
+          cpf: participant?.cpf || null,
+          participant_type: participant?.participant_type || null,
+          escola: participant?.escola || (linked ? SEM_ESCOLA : ""),
+          qr_code: r.payload?.qr_code || null,
+          operator_name: (r.created_by && attemptOperatorNamesById[r.created_by]) || null,
+        };
+      }),
+    [duplicateAttemptsRaw, attemptParticipantsById, attemptOperatorNamesById],
+  );
+
   // Atualização ao vivo: qualquer entrega/estorno/crachá não vinculado
   // neste kit recarrega os dados (as duas tabelas de entrega precisam
   // estar na publicação supabase_realtime — ver migration correspondente).
@@ -564,6 +678,9 @@ export default function MaterialEntregaPage() {
     ...(unlinkedDeliveries.length > 0
       ? [{ label: "Não vinculados", value: unlinkedDeliveries.length, tone: "warning" as const }]
       : []),
+    ...(duplicateAttempts.length > 0
+      ? [{ label: "Duplicadas", value: duplicateAttempts.length, tone: "warning" as const }]
+      : []),
   ]);
 
   // Refs para os KPIs clicáveis rolarem até a seção correspondente.
@@ -571,6 +688,7 @@ export default function MaterialEntregaPage() {
   const faltamRef = useRef<HTMLDivElement>(null);
   const estornadasRef = useRef<HTMLDivElement>(null);
   const naoVinculadosRef = useRef<HTMLDivElement>(null);
+  const duplicadasRef = useRef<HTMLDivElement>(null);
   const scrollTo = (ref: React.RefObject<HTMLDivElement>) =>
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -587,7 +705,7 @@ export default function MaterialEntregaPage() {
     <div className="space-y-4">
       {/* KPIs clicáveis — cada um rola até a lista correspondente */}
       {activeKitId && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           <button
             type="button"
             onClick={() => scrollTo(entreguesRef)}
@@ -649,6 +767,21 @@ export default function MaterialEntregaPage() {
               {unlinkedDeliveries.length}
             </p>
             <p className="text-[10px] text-muted-foreground">crachá não reconhecido</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => scrollTo(duplicadasRef)}
+            disabled={duplicateAttempts.length === 0}
+            className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-colors hover:bg-amber-500/10 disabled:cursor-default disabled:opacity-60 disabled:hover:bg-amber-500/5"
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+              Duplicadas
+            </p>
+            <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-amber-700 dark:text-amber-400">
+              {duplicateAttempts.length}
+            </p>
+            <p className="text-[10px] text-muted-foreground">tentativas de reentrega</p>
           </button>
         </div>
       )}
@@ -1092,6 +1225,84 @@ export default function MaterialEntregaPage() {
                       <td className="py-2 pr-2 font-mono">{u.qr_code}</td>
                       <td className="py-2 text-muted-foreground">
                         {format(new Date(u.delivered_at), "dd/MM HH:mm")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Tentativas de entrega duplicada (crachá já recebeu este kit) */}
+      <Card ref={duplicadasRef}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Copy className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Tentativas de
+            Duplicação
+            {activeKit && (
+              <span className="text-sm font-normal text-muted-foreground">
+                · {activeKit.name}
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Crachás escaneados que já haviam recebido este kit — a entrega foi
+            bloqueada (sem duplicar o material), mas a tentativa fica registrada
+            aqui para auditoria.
+          </p>
+          {loadingDuplicates ? (
+            <Skeleton className="h-16 w-full" />
+          ) : duplicateAttempts.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Nenhuma tentativa de duplicação registrada para este kit.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">Participante</th>
+                    <th className="py-2 pr-2 font-medium">Escola</th>
+                    <th className="py-2 pr-2 font-medium">Tipo</th>
+                    <th className="py-2 pr-2 font-medium">Operador</th>
+                    <th className="py-2 font-medium">Tentativa em</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {duplicateAttempts.map((d) => (
+                    <tr key={d.id} className="border-b last:border-0">
+                      <td className="py-2 pr-2">
+                        {d.linked ? (
+                          <>
+                            <p className="font-medium">{d.full_name || "—"}</p>
+                            {d.cpf && (
+                              <p className="text-xs text-muted-foreground">{d.cpf}</p>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-medium text-amber-600 dark:text-amber-400">
+                              Crachá não vinculado
+                            </p>
+                            <p className="font-mono text-xs text-muted-foreground">
+                              {d.qr_code}
+                            </p>
+                          </>
+                        )}
+                      </td>
+                      <td className="py-2 pr-2 text-muted-foreground">{d.escola || "—"}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">
+                        {d.linked ? ptLabel(d.participant_type) : "—"}
+                      </td>
+                      <td className="py-2 pr-2 text-muted-foreground">
+                        {d.operator_name || "—"}
+                      </td>
+                      <td className="py-2 text-muted-foreground">
+                        {format(new Date(d.created_at), "dd/MM HH:mm")}
                       </td>
                     </tr>
                   ))}
