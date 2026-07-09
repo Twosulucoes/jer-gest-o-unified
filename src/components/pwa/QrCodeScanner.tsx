@@ -35,6 +35,10 @@ interface QrCodeScannerProps {
 
 type ScanState = "requesting" | "active" | "error" | "idle";
 
+/** Janela em que a releitura do MESMO código é ignorada (crachá parado
+ *  na frente da câmera). Não afeta a leitura de um código diferente. */
+const SAME_CODE_COOLDOWN_MS = 10_000;
+
 export default function QrCodeScanner({
   onScan,
   onClose,
@@ -57,8 +61,9 @@ export default function QrCodeScanner({
   const [isZoomed, setIsZoomed] = useState(false);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const debounceRef = useRef(false);
+  const isProcessingRef = useRef(false);
   const lastScannedRef = useRef("");
+  const lastScannedAtRef = useRef(0);
   const containerId = useRef(`qr-scanner-${Math.random().toString(36).slice(2, 8)}`).current;
   const mountedRef = useRef(true);
 
@@ -96,17 +101,27 @@ export default function QrCodeScanner({
 
   const handleDetected = useCallback(
     (raw: string) => {
-      if (debounceRef.current) return;
+      if (isProcessingRef.current) return;
       if (!isValidPayload(raw)) {
         toast.error("CÓDIGO INVÁLIDO");
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         return;
       }
-      if (raw === lastScannedRef.current) return;
 
-      debounceRef.current = true;
+      // Câmera continua enxergando o mesmo crachá porque o operador não
+      // afastou a tempo (comum em modo contínuo) — ignora silenciosamente
+      // em vez de reenviar e gerar um alerta de "JÁ ENTREGUE"/duplicidade
+      // sem sentido. Só bloqueia repetição do MESMO código; um crachá
+      // diferente é lido normalmente, sem esperar essa janela.
+      const now = Date.now();
+      if (raw === lastScannedRef.current && now - lastScannedAtRef.current < SAME_CODE_COOLDOWN_MS) {
+        return;
+      }
+
+      isProcessingRef.current = true;
       lastScannedRef.current = raw;
-      
+      lastScannedAtRef.current = now;
+
       if (navigator.vibrate) navigator.vibrate(40);
       setShowSuccess(true);
       setTimeout(() => {
@@ -122,8 +137,7 @@ export default function QrCodeScanner({
       onScanRef.current(raw);
 
       setTimeout(() => {
-        debounceRef.current = false;
-        lastScannedRef.current = "";
+        isProcessingRef.current = false;
       }, 2000);
     },
     [isValidPayload, stopScanner],
