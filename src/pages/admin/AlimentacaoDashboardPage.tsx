@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Download, RefreshCw, Utensils, AlertTriangle, AlertCircle } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
+import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 
 export default function AlimentacaoDashboardPage() {
   const eventId = useActiveEventId();
@@ -141,32 +142,42 @@ export default function AlimentacaoDashboardPage() {
     [delegations]
   );
 
-  // Total participants with needs_meals=true (denominator for "sem consumo" KPI)
+  // Total de participantes "presentes na data" (denominador do KPI "sem
+  // consumo") — mesma semântica de presença usada em
+  // get_present_participant_counts_by_* (etapa 3 da auditoria de
+  // alimentação) e em AlimentacaoDivergenciasPage/DelegacaoAlimentacaoPage:
+  // não basta is_active+needs_meals, o participante também precisa ter
+  // chegado (credentialed_at até o fim do dia) e não ter saído antes dele
+  // (left_event_at). Sem isso, o denominador incluía quem ainda não tinha
+  // chegado ou já tinha ido embora, inflando "Sem refeição hoje".
   const { data: totalParticipants = 0 } = useQuery({
-    queryKey: ["total-participants-meals-dash", eventId, stageId, stageParticipantIds?.size ?? -1],
+    queryKey: ["total-participants-meals-dash", eventId, stageId, filterDate, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
+      const { endIsoExclusive } = dayRangeRoraima(filterDate);
+      const applyPresence = (q: any) =>
+        q
+          .eq("needs_meals", true)
+          .eq("is_active", true)
+          .not("credentialed_at", "is", null)
+          .lt("credentialed_at", endIsoExclusive)
+          .or(`left_event_at.is.null,left_event_at.gte.${endIsoExclusive}`);
+
       if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
         const ids = Array.from(stageParticipantIds);
         let count = 0;
         for (let i = 0; i < ids.length; i += 200) {
           const chunk = ids.slice(i, i + 200);
-          const { count: c } = await supabase
-            .from("participants")
-            .select("id", { count: "exact", head: true })
-            .in("id", chunk)
-            .eq("needs_meals", true)
-            .eq("is_active", true);
+          const { count: c } = await applyPresence(
+            supabase.from("participants").select("id", { count: "exact", head: true }).in("id", chunk),
+          );
           count += c ?? 0;
         }
         return count;
       }
       if (isStageScoped) return 0;
-      const { count, error } = await supabase
-        .from("participants")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", eventId)
-        .eq("is_active", true)
-        .eq("needs_meals", true);
+      const { count, error } = await applyPresence(
+        supabase.from("participants").select("id", { count: "exact", head: true }).eq("event_id", eventId),
+      );
       if (error) throw error;
       return count ?? 0;
     },

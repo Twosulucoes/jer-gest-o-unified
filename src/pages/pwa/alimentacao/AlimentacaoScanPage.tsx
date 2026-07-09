@@ -16,6 +16,7 @@ import {
   ListChecks,
   Settings2,
   Layers,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -51,6 +52,8 @@ import { useTodayString } from "@/hooks/useTodayString";
 import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 import { VoucherConflictCentral } from "@/components/pwa/VoucherConflictCentral";
 import { JanelaSheet, type JanelaStatus } from "@/components/pwa/alimentacao/JanelaSheet";
+import { FoodIncidentDialog } from "@/components/pwa/alimentacao/FoodIncidentDialog";
+import { mealWindowStatus } from "@/lib/mealWindowStatus";
 import { cn } from "@/lib/utils";
 
 interface MealWindow {
@@ -85,11 +88,7 @@ function leftEventBlocksWindow(
 }
 
 function statusForWindow(w: MealWindow, now: Date): JanelaStatus {
-  const start = new Date(`${w.service_date}T${w.start_time}`);
-  const end = new Date(`${w.service_date}T${w.end_time}`);
-  if (now < start) return "futura";
-  if (now > end) return "encerrada";
-  return "ativa";
+  return mealWindowStatus(w.service_date, w.start_time, w.end_time, now);
 }
 
 const STATUS_HEADER: Record<
@@ -144,6 +143,7 @@ export default function AlimentacaoScanPage() {
   const [myConsumptionCount, setMyConsumptionCount] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [janelaSheetOpen, setJanelaSheetOpen] = useState(false);
+  const [incidentDialogOpen, setIncidentDialogOpen] = useState(false);
   const [online, setOnline] = useState(isOnline());
 
   const { lookupQr, searchOffline } = useParticipantStatusCache({
@@ -259,6 +259,40 @@ export default function AlimentacaoScanPage() {
     return count || 0;
   }
 
+  // Vouchers de refeição resgatados via QR (tabela service_voucher_uses)
+  // não caem em meal_consumptions/meal_consumptions_unlinked — sem isto,
+  // "Janela"/"Total Geral"/"Meus Registros" não contavam nenhum consumo
+  // feito por voucher, mesmo processado pelo mesmo scanner desta tela.
+  async function getVoucherCountForWindow(currentWindowId: string) {
+    const { count } = await (supabase as any)
+      .from("service_voucher_uses")
+      .select("*", { count: "exact", head: true })
+      .eq("service_kind", "meals")
+      .eq("context_id", currentWindowId);
+
+    return count || 0;
+  }
+
+  async function getVoucherCountToday(onlyMine = false) {
+    const windowIds = windows.map((w) => w.id);
+    if (windowIds.length === 0) return 0;
+
+    const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+
+    let q = (supabase as any)
+      .from("service_voucher_uses")
+      .select("id", { count: "exact", head: true })
+      .eq("service_kind", "meals")
+      .in("context_id", windowIds)
+      .gte("used_at", startIso)
+      .lt("used_at", endIsoExclusive);
+
+    if (onlyMine && userId) q = q.eq("used_by", userId);
+
+    const { count } = await q;
+    return count || 0;
+  }
+
   useEffect(() => {
     (async () => {
       const cached = readMealWindowsCache<any>(activeEventId, stageId);
@@ -326,7 +360,8 @@ export default function AlimentacaoScanPage() {
         .eq("meal_window_id", windowId);
 
       const unlinked = await getUnlinkedCountForWindow(windowId);
-      setConsumptionCount((count || 0) + unlinked);
+      const vouchers = await getVoucherCountForWindow(windowId);
+      setConsumptionCount((count || 0) + unlinked + vouchers);
     };
 
     void fetchCount();
@@ -359,77 +394,141 @@ export default function AlimentacaoScanPage() {
       )
       .subscribe();
 
+    const channel3 = supabase
+      .channel(`service_voucher_uses_${windowId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "service_voucher_uses",
+          filter: `context_id=eq.${windowId}`,
+        },
+        () => void fetchCount(),
+      )
+      .subscribe();
+
     return () => {
       void supabase.removeChannel(channel1);
       void supabase.removeChannel(channel2);
+      void supabase.removeChannel(channel3);
     };
   }, [windowId]);
 
-  useEffect(() => {
-    if (!activeEventId) return;
+  const fetchTotalToday = useCallback(async () => {
+    if (!activeEventId) {
+      setTotalToday(0);
+      return;
+    }
 
-    let cancelled = false;
+    const { startIso, endIsoExclusive } = dayRangeRoraima(today);
 
-    (async () => {
-      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+    let consumoQ = supabase
+      .from("meal_consumptions")
+      .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
+        count: "exact",
+        head: true,
+      })
+      .eq("meal_windows.event_id", activeEventId)
+      .gte("consumed_at", startIso)
+      .lt("consumed_at", endIsoExclusive);
 
-      let consumoQ = supabase
-        .from("meal_consumptions")
-        .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
-          count: "exact",
-          head: true,
-        })
-        .eq("meal_windows.event_id", activeEventId)
-        .gte("consumed_at", startIso)
-        .lt("consumed_at", endIsoExclusive);
+    if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
 
-      if (stageId) consumoQ = consumoQ.eq("meal_windows.event_stage_id", stageId);
+    const { count } = await consumoQ;
+    const unlinked = await getUnlinkedCountToday(false);
+    const vouchers = await getVoucherCountToday(false);
 
-      const { count } = await consumoQ;
-      const unlinked = await getUnlinkedCountToday(false);
+    setTotalToday((count || 0) + unlinked + vouchers);
+  }, [activeEventId, stageId, today, windows]);
 
-      if (!cancelled) setTotalToday((count || 0) + unlinked);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeEventId, stageId, today, consumptionCount]);
-
-  useEffect(() => {
+  const fetchMyConsumptionCount = useCallback(async () => {
     if (!userId || !activeEventId) {
       setMyConsumptionCount(0);
       return;
     }
 
-    let cancelled = false;
+    const { startIso, endIsoExclusive } = dayRangeRoraima(today);
 
-    (async () => {
-      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+    let q = supabase
+      .from("meal_consumptions")
+      .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
+        count: "exact",
+        head: true,
+      })
+      .eq("registered_by", userId)
+      .eq("meal_windows.event_id", activeEventId)
+      .gte("consumed_at", startIso)
+      .lt("consumed_at", endIsoExclusive);
 
-      let q = supabase
-        .from("meal_consumptions")
-        .select("id, meal_windows!meal_window_id!inner(event_id, event_stage_id)", {
-          count: "exact",
-          head: true,
-        })
-        .eq("registered_by", userId)
-        .eq("meal_windows.event_id", activeEventId)
-        .gte("consumed_at", startIso)
-        .lt("consumed_at", endIsoExclusive);
+    if (stageId) q = q.eq("meal_windows.event_stage_id", stageId);
 
-      if (stageId) q = q.eq("meal_windows.event_stage_id", stageId);
+    const { count } = await q;
+    const unlinked = await getUnlinkedCountToday(true);
+    const vouchers = await getVoucherCountToday(true);
 
-      const { count } = await q;
-      const unlinked = await getUnlinkedCountToday(true);
+    setMyConsumptionCount((count || 0) + unlinked + vouchers);
+  }, [userId, activeEventId, stageId, today, windows]);
 
-      if (!cancelled) setMyConsumptionCount((count || 0) + unlinked);
-    })();
+  useEffect(() => {
+    void fetchTotalToday();
+  }, [fetchTotalToday]);
+
+  useEffect(() => {
+    void fetchMyConsumptionCount();
+  }, [fetchMyConsumptionCount]);
+
+  // Realtime escopado ao dia/evento/etapa inteiro (não só à janela
+  // selecionada): antes, Total Geral/Meus Registros só reagiam via
+  // dependência de consumptionCount, que só muda com a janela atualmente
+  // aberta na tela. Com mais de uma janela ativa ao mesmo tempo (locais
+  // diferentes), um consumo em outra janela não atualizava esses dois KPIs
+  // em tempo real nesta tela.
+  useEffect(() => {
+    if (!activeEventId) return;
+
+    const todayWindowIds = new Set(windows.map((w) => w.id));
+    const isRelevant = (payload: any) => {
+      const changedWindowId = payload?.new?.meal_window_id ?? payload?.old?.meal_window_id;
+      return !changedWindowId || todayWindowIds.has(changedWindowId);
+    };
+
+    const channel = supabase
+      .channel(`meal_consumptions_today_${activeEventId}_${stageId ?? "all"}_${today}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meal_consumptions" },
+        (payload) => {
+          if (!isRelevant(payload)) return;
+          void fetchTotalToday();
+          void fetchMyConsumptionCount();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meal_consumptions_unlinked" },
+        (payload) => {
+          if (!isRelevant(payload)) return;
+          void fetchTotalToday();
+          void fetchMyConsumptionCount();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "service_voucher_uses" },
+        (payload: any) => {
+          const changedWindowId = payload?.new?.context_id ?? payload?.old?.context_id;
+          if (changedWindowId && !todayWindowIds.has(changedWindowId)) return;
+          void fetchTotalToday();
+          void fetchMyConsumptionCount();
+        },
+      )
+      .subscribe();
 
     return () => {
-      cancelled = true;
+      void supabase.removeChannel(channel);
     };
-  }, [userId, activeEventId, stageId, today, consumptionCount]);
+  }, [activeEventId, stageId, today, windows, fetchTotalToday, fetchMyConsumptionCount]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedManual(manualQuery.trim()), 320);
@@ -1553,10 +1652,30 @@ export default function AlimentacaoScanPage() {
               aria-label="Modo contínuo"
             />
           </label>
+
+          <button
+            type="button"
+            onClick={() => setIncidentDialogOpen(true)}
+            className="col-span-2 flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-left active:scale-[0.98] transition-transform"
+          >
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold leading-tight truncate">Reportar Ocorrência</p>
+              <p className="text-[10px] text-muted-foreground">Falta de comida, fila, restrição não atendida etc.</p>
+            </div>
+          </button>
         </div>
 
         <SyncStatusLine online={online} />
       </main>
+
+      <FoodIncidentDialog
+        open={incidentDialogOpen}
+        onOpenChange={setIncidentDialogOpen}
+        preselectedWindowId={windowId || null}
+        eventId={activeEventId}
+        stageId={stageId}
+      />
 
       <JanelaSheet
         open={janelaSheetOpen}

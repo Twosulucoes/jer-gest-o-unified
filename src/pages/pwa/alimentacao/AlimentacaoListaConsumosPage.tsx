@@ -15,12 +15,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import {
-  UtensilsCrossed, Search, Phone, Clock, Download, X, AlertTriangle, List,
+  UtensilsCrossed, Search, Phone, Clock, Download, X, List,
 } from "lucide-react";
 import { formatPhone, phoneMask } from "@/lib/phoneUtils";
 import { downloadCsv } from "@/lib/reportExport";
 import { useTodayString } from "@/hooks/useTodayString";
 import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
+import { mealWindowStatus } from "@/lib/mealWindowStatus";
+import { AlimentacaoDuplicateAlert } from "@/components/pwa/alimentacao/AlimentacaoDuplicateAlert";
 
 interface MealWindow {
   id: string;
@@ -49,6 +51,7 @@ interface Consumption {
   window_label: string;
   meal_type_name: string;
   isVoucher?: boolean;
+  isUnlinked?: boolean;
 }
 
 export default function AlimentacaoListaConsumosPage() {
@@ -118,7 +121,7 @@ export default function AlimentacaoListaConsumosPage() {
       .lt("consumed_at", endIsoExclusive);
     if (stageId) consQuery = consQuery.eq("meal_windows.event_stage_id", stageId);
 
-    const [consumptionsRes, voucherUsesRes] = await Promise.all([
+    const [consumptionsRes, voucherUsesRes, unlinkedRes] = await Promise.all([
       consQuery.order("consumed_at", { ascending: false }),
 
       windowIds.length > 0
@@ -135,6 +138,15 @@ export default function AlimentacaoListaConsumosPage() {
             .in("context_id", windowIds)
             .gte("used_at", startIso)
             .lt("used_at", endIsoExclusive)
+        : Promise.resolve({ data: [] as any[] }),
+
+      windowIds.length > 0
+        ? (supabase as any)
+            .from("meal_consumptions_unlinked")
+            .select("id, consumed_at, meal_window_id, qr_code")
+            .in("meal_window_id", windowIds)
+            .gte("consumed_at", startIso)
+            .lt("consumed_at", endIsoExclusive)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
@@ -182,8 +194,31 @@ export default function AlimentacaoListaConsumosPage() {
       };
     });
 
+    const unlinked: Consumption[] = (unlinkedRes.data || []).map((u: any) => {
+      const win = windowList.find(w => w.id === u.meal_window_id);
+      return {
+        id: u.id,
+        consumed_at: u.consumed_at,
+        participant_id: `unlinked:${u.id}`,
+        meal_window_id: u.meal_window_id || "",
+        full_name: `QR não vinculado (${u.qr_code})`,
+        cpf: null,
+        photo_url: null,
+        guardian_name: null,
+        guardian_phone: null,
+        coach_name: null,
+        coach_phone: null,
+        delegation_name: null,
+        delegation_id: null,
+        participant_type: null,
+        window_label: win ? `${fmtTime(win.start_time)}-${fmtTime(win.end_time)}` : "",
+        meal_type_name: win?.meal_type_name || "",
+        isUnlinked: true,
+      };
+    });
+
     setConsumptions(
-      [...regular, ...vouchers].sort((a, b) => b.consumed_at.localeCompare(a.consumed_at))
+      [...regular, ...vouchers, ...unlinked].sort((a, b) => b.consumed_at.localeCompare(a.consumed_at))
     );
     setLoading(false);
   }
@@ -193,28 +228,16 @@ export default function AlimentacaoListaConsumosPage() {
     return t.slice(0, 5);
   }
 
-  const now = new Date().toISOString();
-  const activeWindowId = windows.find(w => w.start_time <= now && w.end_time >= now)?.id;
+  const activeWindowId = useMemo(
+    () => windows.find(w => mealWindowStatus(w.service_date, w.start_time, w.end_time) === "ativa")?.id,
+    [windows],
+  );
 
   const delegations = useMemo(() => {
     const m = new Map<string, string>();
     consumptions.forEach(c => { if (c.delegation_id && c.delegation_name) m.set(c.delegation_id, c.delegation_name); });
     return Array.from(m.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [consumptions]);
-
-  const duplicateParticipantIds = useMemo(() => {
-    const source = windowFilter !== "all"
-      ? consumptions.filter(c => c.meal_window_id === windowFilter)
-      : consumptions;
-    const pairCount = new Map<string, number>();
-    source.forEach(c => {
-      const key = `${c.participant_id}|${c.meal_window_id}`;
-      pairCount.set(key, (pairCount.get(key) || 0) + 1);
-    });
-    const dups = new Set<string>();
-    pairCount.forEach((count, key) => { if (count > 1) dups.add(key.split("|")[0]); });
-    return dups;
-  }, [consumptions, windowFilter]);
 
   const filtered = useMemo(() => {
     return consumptions.filter(c => {
@@ -311,15 +334,11 @@ export default function AlimentacaoListaConsumosPage() {
           <span className="font-semibold text-foreground">{filtered.length}</span> consumos registrados
         </p>
 
-        {duplicateParticipantIds.size > 0 && (
-          <div className="rounded-lg border border-yellow-500/40 bg-yellow-50 dark:bg-yellow-950/30 px-3 py-2.5 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
-            <span className="text-xs text-yellow-800 dark:text-yellow-200">
-              ℹ️ <span className="font-semibold">{duplicateParticipantIds.size} participante{duplicateParticipantIds.size > 1 ? "s" : ""}</span>{" "}
-              consumiu mais de uma vez {windowFilter !== "all" ? "nesta janela" : "hoje"}
-            </span>
-          </div>
-        )}
+        <AlimentacaoDuplicateAlert
+          eventId={activeEventId}
+          eventStageId={stageId}
+          serviceDate={today}
+        />
 
         {/* Search */}
         <div className="relative">
@@ -376,12 +395,7 @@ export default function AlimentacaoListaConsumosPage() {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{c.full_name}</p>
-                      <div className="flex items-center gap-1">
-                        {c.delegation_name && <p className="text-xs text-muted-foreground truncate">{c.delegation_name}</p>}
-                        {duplicateParticipantIds.has(c.participant_id) && (
-                          <Badge variant="warning" className="text-[10px] px-1 shrink-0">⚠️ Duplicado</Badge>
-                        )}
-                      </div>
+                      {c.delegation_name && <p className="text-xs text-muted-foreground truncate">{c.delegation_name}</p>}
                     </div>
                   </div>
 
@@ -399,7 +413,11 @@ export default function AlimentacaoListaConsumosPage() {
 
                   {/* Phone badges */}
                   <div className="pt-1 border-t border-border">
-                    {c.isVoucher ? (
+                    {c.isUnlinked ? (
+                      <Badge variant="warning" className="text-[10px] px-1.5">
+                        QR não vinculado a participante
+                      </Badge>
+                    ) : c.isVoucher ? (
                       <Badge variant="secondary" className="text-[10px] px-1.5">
                         {c.participant_type === "voucher_anonimo" ? "Voucher Anônimo" : "Voucher Nominal"}
                       </Badge>

@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { downloadXlsx } from "@/lib/reportExport";
+import { isMealWindowClosed } from "@/lib/mealWindowStatus";
 
 type DivergenceType = "missing_consumption" | "incident_attempt" | "all";
 
@@ -74,7 +75,7 @@ export default function AlimentacaoDivergenciasPage() {
       let winQuery = (supabase as any)
         .from("meal_windows")
         .select(`
-          id, label, 
+          id, label, service_date, start_time, end_time,
           meal_types(name),
           meal_window_eligibility(*)
         `)
@@ -136,8 +137,13 @@ export default function AlimentacaoDivergenciasPage() {
       });
 
       const missing: any[] = [];
+      const now = new Date();
 
       for (const win of windows) {
+        // Janela ainda aberta ou futura não é "ausência" — o participante
+        // ainda pode consumir antes dela encerrar.
+        if (!isMealWindowClosed(win.service_date, win.end_time, now)) continue;
+
         const rules = win.meal_window_eligibility || [];
         const winConsumptions = new Set(consumptions?.filter(c => c.meal_window_id === win.id).map(c => c.participant_id));
 
