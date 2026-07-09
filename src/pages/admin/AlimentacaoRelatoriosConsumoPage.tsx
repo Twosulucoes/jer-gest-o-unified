@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { KpiStatCard } from "@/components/shared/KpiStatCard";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -373,27 +374,27 @@ export default function AlimentacaoRelatoriosConsumoPage() {
 
       {/* ── Summary cards ────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SummaryCard
-          title="Total Refeições"
+        <KpiStatCard
+          label="Total Refeições"
           value={resumo.totalRefeicoes}
           icon={<Utensils className="h-4 w-4 text-muted-foreground" />}
           loading={isLoading}
         />
-        <SummaryCard
-          title="Tempo real"
+        <KpiStatCard
+          label="Tempo real"
           value={resumo.totalRealtime}
           sub={resumo.totalRefeicoes > 0 ? `${resumo.pctRealtime}%` : undefined}
           icon={<Wifi className="h-4 w-4 text-green-600" />}
           loading={isLoading}
         />
-        <SummaryCard
-          title="Em fila offline"
+        <KpiStatCard
+          label="Em fila offline"
           value={resumo.totalQueue}
           icon={<WifiOff className="h-4 w-4 text-amber-600" />}
           loading={isLoading}
         />
-        <SummaryCard
-          title="Duplicidades"
+        <KpiStatCard
+          label="Duplicidades"
           value={resumo.totalDuplicidade}
           icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
           loading={isLoading}
@@ -515,41 +516,6 @@ export default function AlimentacaoRelatoriosConsumoPage() {
 }
 
 // ── Shared card wrapper ───────────────────────────────────────────────────────
-
-function SummaryCard({
-  title,
-  value,
-  sub,
-  icon,
-  loading,
-}: {
-  title: string;
-  value: number;
-  sub?: string;
-  icon: React.ReactNode;
-  loading: boolean;
-}) {
-  return (
-    <Card>
-      <CardHeader className="pb-1 pt-3 px-4">
-        <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-          {icon}
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 pb-3">
-        {loading ? (
-          <Skeleton className="h-7 w-16" />
-        ) : (
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold">{value.toLocaleString("pt-BR")}</span>
-            {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 function TableCard({
   title,

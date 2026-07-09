@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import ReverseConsumptionDialog from "@/components/admin/ReverseConsumptionDialog";
 import { ModuleStateBoundary } from "@/components/shared/ModuleStateBoundary";
+import { KpiStatCard } from "@/components/shared/KpiStatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -487,50 +488,33 @@ export default function AlimentacaoConsumoPage() {
 
       {selectedWindowId && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Refeição</p>
-              <p className="text-lg font-bold text-foreground">
-                {selectedWindowId === "all"
-                  ? `Todas (${windows.length})`
-                  : ((selectedMealType as any)?.name ?? "—")}
-              </p>
-            </CardContent>
-          </Card>
+          <KpiStatCard
+            label="Refeição"
+            value={
+              selectedWindowId === "all"
+                ? `Todas (${windows.length})`
+                : ((selectedMealType as any)?.name ?? "—")
+            }
+            valueClassName="text-lg font-bold"
+          />
 
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Consumos registrados</p>
-              <p className="text-2xl font-bold text-foreground">{kpiCount}</p>
-            </CardContent>
-          </Card>
+          <KpiStatCard label="Consumos registrados" value={kpiCount} />
 
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Vinculados</p>
-              <p className="text-2xl font-bold text-green-500">{linkedTotal}</p>
-            </CardContent>
-          </Card>
+          <KpiStatCard label="Vinculados" value={linkedTotal} tone="success" />
 
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Não vinculados</p>
-              <p className="text-2xl font-bold text-yellow-500">{unlinkedTotal}</p>
-            </CardContent>
-          </Card>
+          <KpiStatCard label="Não vinculados" value={unlinkedTotal} tone="warning" />
 
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <p className="text-xs text-muted-foreground">Local</p>
-              <p className="text-sm font-medium text-foreground">
-                {selectedWindowId === "all"
-                  ? "—"
-                  : ((selectedWindow as any)?.meal_locations?.name ||
-                    (selectedWindow as any)?.location ||
-                    "Não definido")}
-              </p>
-            </CardContent>
-          </Card>
+          <KpiStatCard
+            label="Local"
+            value={
+              selectedWindowId === "all"
+                ? "—"
+                : ((selectedWindow as any)?.meal_locations?.name ||
+                  (selectedWindow as any)?.location ||
+                  "Não definido")
+            }
+            valueClassName="text-sm font-medium"
+          />
         </div>
       )}
 
