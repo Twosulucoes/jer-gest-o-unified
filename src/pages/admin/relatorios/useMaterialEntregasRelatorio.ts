@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const SEM_ESCOLA = "Sem escola/delegação";
+export const CRACHA_NAO_VINCULADO = "Crachá não vinculado";
 
 export const PARTICIPANT_TYPE_LABELS: Record<string, string> = {
   athlete: "Atleta",
@@ -49,10 +50,13 @@ export interface MaterialDeliveryRow {
   delivered_at: string;
   method: string;
   status: string;
+  /** false = crachá bipado mas não reconhecido no momento do scan (material_deliveries_unlinked). */
+  linked: boolean;
   full_name: string;
   cpf: string | null;
   participant_type: string;
   escola: string;
+  qr_code?: string | null;
 }
 
 export interface MaterialSchoolBreakdownRow {
@@ -117,6 +121,23 @@ export function useMaterialEntregasRelatorio(eventId: string | null) {
     },
   });
 
+  // Crachás bipados mas ainda não vinculados a um participante — o kit já foi
+  // fisicamente entregue, só falta a reconciliação (mesmo padrão do PWA em
+  // MaterialListaPage: não pode ficar de fora da contagem de entregues).
+  const { data: unlinkedRaw = [], isLoading: loadingUnlinked } = useQuery({
+    queryKey: ["material_relatorio_unlinked", kitIds],
+    enabled: kitIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("material_deliveries_unlinked")
+        .select("id, kit_id, delivered_at, method, qr_code")
+        .in("kit_id", kitIds)
+        .order("delivered_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   // Universo de credenciados (ativos e credenciados) do evento, com a etapa
   // em que estão vinculados — usado para calcular "faltam" por kit/escola.
   const { data: credentialedRows = [] } = useQuery({
@@ -148,22 +169,40 @@ export function useMaterialEntregasRelatorio(eventId: string | null) {
     return map;
   }, [kitsRaw]);
 
-  const deliveries = useMemo<MaterialDeliveryRow[]>(
-    () =>
-      deliveriesRaw.map((r) => ({
-        id: r.id,
-        kit_id: r.kit_id,
-        kit_name: kitsMap.get(r.kit_id)?.name || "—",
-        delivered_at: r.delivered_at,
-        method: r.method,
-        status: r.status,
-        full_name: r.participants?.people?.full_name || "",
-        cpf: r.participants?.people?.cpf || null,
-        participant_type: r.participants?.participant_type || "",
-        escola: r.participants?.delegations?.institutions?.name || SEM_ESCOLA,
-      })),
-    [deliveriesRaw, kitsMap],
-  );
+  const deliveries = useMemo<MaterialDeliveryRow[]>(() => {
+    const linked: MaterialDeliveryRow[] = deliveriesRaw.map((r) => ({
+      id: r.id,
+      kit_id: r.kit_id,
+      kit_name: kitsMap.get(r.kit_id)?.name || "—",
+      delivered_at: r.delivered_at,
+      method: r.method,
+      status: r.status,
+      linked: true,
+      full_name: r.participants?.people?.full_name || "",
+      cpf: r.participants?.people?.cpf || null,
+      participant_type: r.participants?.participant_type || "",
+      escola: r.participants?.delegations?.institutions?.name || SEM_ESCOLA,
+    }));
+
+    const unlinked: MaterialDeliveryRow[] = unlinkedRaw.map((r) => ({
+      id: r.id,
+      kit_id: r.kit_id,
+      kit_name: kitsMap.get(r.kit_id)?.name || "—",
+      delivered_at: r.delivered_at,
+      method: r.method,
+      status: "active",
+      linked: false,
+      full_name: "",
+      cpf: null,
+      participant_type: "",
+      escola: CRACHA_NAO_VINCULADO,
+      qr_code: r.qr_code,
+    }));
+
+    return [...linked, ...unlinked].sort(
+      (a, b) => new Date(b.delivered_at).getTime() - new Date(a.delivered_at).getTime(),
+    );
+  }, [deliveriesRaw, unlinkedRaw, kitsMap]);
 
   const kits = useMemo<MaterialKitSummary[]>(() => {
     return kitsRaw.map((k) => {
@@ -230,15 +269,18 @@ export function useMaterialEntregasRelatorio(eventId: string | null) {
 
       const escolas = new Set<string>([...totalBySchool.keys(), ...deliveredBySchool.keys()]);
       for (const escola of escolas) {
-        const total = totalBySchool.get(escola) ?? 0;
         const delivered = deliveredBySchool.get(escola) ?? 0;
+        // Crachás não vinculados não pertencem ao universo de credenciados de
+        // nenhuma escola conhecida — não faz sentido calcular "faltam" aqui.
+        const isUnlinkedBucket = escola === CRACHA_NAO_VINCULADO;
+        const total = isUnlinkedBucket ? null : totalBySchool.get(escola) ?? 0;
         rows.push({
           kit_id: k.id,
           kit_name: k.name,
           escola,
           delivered,
           total,
-          faltam: Math.max(0, total - delivered),
+          faltam: total === null ? null : Math.max(0, total - delivered),
         });
       }
     }
@@ -249,6 +291,7 @@ export function useMaterialEntregasRelatorio(eventId: string | null) {
   const refetchAll = async () => {
     await qc.invalidateQueries({ queryKey: ["material_relatorio_kits", eventId] });
     await qc.invalidateQueries({ queryKey: ["material_relatorio_deliveries"] });
+    await qc.invalidateQueries({ queryKey: ["material_relatorio_unlinked"] });
     await qc.invalidateQueries({ queryKey: ["material_relatorio_credentialed", eventId] });
   };
 
@@ -256,7 +299,7 @@ export function useMaterialEntregasRelatorio(eventId: string | null) {
     kits,
     deliveries,
     schoolBreakdown,
-    isLoading: loadingKits || loadingDeliveries,
+    isLoading: loadingKits || loadingDeliveries || loadingUnlinked,
     refetchAll,
   };
 }

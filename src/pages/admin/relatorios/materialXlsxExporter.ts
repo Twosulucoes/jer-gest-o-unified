@@ -28,6 +28,7 @@ export async function exportMaterialXlsx(
 
   const totalEntregues = data.kits.reduce((s, k) => s + k.delivered, 0);
   const totalEstornadas = data.kits.reduce((s, k) => s + k.revoked, 0);
+  const totalNaoVinculadas = data.deliveries.filter((d) => !d.linked).length;
   const kitsAtivos = data.kits.filter((k) => k.is_active).length;
 
   // ── Aba 1: Resumo ───────────────────────────────────────────────
@@ -42,9 +43,10 @@ export async function exportMaterialXlsx(
   kpiHeader.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFEFEF" } }; });
 
   wsResumo.addRow(["Kits Ativos", kitsAtivos]);
-  wsResumo.addRow(["Entregues", totalEntregues]);
+  wsResumo.addRow(["Entregues (inclui crachás não vinculados)", totalEntregues]);
+  wsResumo.addRow(["Crachás não vinculados", totalNaoVinculadas]);
   wsResumo.addRow(["Estornadas", totalEstornadas]);
-  wsResumo.columns = [{ width: 30 }, { width: 20 }];
+  wsResumo.columns = [{ width: 42 }, { width: 20 }];
 
   // ── Aba 2: Por Kit ──────────────────────────────────────────────
   const wsKit = wb.addWorksheet("Por Kit");
@@ -83,20 +85,21 @@ export async function exportMaterialXlsx(
   wsDet.addRow([meta.eventName]).getCell(1).font = { bold: true };
   wsDet.addRow([`Gerado em: ${meta.generatedAt.toLocaleString("pt-BR")}`]);
   wsDet.addRow([]);
-  const detHeader = wsDet.addRow(["Participante", "CPF", "Escola", "Kit", "Tipo", "Data/Hora", "Método", "Status"]);
+  const detHeader = wsDet.addRow(["Participante", "CPF / QR Code", "Escola", "Kit", "Tipo", "Data/Hora", "Método", "Status"]);
   detHeader.font = { bold: true };
   detHeader.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFEFEF" } }; });
   for (const d of data.deliveries) {
     const row = wsDet.addRow([
-      d.full_name || "—",
-      d.cpf || "—",
+      d.linked ? d.full_name || "—" : "Crachá não vinculado",
+      d.linked ? d.cpf || "—" : d.qr_code || "—",
       d.escola,
       d.kit_name,
-      ptLabel(d.participant_type),
+      d.linked ? ptLabel(d.participant_type) : "—",
       new Date(d.delivered_at).toLocaleString("pt-BR"),
       d.method,
       d.status === "active" ? "Entregue" : "Estornada",
     ]);
+    if (!d.linked) row.getCell(1).font = { color: { argb: "FFD97706" } };
     row.getCell(8).font = { color: { argb: d.status === "active" ? "FF16A34A" : "FFDC2626" } };
   }
   wsDet.columns = [

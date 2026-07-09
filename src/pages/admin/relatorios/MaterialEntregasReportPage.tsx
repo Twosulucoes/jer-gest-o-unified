@@ -29,6 +29,7 @@ import {
   FileText,
   FileSpreadsheet,
   School,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -102,6 +103,7 @@ export default function MaterialEntregasReportPage() {
       kitsAtivos: kits.filter((k) => k.is_active).length,
       entregues: kits.reduce((s, k) => s + k.delivered, 0),
       estornadas: kits.reduce((s, k) => s + k.revoked, 0),
+      naoVinculadas: deliveries.filter((d) => !d.linked).length,
       hoje: deliveries.filter((d) => d.status === "active" && new Date(d.delivered_at).toDateString() === today)
         .length,
     };
@@ -194,9 +196,9 @@ export default function MaterialEntregasReportPage() {
 
       {/* KPIs */}
       <section>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
+            Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-[100px]" />)
           ) : (
             <>
               <KpiCard icon={Package} label="Kits Ativos" value={totals.kitsAtivos} tint="bg-primary/10 text-primary" />
@@ -204,7 +206,15 @@ export default function MaterialEntregasReportPage() {
                 icon={PackageCheck}
                 label="Entregues"
                 value={totals.entregues}
+                sub="inclui crachás não vinculados"
                 tint="bg-emerald-500/10 text-emerald-600"
+              />
+              <KpiCard
+                icon={AlertTriangle}
+                label="Não Vinculadas"
+                value={totals.naoVinculadas}
+                sub="crachá bipado, sem nome ainda"
+                tint="bg-amber-500/10 text-amber-600"
               />
               <KpiCard
                 icon={RotateCcw}
@@ -400,12 +410,25 @@ export default function MaterialEntregasReportPage() {
                   {filteredDeliveries.map((d) => (
                     <tr key={d.id} className="border-b last:border-0">
                       <td className="px-4 py-2">
-                        <p className="font-medium">{d.full_name || "—"}</p>
-                        {d.cpf && <p className="text-xs text-muted-foreground">{d.cpf}</p>}
+                        {d.linked ? (
+                          <>
+                            <p className="font-medium">{d.full_name || "—"}</p>
+                            {d.cpf && <p className="text-xs text-muted-foreground">{d.cpf}</p>}
+                          </>
+                        ) : (
+                          <>
+                            <p className="flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400">
+                              <AlertTriangle className="h-3.5 w-3.5" /> Crachá não vinculado
+                            </p>
+                            <p className="font-mono text-xs text-muted-foreground">{d.qr_code}</p>
+                          </>
+                        )}
                       </td>
                       <td className="px-2 py-2 text-muted-foreground">{d.escola}</td>
                       <td className="px-2 py-2 text-muted-foreground">{d.kit_name}</td>
-                      <td className="px-2 py-2 text-muted-foreground">{ptLabel(d.participant_type)}</td>
+                      <td className="px-2 py-2 text-muted-foreground">
+                        {d.linked ? ptLabel(d.participant_type) : "—"}
+                      </td>
                       <td className="px-2 py-2 text-muted-foreground">
                         {format(new Date(d.delivered_at), "dd/MM/yyyy HH:mm")}
                       </td>
