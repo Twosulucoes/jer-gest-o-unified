@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -24,6 +24,11 @@ export default function AlimentacaoDashboardPage() {
   const [filterMealType, setFilterMealType] = useState("all");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // IDs das janelas exibidas na tela (data/etapa atuais) — usado para
+  // ignorar eventos realtime de consumos de outras janelas/etapas/datas
+  // e evitar refetch do dashboard inteiro a cada scan em qualquer evento.
+  const mealWindowIdsRef = useRef<Set<string>>(new Set());
+
   // Auto-refresh every 30 seconds (fallback caso o canal realtime caia)
   useEffect(() => {
     const interval = setInterval(() => setRefreshKey((k) => k + 1), 30000);
@@ -33,19 +38,30 @@ export default function AlimentacaoDashboardPage() {
   // M8: realtime — invalida o cache assim que algum consumo da etapa muda
   // (vinculado OU não vinculado — antes só escutava meal_consumptions, e
   // scans de QR não resolvido a participante nunca disparavam refresh).
+  // Filtra por meal_window_id no cliente (payload novo/antigo) porque a
+  // tabela não tem event_id próprio para usar o filtro nativo do canal —
+  // sem isso, um scan em qualquer outra etapa/data/evento disparava
+  // refetch completo deste dashboard.
   useEffect(() => {
     if (!eventId) return;
+    const handleChange = (payload: { new?: unknown; old?: unknown }) => {
+      const windowId =
+        (payload.new as { meal_window_id?: string } | undefined)?.meal_window_id ??
+        (payload.old as { meal_window_id?: string } | undefined)?.meal_window_id;
+      if (windowId && !mealWindowIdsRef.current.has(windowId)) return;
+      setRefreshKey((k) => k + 1);
+    };
     const channel = supabase
       .channel(`meal_consumptions_dashboard_${eventId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meal_consumptions" },
-        () => setRefreshKey((k) => k + 1),
+        handleChange,
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meal_consumptions_unlinked" },
-        () => setRefreshKey((k) => k + 1),
+        handleChange,
       )
       .subscribe();
     return () => {
@@ -67,6 +83,7 @@ export default function AlimentacaoDashboardPage() {
       return data;
     },
     enabled: !!eventId,
+    staleTime: 60_000,
   });
 
   // Meal windows for the selected date — restritos à etapa quando aplicável
@@ -86,7 +103,12 @@ export default function AlimentacaoDashboardPage() {
       return data;
     },
     enabled: !!eventId,
+    staleTime: 20_000,
   });
+
+  useEffect(() => {
+    mealWindowIdsRef.current = new Set(mealWindows.map((w) => w.id));
+  }, [mealWindows]);
 
   // Consumptions for the date — também filtradas por participantes da etapa.
   // Soma meal_consumptions (vinculado) + meal_consumptions_unlinked (QR não
@@ -124,6 +146,7 @@ export default function AlimentacaoDashboardPage() {
       ];
     },
     enabled: mealWindows.length > 0 && (!isStageScoped || !!stageParticipantIds),
+    staleTime: 15_000,
   });
 
   // Participants with delegations — filtra null (consumo avulso não tem
@@ -145,6 +168,7 @@ export default function AlimentacaoDashboardPage() {
       return data;
     },
     enabled: participantIds.length > 0,
+    staleTime: 30_000,
   });
 
   const participantDelegationMap = useMemo(
@@ -164,6 +188,7 @@ export default function AlimentacaoDashboardPage() {
       return data;
     },
     enabled: !!eventId,
+    staleTime: 60_000,
   });
 
   const delegationNameMap = useMemo(
@@ -209,15 +234,16 @@ export default function AlimentacaoDashboardPage() {
 
       if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
         const ids = Array.from(stageParticipantIds);
-        let count = 0;
-        for (let i = 0; i < ids.length; i += 200) {
-          const chunk = ids.slice(i, i + 200);
-          const { count: c } = await applyPresence(
-            supabase.from("participants").select("id", { count: "exact", head: true }).in("id", chunk),
-          );
-          count += c ?? 0;
-        }
-        return count;
+        const chunks: string[][] = [];
+        for (let i = 0; i < ids.length; i += 200) chunks.push(ids.slice(i, i + 200));
+        const results = await Promise.all(
+          chunks.map((chunk) =>
+            applyPresence(
+              supabase.from("participants").select("id", { count: "exact", head: true }).in("id", chunk),
+            ),
+          ),
+        );
+        return results.reduce((sum, { count: c }) => sum + (c ?? 0), 0);
       }
       if (isStageScoped) return 0;
       const { count, error } = await applyPresence(
@@ -227,6 +253,7 @@ export default function AlimentacaoDashboardPage() {
       return count ?? 0;
     },
     enabled: !!eventId && (!isStageScoped || !!stageParticipantIds),
+    staleTime: 15_000,
   });
 
   // Filtered consumptions — also apply stage participant filter when scoped
