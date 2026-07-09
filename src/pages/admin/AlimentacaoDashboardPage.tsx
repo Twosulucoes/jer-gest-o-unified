@@ -31,6 +31,8 @@ export default function AlimentacaoDashboardPage() {
   }, []);
 
   // M8: realtime — invalida o cache assim que algum consumo da etapa muda
+  // (vinculado OU não vinculado — antes só escutava meal_consumptions, e
+  // scans de QR não resolvido a participante nunca disparavam refresh).
   useEffect(() => {
     if (!eventId) return;
     const channel = supabase
@@ -38,6 +40,11 @@ export default function AlimentacaoDashboardPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meal_consumptions" },
+        () => setRefreshKey((k) => k + 1),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meal_consumptions_unlinked" },
         () => setRefreshKey((k) => k + 1),
       )
       .subscribe();
@@ -81,28 +88,50 @@ export default function AlimentacaoDashboardPage() {
     enabled: !!eventId,
   });
 
-  // Consumptions for the date — também filtradas por participantes da etapa
+  // Consumptions for the date — também filtradas por participantes da etapa.
+  // Soma meal_consumptions (vinculado) + meal_consumptions_unlinked (QR não
+  // resolvido a participante) — mesma definição de "consumo" já unificada em
+  // AlimentacaoConsumoPage.tsx; antes só lia meal_consumptions e todo scan
+  // avulso desaparecia dos cards, do gráfico e de "Delegações com maior
+  // consumo". Registros avulsos não têm participant_id, então não entram no
+  // filtro de escopo de etapa nem em "Delegações com maior consumo" (não há
+  // como atribuí-los a uma delegação) — só somam nos totais gerais.
   const { data: consumptions = [], isLoading, isError } = useQuery({
     queryKey: ["meal-consumptions-dash", eventId, filterDate, refreshKey, stageId, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
       const windowIds = mealWindows.map((w) => w.id);
       if (!windowIds.length) return [];
-      let q = supabase
+      let linkedQ = supabase
         .from("meal_consumptions")
         .select("id, meal_window_id, participant_id, consumed_at, method")
         .in("meal_window_id", windowIds);
       if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
-        q = q.in("participant_id", Array.from(stageParticipantIds));
+        linkedQ = linkedQ.in("participant_id", Array.from(stageParticipantIds));
       }
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
+      const unlinkedQ = (supabase as any)
+        .from("meal_consumptions_unlinked")
+        .select("id, meal_window_id, consumed_at, method")
+        .in("meal_window_id", windowIds);
+
+      const [{ data: linked, error: linkedError }, { data: unlinked, error: unlinkedError }] =
+        await Promise.all([linkedQ, unlinkedQ]);
+      if (linkedError) throw linkedError;
+      if (unlinkedError) throw unlinkedError;
+
+      return [
+        ...(linked ?? []),
+        ...(unlinked ?? []).map((c: any) => ({ ...c, participant_id: null as string | null })),
+      ];
     },
     enabled: mealWindows.length > 0 && (!isStageScoped || !!stageParticipantIds),
   });
 
-  // Participants with delegations
-  const participantIds = useMemo(() => [...new Set(consumptions.map((c) => c.participant_id))], [consumptions]);
+  // Participants with delegations — filtra null (consumo avulso não tem
+  // participant_id; incluí-lo em .in() quebraria a query).
+  const participantIds = useMemo(
+    () => [...new Set(consumptions.map((c) => c.participant_id).filter((id): id is string => !!id))],
+    [consumptions]
+  );
   const participantIdsKey = useMemo(() => participantIds.slice().sort().join(","), [participantIds]);
   const { data: participants = [] } = useQuery({
     queryKey: ["participants-dash", eventId, participantIdsKey],
@@ -150,17 +179,33 @@ export default function AlimentacaoDashboardPage() {
   // chegado (credentialed_at até o fim do dia) e não ter saído antes dele
   // (left_event_at). Sem isso, o denominador incluía quem ainda não tinha
   // chegado ou já tinha ido embora, inflando "Sem refeição hoje".
+  //
+  // Aplica filterDelegation também aqui: o numerador (consumingParticipantIds)
+  // já reflete o filtro de delegação via filteredConsumptions — sem aplicar
+  // o mesmo filtro no denominador, escolher uma delegação pequena fazia
+  // "Sem refeição hoje" comparar "consumidores só daquela delegação" contra
+  // "presentes de todo o evento", mostrando um número inflado sem sentido.
   const { data: totalParticipants = 0 } = useQuery({
-    queryKey: ["total-participants-meals-dash", eventId, stageId, filterDate, stageParticipantIds?.size ?? -1],
+    queryKey: [
+      "total-participants-meals-dash",
+      eventId,
+      stageId,
+      filterDate,
+      stageParticipantIds?.size ?? -1,
+      filterDelegation,
+    ],
     queryFn: async () => {
       const { endIsoExclusive } = dayRangeRoraima(filterDate);
-      const applyPresence = (q: any) =>
-        q
+      const applyPresence = (q: any) => {
+        let query = q
           .eq("needs_meals", true)
           .eq("is_active", true)
           .not("credentialed_at", "is", null)
           .lt("credentialed_at", endIsoExclusive)
           .or(`left_event_at.is.null,left_event_at.gte.${endIsoExclusive}`);
+        if (filterDelegation !== "all") query = query.eq("delegation_id", filterDelegation);
+        return query;
+      };
 
       if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
         const ids = Array.from(stageParticipantIds);
@@ -223,7 +268,11 @@ export default function AlimentacaoDashboardPage() {
     }
     filteredConsumptions.forEach((c) => {
       if (c.consumed_at) {
-        const hour = new Date(c.consumed_at).getHours();
+        // getHours() usa o fuso do navegador — um admin acessando de fora
+        // de Roraima via um horário deslocado no eixo X. consumed_at é
+        // timestamptz; convertemos para a hora fixa de Roraima (UTC-4,
+        // sem DST) em vez do fuso de quem está olhando a tela.
+        const hour = new Date(new Date(c.consumed_at).getTime() - 4 * 60 * 60 * 1000).getUTCHours();
         const key = `${hour.toString().padStart(2, "0")}h`;
         if (hours[key] !== undefined) hours[key]++;
       }
@@ -246,8 +295,10 @@ export default function AlimentacaoDashboardPage() {
 
   // Participants with zero consumptions today — usa filteredConsumptions para
   // refletir os filtros aplicados (delegação/refeição) e não o conjunto bruto.
+  // Filtra null (consumo avulso não tem participant_id — não deve contar
+  // como "1 participante que consumiu" no Set).
   const consumingParticipantIds = useMemo(
-    () => new Set(filteredConsumptions.map((c) => c.participant_id)),
+    () => new Set(filteredConsumptions.map((c) => c.participant_id).filter((id): id is string => !!id)),
     [filteredConsumptions]
   );
   const zeroConsumptionCount = Math.max(0, totalParticipants - consumingParticipantIds.size);

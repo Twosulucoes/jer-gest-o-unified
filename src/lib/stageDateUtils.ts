@@ -17,9 +17,17 @@ interface StageDates {
   status?: string;
 }
 
-/** Retorna 'YYYY-MM-DD' do fuso local. */
+/**
+ * Retorna 'YYYY-MM-DD' do fuso local do dispositivo (mesma convenção de
+ * useTodayString.ts/pwaScan.ts — o operador PWA está fisicamente em
+ * Roraima, então o fuso do dispositivo é o que importa). `toISOString()`
+ * usa UTC e fazia "hoje" virar o dia seguinte a partir de ~20h em Roraima
+ * (UTC-4) — mesma classe de bug já corrigida em pwaScan.ts — o que podia
+ * tirar a etapa vigente de `openStages` (StageContext) e do seletor de
+ * etapa da Scan horas antes do fim real do dia local.
+ */
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString("fr-CA");
 }
 
 /**

@@ -136,13 +136,25 @@ export default function AlimentacaoJanelasPage() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      // Bloquear exclusão se há consumos registrados nesta janela
-      const { count } = await supabase
-        .from("meal_consumptions")
-        .select("id", { count: "exact", head: true })
-        .eq("meal_window_id", id);
-      if ((count ?? 0) > 0) {
-        throw new Error(`Esta janela possui ${count} consumo(s) registrado(s) e não pode ser excluída. Desative-a em vez de excluir.`);
+      // Bloquear exclusão se há consumos registrados nesta janela — em
+      // meal_consumptions (vinculados) OU meal_consumptions_unlinked (QR
+      // não resolvido a participante). meal_consumptions_unlinked tem
+      // ON DELETE CASCADE para meal_windows: checar só a tabela vinculada
+      // deixava excluir (e apagar em cascata, sem aviso) janelas que só
+      // tinham consumo avulso registrado.
+      const [{ count: linkedCount }, { count: unlinkedCount }] = await Promise.all([
+        supabase
+          .from("meal_consumptions")
+          .select("id", { count: "exact", head: true })
+          .eq("meal_window_id", id),
+        (supabase as any)
+          .from("meal_consumptions_unlinked")
+          .select("id", { count: "exact", head: true })
+          .eq("meal_window_id", id),
+      ]);
+      const total = (linkedCount ?? 0) + (unlinkedCount ?? 0);
+      if (total > 0) {
+        throw new Error(`Esta janela possui ${total} consumo(s) registrado(s) e não pode ser excluída. Desative-a em vez de excluir.`);
       }
       const { error } = await supabase.from("meal_windows").delete().eq("id", id);
       if (error) throw error;

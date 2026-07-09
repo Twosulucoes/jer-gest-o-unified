@@ -102,7 +102,11 @@ export default function AlimentacaoPrevisaoPage() {
     enabled: !!eventId,
   });
 
-  // 4. Fetch Real-time Consumption Counts for these windows
+  // 4. Fetch Real-time Consumption Counts for these windows — soma
+  // meal_consumptions (vinculado) + meal_consumptions_unlinked (QR não
+  // resolvido a participante, mas liberado mesmo assim). Antes só contava
+  // vinculado, subestimando "Realizado"/"Ocupação"/"Saldo" e escondendo
+  // excedente real sobre a previsão quando havia consumo avulso.
   const windowIdsKey = windows.map(w => w.id).join(",");
   const { data: consumptionCounts = {} } = useQuery({
     queryKey: ["meal_consumption_counts", windowIdsKey],
@@ -110,16 +114,25 @@ export default function AlimentacaoPrevisaoPage() {
       const windowIds = windows.map(w => w.id);
       if (!windowIds.length) return {};
 
-      const { data, error } = await supabase
-        .from("meal_consumptions")
-        .select("meal_window_id")
-        .in("meal_window_id", windowIds)
-        .limit(50000);
+      const [{ data: linked, error: linkedError }, { data: unlinked, error: unlinkedError }] =
+        await Promise.all([
+          supabase
+            .from("meal_consumptions")
+            .select("meal_window_id")
+            .in("meal_window_id", windowIds)
+            .limit(50000),
+          (supabase as any)
+            .from("meal_consumptions_unlinked")
+            .select("meal_window_id")
+            .in("meal_window_id", windowIds)
+            .limit(50000),
+        ]);
 
-      if (error) throw error;
+      if (linkedError) throw linkedError;
+      if (unlinkedError) throw unlinkedError;
 
       const counts: Record<string, number> = {};
-      data.forEach(c => {
+      [...(linked ?? []), ...(unlinked ?? [])].forEach((c: any) => {
         counts[c.meal_window_id] = (counts[c.meal_window_id] || 0) + 1;
       });
       return counts;

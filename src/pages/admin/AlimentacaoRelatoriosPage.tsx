@@ -6,6 +6,7 @@ import { useActiveEventId } from "@/contexts/EventContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useStageScope } from "@/hooks/useStageScope";
 import { format } from "date-fns";
+import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 import {
   Download,
   Utensils,
@@ -125,14 +126,20 @@ export default function AlimentacaoRelatoriosPage() {
         unlinkedQ = unlinkedQ.eq("meal_windows.event_stage_id", stageId);
       }
 
+      // consumed_at é timestamptz; limites sem offset eram interpretados no
+      // fuso da sessão (tipicamente UTC), deslocando o "dia" filtrado em 4h
+      // em relação ao horário local de Roraima e cortando consumos do fim
+      // da noite (ex.: jantar após ~20h local) do dia a que pertencem.
       if (startDate) {
-        linkedQ = linkedQ.gte("consumed_at", `${startDate}T00:00:00`);
-        unlinkedQ = unlinkedQ.gte("consumed_at", `${startDate}T00:00:00`);
+        const { startIso } = dayRangeRoraima(startDate);
+        linkedQ = linkedQ.gte("consumed_at", startIso);
+        unlinkedQ = unlinkedQ.gte("consumed_at", startIso);
       }
 
       if (endDate) {
-        linkedQ = linkedQ.lte("consumed_at", `${endDate}T23:59:59`);
-        unlinkedQ = unlinkedQ.lte("consumed_at", `${endDate}T23:59:59`);
+        const { endIsoExclusive } = dayRangeRoraima(endDate);
+        linkedQ = linkedQ.lt("consumed_at", endIsoExclusive);
+        unlinkedQ = unlinkedQ.lt("consumed_at", endIsoExclusive);
       }
 
       if (delegationFilter !== "all") {
@@ -637,7 +644,13 @@ data.push({
   </CardContent>
 </Card>
 
-          {Array.from(totalByType.entries()).slice(0, 1).map(([k, v]) => (
+          {/* totalByType é um Map na ordem de primeira ocorrência (consumptions
+              vem ordenado por consumed_at desc) — sem o sort, este card mostrava
+              o tipo de refeição mais recente, não o de maior volume. */}
+          {Array.from(totalByType.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 1)
+            .map(([k, v]) => (
             <Card key={k}>
               <CardContent className="pt-4 text-center">
                 <p className="text-2xl font-bold">{v}</p>

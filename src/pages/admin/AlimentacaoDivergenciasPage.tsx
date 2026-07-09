@@ -40,16 +40,20 @@ export default function AlimentacaoDivergenciasPage() {
   const [filterDate, setFilterDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [search, setSearch] = useState("");
 
-  // 1. Fetch Incidents (Rejected Attempts)
+  // 1. Fetch Incidents (Rejected Attempts) — filtra por etapa quando
+  // escopado, igual à query de "Ausências" abaixo. Sem isso, o card/export
+  // resumo somava "Tentativas Recusadas" de TODAS as etapas do evento ao
+  // lado de "Ausências" já filtrada só pela etapa selecionada — granularidades
+  // diferentes exibidas como se fossem comparáveis.
   const { data: incidents = [], isLoading: loadingIncidents } = useQuery({
-    queryKey: ["meal-incidents", eventId, filterDate],
+    queryKey: ["meal-incidents", eventId, filterDate, isStageScoped ? stageId : null],
     enabled: !!eventId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      let q = (supabase as any)
         .from("meal_incidents")
         .select(`
           *,
-          meal_windows!inner(id, label, service_date, meal_types(name)),
+          meal_windows!inner(id, label, service_date, event_stage_id, meal_types(name)),
           participants(
             id,
             people(full_name),
@@ -60,6 +64,9 @@ export default function AlimentacaoDivergenciasPage() {
         .eq("meal_windows.event_id", eventId)
         .eq("meal_windows.service_date", filterDate);
 
+      if (isStageScoped && stageId) q = q.eq("meal_windows.event_stage_id", stageId);
+
+      const { data, error } = await q;
       if (error) throw error;
       return data as any[];
     }

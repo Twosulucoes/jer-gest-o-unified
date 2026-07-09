@@ -205,7 +205,8 @@ export default function AlimentacaoRelatoriosConsumoPage() {
       const { data, error } = await (supabase as any)
         .from("vw_consumo_por_operador")
         .select("operador_id, operador_nome")
-        .eq("event_id", eventId);
+        .eq("event_id", eventId)
+        .limit(20000);
       if (error) return [];
       const seen = new Set<string>();
       return (data ?? []).filter((r: any) => {
@@ -381,7 +382,7 @@ export default function AlimentacaoRelatoriosConsumoPage() {
         <SummaryCard
           title="Tempo real"
           value={resumo.totalRealtime}
-          sub={`${resumo.pctRealtime}%`}
+          sub={resumo.totalRefeicoes > 0 ? `${resumo.pctRealtime}%` : undefined}
           icon={<Wifi className="h-4 w-4 text-green-600" />}
           loading={isLoading}
         />

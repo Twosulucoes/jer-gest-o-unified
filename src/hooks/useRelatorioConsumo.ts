@@ -249,6 +249,10 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
   });
 
   // ── vw_consumo_por_dia ─────────────────────────────────────────────────────
+  // .limit() explícito nas 5 queries abaixo: sem ele, o PostgREST trunca em
+  // 1000 linhas por padrão — o mesmo truncamento silencioso já corrigido em
+  // completoQuery/resumoQuery (comentário acima), mas que ainda não tinha
+  // sido replicado aqui.
   const porDiaQuery = useQuery({
     queryKey: [...queryKey, "por-dia"],
     enabled,
@@ -257,7 +261,8 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
         .from("vw_consumo_por_dia")
         .select("*")
         .eq("event_id", eventId)
-        .order("data", { ascending: false });
+        .order("data", { ascending: false })
+        .limit(20000);
 
       if (etapaId) q = q.eq("event_stage_id", etapaId);
       if (dataInicio) q = q.gte("data", dataInicio);
@@ -278,7 +283,8 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
         .from("vw_consumo_por_janela")
         .select("*")
         .eq("event_id", eventId)
-        .order("data", { ascending: false });
+        .order("data", { ascending: false })
+        .limit(20000);
 
       if (etapaId) q = q.eq("event_stage_id", etapaId);
       if (dataInicio) q = q.gte("data", dataInicio);
@@ -299,7 +305,8 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
         .from("vw_consumo_por_operador")
         .select("*")
         .eq("event_id", eventId)
-        .order("data", { ascending: false });
+        .order("data", { ascending: false })
+        .limit(20000);
 
       if (etapaId) q = q.eq("event_stage_id", etapaId);
       if (dataInicio) q = q.gte("data", dataInicio);
@@ -321,7 +328,8 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
         .from("vw_erros_sync")
         .select("*")
         .eq("event_id", eventId)
-        .order("consumed_at", { ascending: false });
+        .order("consumed_at", { ascending: false })
+        .limit(20000);
 
       if (etapaId) q = q.eq("event_stage_id", etapaId);
       if (dataInicio) q = q.gte("janela_data", dataInicio);
@@ -342,7 +350,8 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
         .from("vw_consumo_por_etapa")
         .select("*")
         .eq("event_id", eventId)
-        .order("etapa_nome");
+        .order("etapa_nome")
+        .limit(20000);
 
       if (etapaId) q = q.eq("etapa_id", etapaId);
 
