@@ -19,6 +19,7 @@ export const ENQUETE_ROUTES = {
   cadastro: "/enquete",
   votar: "/enquete/votar",
   mural: "/enquete/mural",
+  sobre: "/enquete/sobre",
   direcao: `/enquete/${ENQUETE_DIRECAO_SLUG}`,
 } as const;
 
@@ -40,6 +41,9 @@ export const ENQUETE_TAGS = [
 ] as const;
 
 export type EnqueteTagId = (typeof ENQUETE_TAGS)[number]["id"];
+
+// Máximo de tags que um participante pode marcar no cadastro.
+export const ENQUETE_MAX_TAGS = 4;
 
 // Selos de zoeira — valores restritos por CHECK constraint no banco
 // (enq_participantes_selo_zoeira_check: selo_01..selo_05). Rótulos são só de UI.

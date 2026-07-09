@@ -258,6 +258,7 @@ const CdeConsultaPage = lazy(() => import("../pages/public/CdeConsultaPage"));
 const EnquetePage = lazy(() => import("../pages/enquete/EnquetePage"));
 const EnqueteVotarPage = lazy(() => import("../pages/enquete/EnqueteVotarPage"));
 const EnqueteMuralPage = lazy(() => import("../pages/enquete/EnqueteMuralPage"));
+const EnqueteSobrePage = lazy(() => import("../pages/enquete/EnqueteSobrePage"));
 const EnqueteDirecaoPage = lazy(() => import("../pages/enquete/EnqueteDirecaoPage"));
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
@@ -575,6 +576,7 @@ export const AppRoutes = () => (
       <Route path={ENQUETE_ROUTES.cadastro} element={<EnquetePage />} />
       <Route path={ENQUETE_ROUTES.votar} element={<EnqueteVotarPage />} />
       <Route path={ENQUETE_ROUTES.mural} element={<EnqueteMuralPage />} />
+      <Route path={ENQUETE_ROUTES.sobre} element={<EnqueteSobrePage />} />
       <Route path={ENQUETE_ROUTES.direcao} element={<EnqueteDirecaoPage />} />
 
       <Route path="*" element={<NotFound />} />
