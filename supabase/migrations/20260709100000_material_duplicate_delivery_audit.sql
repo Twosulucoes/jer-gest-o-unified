@@ -138,3 +138,20 @@ REVOKE ALL ON FUNCTION public.record_material_delivery FROM anon;
 GRANT EXECUTE ON FUNCTION public.record_material_delivery TO authenticated;
 REVOKE ALL ON FUNCTION public.record_material_delivery_unlinked FROM anon;
 GRANT EXECUTE ON FUNCTION public.record_material_delivery_unlinked TO authenticated;
+
+-- ─── Leitura das tentativas na tela de Entrega de Material ────────────
+-- audit_events já permite leitura para 'admin' (policy "Admin can read
+-- audit"). Esta policy adicional (permissiva, soma com a de admin) libera
+-- secretaria/coordenação técnica/material para ver SÓ as linhas de
+-- duplicate_delivery_attempt — nenhum outro tipo de evento de auditoria
+-- (pwa_access, scope_violation etc.) fica visível para esses perfis.
+CREATE POLICY "Material roles can read duplicate delivery attempts" ON public.audit_events
+  FOR SELECT TO authenticated
+  USING (
+    action = 'duplicate_delivery_attempt'
+    AND (
+      has_role(auth.uid(), 'secretaria')
+      OR has_role(auth.uid(), 'coordenacao_tecnica')
+      OR has_role(auth.uid(), 'material')
+    )
+  );
