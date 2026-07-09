@@ -83,6 +83,7 @@ const RelatoriosCredenciamentoPage = lazy(() => import("../pages/admin/relatorio
 const ExecucaoFisicaPage = lazy(() => import("../pages/admin/relatorios/ExecucaoFisicaPage"));
 const RelatorioConsolidadoPage = lazy(() => import("../pages/admin/relatorios/RelatorioConsolidadoPage"));
 const MaterialEntregasReportPage = lazy(() => import("../pages/admin/relatorios/MaterialEntregasReportPage"));
+const MaterialDuplicidadesReportPage = lazy(() => import("../pages/admin/relatorios/MaterialDuplicidadesReportPage"));
 const CompeticaoPublicacaoPage = lazy(() => import("../pages/admin/CompeticaoPublicacaoPage"));
 const CompeticaoBoletinsPage = lazy(() => import("../pages/admin/CompeticaoBoletinsPage"));
 const LinksPage = lazy(() => import("../pages/admin/LinksPage"));
@@ -446,6 +447,7 @@ export const AppRoutes = () => (
         <Route path="relatorios/osc" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><PrestacaoContasOscPage /></ProtectedRoute>} />
         <Route path="relatorios/execucao-fisica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ExecucaoFisicaPage /></ProtectedRoute>} />
         <Route path="relatorios/material" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "super_admin"]}><MaterialEntregasReportPage /></ProtectedRoute>} />
+        <Route path="relatorios/material-duplicidades" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "coordenacao_tecnica", "super_admin", "material"]}><MaterialDuplicidadesReportPage /></ProtectedRoute>} />
         <Route path="clonar-logistica" element={<ProtectedRoute allowedRoles={["admin", "secretaria", "super_admin"]}><ClonarLogisticaPage /></ProtectedRoute>} />
         <Route path="debug-publicados" element={<Navigate to="/super/debug-publicados" replace />} />
         <Route path="auth/email-templates" element={<Navigate to="/admin" replace />} />
