@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +38,7 @@ import {
   UserX,
   Search,
   Copy,
+  FileText,
 } from "lucide-react";
 
 interface MaterialKit {
@@ -1346,7 +1348,7 @@ export default function MaterialEntregaPage() {
 
       {/* Tentativas de entrega duplicada (crachá já recebeu este kit) */}
       <Card ref={duplicadasRef}>
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <Copy className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Tentativas de
             Duplicação
@@ -1356,12 +1358,20 @@ export default function MaterialEntregaPage() {
               </span>
             )}
           </CardTitle>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/relatorios/material-duplicidades">
+              <FileText className="mr-2 h-4 w-4" />
+              Relatório completo / declaração
+            </Link>
+          </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
             Crachás escaneados que já haviam recebido este kit — a entrega foi
             bloqueada (sem duplicar o material), mas a tentativa fica registrada
-            aqui para auditoria.
+            aqui para auditoria. Use o relatório completo para classificar cada
+            caso (erro técnico x tentativa real) e gerar uma declaração
+            individual para escolas/participantes.
           </p>
           {loadingDuplicates ? (
             <Skeleton className="h-16 w-full" />
