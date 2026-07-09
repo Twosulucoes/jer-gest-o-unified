@@ -9,6 +9,7 @@ import StageLayout from "@/components/StageLayout";
 import SuperAdminLayout from "@/components/SuperAdminLayout";
 import PwaRouteGuard from "@/components/pwa/PwaRouteGuard";
 import { COMPETITION_ROLES } from "@/config/accessControl";
+import { ENQUETE_ROUTES } from "@/lib/enquete";
 
 // Core Pages
 import Index from "../pages/Index";
@@ -252,6 +253,12 @@ const CdeAssinarPage = lazy(
   () => import("@/pages/public/CdeAssinarPage")
 );
 const CdeConsultaPage = lazy(() => import("../pages/public/CdeConsultaPage"));
+
+// Enquete de Reconhecimento JER 2026 (público, sem auth)
+const EnquetePage = lazy(() => import("../pages/enquete/EnquetePage"));
+const EnqueteVotarPage = lazy(() => import("../pages/enquete/EnqueteVotarPage"));
+const EnqueteMuralPage = lazy(() => import("../pages/enquete/EnqueteMuralPage"));
+const EnqueteDirecaoPage = lazy(() => import("../pages/enquete/EnqueteDirecaoPage"));
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
     <div className="space-y-4 text-center">
@@ -563,6 +570,13 @@ export const AppRoutes = () => (
       <Route path="/cde/recurso" element={<CdeRecursoPage />} />
       <Route path="/cde/consulta/:token" element={<CdeConsultaPage />} />
       <Route path="/cde/assinar/:token" element={<CdeAssinarPage />} />
+
+      {/* Enquete de Reconhecimento JER 2026 — público, sem ProtectedRoute */}
+      <Route path={ENQUETE_ROUTES.cadastro} element={<EnquetePage />} />
+      <Route path={ENQUETE_ROUTES.votar} element={<EnqueteVotarPage />} />
+      <Route path={ENQUETE_ROUTES.mural} element={<EnqueteMuralPage />} />
+      <Route path={ENQUETE_ROUTES.direcao} element={<EnqueteDirecaoPage />} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
