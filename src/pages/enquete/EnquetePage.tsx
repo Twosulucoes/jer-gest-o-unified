@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import { cn } from "@/lib/utils";
 import {
   ENQUETE_TAGS,
   ENQUETE_SELOS_ZOEIRA,
+  ENQUETE_MAX_TAGS,
+  ENQUETE_ROUTES,
   XP_POR_TAG,
   XP_POR_SUBJETIVA,
   calcXpPreview,
@@ -29,7 +32,7 @@ import {
   type EnqueteFinalizarCadastroResult,
 } from "@/lib/enquete";
 
-const XP_MAXIMO = ENQUETE_TAGS.length * XP_POR_TAG + 2 * XP_POR_SUBJETIVA;
+const XP_MAXIMO = ENQUETE_MAX_TAGS * XP_POR_TAG + 2 * XP_POR_SUBJETIVA;
 const SELO_NENHUM = "nenhum";
 
 interface CadastroSucesso {
@@ -58,7 +61,16 @@ export default function EnquetePage() {
   const progresso = Math.min(100, Math.round((xpAtual / XP_MAXIMO) * 100));
 
   function alternarTag(id: string) {
-    setTags((atual) => (atual.includes(id) ? atual.filter((t) => t !== id) : [...atual, id]));
+    setTags((atual) => {
+      if (atual.includes(id)) return atual.filter((t) => t !== id);
+
+      if (atual.length >= ENQUETE_MAX_TAGS) {
+        toast.error(`Você já marcou ${ENQUETE_MAX_TAGS} tags. Remova uma para trocar.`);
+        return atual;
+      }
+
+      return [...atual, id];
+    });
   }
 
   function selecionarSelo(value: string) {
@@ -173,6 +185,12 @@ export default function EnquetePage() {
           <p className="text-sm text-muted-foreground">
             Conte sua contribuição nos Jogos e concorra ao sorteio.
           </p>
+          <Link
+            to={ENQUETE_ROUTES.sobre}
+            className="mt-1 inline-block text-sm font-medium text-primary underline underline-offset-2"
+          >
+            Como funciona a enquete?
+          </Link>
         </div>
 
         <Card>
@@ -197,15 +215,23 @@ export default function EnquetePage() {
         <Card>
           <CardContent className="space-y-3 p-4">
             <div>
-              <p className="text-sm font-semibold">O que você fez nos Jogos?</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">O que você fez nos Jogos?</p>
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {tags.length} de {ENQUETE_MAX_TAGS}
+                </span>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Marque tudo que se aplica. Cada tag vale {XP_POR_TAG} XP.
+                Marque até {ENQUETE_MAX_TAGS} tags que mais combinam com você. Cada tag vale{" "}
+                {XP_POR_TAG} XP.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               {ENQUETE_TAGS.map((tag) => {
                 const selecionada = tags.includes(tag.id);
+                const limiteAtingido = !selecionada && tags.length >= ENQUETE_MAX_TAGS;
+
                 return (
                   <button
                     key={tag.id}
@@ -215,7 +241,8 @@ export default function EnquetePage() {
                       "flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-colors",
                       selecionada
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-background hover:bg-muted"
+                        : "border-border bg-background hover:bg-muted",
+                      limiteAtingido && "opacity-50"
                     )}
                   >
                     <span>{tag.emoji}</span>
