@@ -2,7 +2,28 @@ import { useQueries } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const STALE = 30_000; // Reduzido de 5min para 30s para sincronia com auditoria realtime
-const todayISO = () => new Date().toISOString().slice(0, 10);
+
+// Roraima usa o fuso America/Boa_Vista (UTC-4, sem horário de verão).
+// "Hoje" precisa ser o dia-calendário local — usar UTC (toISOString) atribuía
+// refeições/credenciais/partidas de depois de ~20h local ao dia seguinte.
+// Mesma convenção já usada em useStageDashboardData.ts (arquivo irmão).
+const todayISO = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Boa_Vista",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+const toRoraimaDate = (iso: string | null | undefined): string | null => {
+  if (!iso) return null;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Boa_Vista",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(iso));
+};
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try { return await fn(); } catch { return fallback; }
@@ -159,7 +180,8 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const query = supabase.from("meal_windows")
-            .select("id, service_date, meal_type_id, label");
+            .select("id, service_date, meal_type_id, label")
+            .limit(5000);
           if (eventId) query.eq("event_id", eventId);
           if (stageId) (query as any).eq("event_stage_id", stageId);
           const { data } = await query;
@@ -393,17 +415,43 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
 
   const dependent = useQueries({
     queries: [
-      // 0: meal_consumptions (via window IN)
+      // 0: meal_consumptions (linked) + meal_consumptions_unlinked (QR não
+      // resolvido a participante) + service_voucher_uses (service_kind=
+      // 'meals') via window IN. Antes só lia meal_consumptions — "Refeições"
+      // e "Refeições hoje" no resumo, e o gráfico/breakdown por delegação,
+      // ficavam sistematicamente subcontados sempre que havia consumo
+      // avulso ou por voucher (mesma definição de "consumo" já unificada em
+      // AlimentacaoConsumoPage.tsx: linked + unlinked + voucher).
       {
         queryKey: ["dash3", "meal_consumptions", eventId, windowIds.join(",")],
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { data, count } = await supabase.from("meal_consumptions")
-            .select("id, meal_window_id, consumed_at, participant_id", { count: "exact" })
-            .in("meal_window_id", windowIds)
-            .limit(15000);
-          return { list: data ?? [], totalCount: count ?? (data?.length || 0) };
+          const [linkedRes, unlinkedRes, voucherRes] = await Promise.all([
+            supabase.from("meal_consumptions")
+              .select("id, meal_window_id, consumed_at, participant_id", { count: "exact" })
+              .in("meal_window_id", windowIds)
+              .limit(15000),
+            (supabase as any).from("meal_consumptions_unlinked")
+              .select("id, meal_window_id, consumed_at", { count: "exact" })
+              .in("meal_window_id", windowIds)
+              .limit(15000),
+            supabase.from("service_voucher_uses")
+              .select("id, context_id, used_at", { count: "exact" })
+              .eq("service_kind", "meals")
+              .in("context_id", windowIds)
+              .limit(15000),
+          ]);
+          const linked = (linkedRes.data ?? []).map((c: any) => ({ ...c, participant_id: c.participant_id as string | null }));
+          const unlinked = (unlinkedRes.data ?? []).map((c: any) => ({
+            id: c.id, meal_window_id: c.meal_window_id, consumed_at: c.consumed_at, participant_id: null as string | null,
+          }));
+          const vouchers = (voucherRes.data ?? []).map((c: any) => ({
+            id: c.id, meal_window_id: c.context_id, consumed_at: c.used_at, participant_id: null as string | null,
+          }));
+          const list = [...linked, ...unlinked, ...vouchers];
+          const totalCount = (linkedRes.count ?? linked.length) + (unlinkedRes.count ?? unlinked.length) + (voucherRes.count ?? vouchers.length);
+          return { list, totalCount };
         }, { list: [], totalCount: 0 }),
       },
       // 1: transport_passengers boarded
@@ -499,13 +547,14 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // credentialed usa COUNT server-side (query 15) para evitar truncamento pelo limite de 1000 linhas do PostgREST
   const credentialed = (credentialedCountRes as number) ?? credentialedIds.size;
   const credActive = activeCreds.length; // total de credenciais ativas (pode incluir reemissões)
-  const credToday = C.filter((c) => (c.issued_at ?? c.created_at)?.slice(0, 10) === today).length;
+  const credToday = C.filter((c) => toRoraimaDate(c.issued_at ?? c.created_at) === today).length;
 
   // daily credenciamento (por credentialed_at)
   const credDailyMap = new Map<string, number>();
   for (const p of P) {
     if (!p.credentialed_at) continue;
-    const d = p.credentialed_at.slice(0, 10);
+    const d = toRoraimaDate(p.credentialed_at);
+    if (!d) continue;
     credDailyMap.set(d, (credDailyMap.get(d) ?? 0) + 1);
   }
   const credDaily: DailyPoint[] = [...credDailyMap.entries()]
@@ -535,7 +584,7 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
   // Alimentação
   const mtName = new Map(MT.map((m) => [m.id, m.name] as const));
   const winById = new Map(MW.map((w) => [w.id, w] as const));
-  const mealsToday = consumptions.filter((c) => (c.consumed_at ?? "").slice(0, 10) === today).length;
+  const mealsToday = consumptions.filter((c) => toRoraimaDate(c.consumed_at) === today).length;
 
   // daily empilhado por meal_type
   const dailyMap = new Map<string, Record<string, number>>();
@@ -559,10 +608,15 @@ export function useDashboardData(eventId?: string | null, stageId?: string | nul
       return out;
     });
 
-  // meals by delegation
+  // meals by delegation — consumo avulso/voucher não tem participant_id
+  // resolvível a uma delegação (não é "sem delegação" no sentido de um
+  // participante cadastrado sem delegação; simplesmente não é atribuível),
+  // então fica de fora deste breakdown, mesmo critério já usado em
+  // AlimentacaoDashboardPage.tsx ("Delegações com maior consumo").
   const partDel = new Map(P.map((p) => [p.id, p.delegation_id] as const));
   const mealByDel = new Map<string, number>();
   for (const c of consumptions) {
+    if (!c.participant_id) continue;
     const did = partDel.get(c.participant_id) ?? "__sem__";
     mealByDel.set(did, (mealByDel.get(did) ?? 0) + 1);
   }

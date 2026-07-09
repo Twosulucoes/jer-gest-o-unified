@@ -71,11 +71,38 @@ export default function AlimentacaoListaConsumosPage() {
   const [saving, setSaving] = useState(false);
 
   const today = useTodayString();
+  // Tick de 30s só para recalcular o badge 🟢 de janela ativa (activeWindowId)
+  // quando o relógio cruza o início/fim de uma janela — sem isso, o badge só
+  // mudava depois do próximo loadData(), mesmo com a aba aberta.
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const tick = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     loadData();
     // `today` é dependência: meia-noite passou ⇒ refetch para o dia novo.
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeEventId, stageId, today]);
+
+  // Realtime: qualquer consumo novo (vinculado, avulso ou voucher) na
+  // etapa/dia atual dispara um refetch — antes, esta tela só carregava uma
+  // vez por mount e ficava parada mesmo com scans acontecendo em outro
+  // dispositivo.
+  useEffect(() => {
+    if (!activeEventId) return;
+    const channel = supabase
+      .channel(`meal_lista_consumos_${activeEventId}_${stageId ?? "all"}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions_unlinked" }, () => loadData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "service_voucher_uses" }, () => loadData())
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeEventId, stageId, today]);
 
   async function loadData() {
@@ -105,6 +132,9 @@ export default function AlimentacaoListaConsumosPage() {
     const { startIso, endIsoExclusive } = dayRangeRoraima(today);
 
     // Step 2: consumptions + voucher uses in parallel
+    // .limit() explícito nas 3 queries: sem ele, ficam sujeitas ao corte
+    // padrão de 1000 linhas do PostgREST, subcontando silenciosamente o
+    // contador "X consumos registrados" e o CSV em dias de evento grande.
     let consQuery = supabase
       .from("meal_consumptions")
       .select(`
@@ -118,7 +148,8 @@ export default function AlimentacaoListaConsumosPage() {
       `)
       .eq("meal_windows.event_id", activeEventId)
       .gte("consumed_at", startIso)
-      .lt("consumed_at", endIsoExclusive);
+      .lt("consumed_at", endIsoExclusive)
+      .limit(5000);
     if (stageId) consQuery = consQuery.eq("meal_windows.event_stage_id", stageId);
 
     const [consumptionsRes, voucherUsesRes, unlinkedRes] = await Promise.all([
@@ -138,6 +169,7 @@ export default function AlimentacaoListaConsumosPage() {
             .in("context_id", windowIds)
             .gte("used_at", startIso)
             .lt("used_at", endIsoExclusive)
+            .limit(5000)
         : Promise.resolve({ data: [] as any[] }),
 
       windowIds.length > 0
@@ -147,6 +179,7 @@ export default function AlimentacaoListaConsumosPage() {
             .in("meal_window_id", windowIds)
             .gte("consumed_at", startIso)
             .lt("consumed_at", endIsoExclusive)
+            .limit(5000)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
@@ -229,8 +262,8 @@ export default function AlimentacaoListaConsumosPage() {
   }
 
   const activeWindowId = useMemo(
-    () => windows.find(w => mealWindowStatus(w.service_date, w.start_time, w.end_time) === "ativa")?.id,
-    [windows],
+    () => windows.find(w => mealWindowStatus(w.service_date, w.start_time, w.end_time, now) === "ativa")?.id,
+    [windows, now],
   );
 
   const delegations = useMemo(() => {

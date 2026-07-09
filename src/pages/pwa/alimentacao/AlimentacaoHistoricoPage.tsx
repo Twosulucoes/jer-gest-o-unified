@@ -26,27 +26,45 @@ export default function AlimentacaoHistoricoPage() {
   const [loading, setLoading] = useState(true);
   const today = useTodayString();
 
+  async function loadHistorico() {
+    setLoading(true);
+    const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+    let query = supabase
+      .from("meal_consumptions")
+      .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows!inner(event_id, event_stage_id, meal_type:meal_types(name))")
+      .eq("meal_windows.event_id", activeEventId)
+      .gte("consumed_at", startIso)
+      .lt("consumed_at", endIsoExclusive);
+
+    if (activeStageId) {
+      query = query.eq("meal_windows.event_stage_id", activeStageId);
+    }
+
+    const { data } = await query
+      .order("consumed_at", { ascending: false })
+      .limit(50);
+    setItems((data as any) || []);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
-      let query = supabase
-        .from("meal_consumptions")
-        .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows!inner(event_id, event_stage_id, meal_type:meal_types(name))")
-        .eq("meal_windows.event_id", activeEventId)
-        .gte("consumed_at", startIso)
-        .lt("consumed_at", endIsoExclusive);
+    loadHistorico();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeEventId, activeStageId, today]);
 
-      if (activeStageId) {
-        query = query.eq("meal_windows.event_stage_id", activeStageId);
-      }
-
-      const { data } = await query
-        .order("consumed_at", { ascending: false })
-        .limit(50);
-      setItems((data as any) || []);
-      setLoading(false);
-    })();
+  // Realtime: a lista ficava parada até o próximo mount/troca de dia — um
+  // consumo novo feito em outro dispositivo só aparecia depois de reabrir a
+  // tela.
+  useEffect(() => {
+    if (!activeEventId) return;
+    const channel = supabase
+      .channel(`meal_historico_${activeEventId}_${activeStageId ?? "all"}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions" }, () => loadHistorico())
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeEventId, activeStageId, today]);
 
   return (

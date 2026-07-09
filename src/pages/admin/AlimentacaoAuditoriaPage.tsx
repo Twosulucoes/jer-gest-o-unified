@@ -52,11 +52,36 @@ export default function AlimentacaoAuditoriaPage() {
   const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const logsQuery = useQuery({
-    queryKey: ["meal_audit_logs", eventId, stageId, actionFilter],
+  // meal_audit_logs não tem event_id/event_stage_id próprio nem FK declarada
+  // para meal_windows (Relationships: [] no schema — não dá pra usar embed
+  // do PostgREST), só meal_window_id solto. Por isso o escopo de
+  // evento/etapa precisa vir de uma lista de janelas buscada ANTES da
+  // query de logs — filtrar só depois do .limit(500), como antes, cortava
+  // a trilha do evento atual inteira sempre que outro evento tivesse
+  // gerado mais de 500 logs recentes, mostrando "nenhum registro" mesmo
+  // havendo entradas reais no banco.
+  const eventWindowsQuery = useQuery({
+    queryKey: ["meal_windows-for-audit-scope", eventId, stageId],
     queryFn: async () => {
+      let q = supabase.from("meal_windows").select("id").limit(5000);
+      if (eventId) q = q.eq("event_id", eventId);
+      if (stageId) q = q.eq("event_stage_id", stageId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []).map((w) => w.id);
+    },
+    enabled: canView && !!eventId,
+  });
+
+  const scopeWindowIds = eventWindowsQuery.data ?? [];
+
+  const logsQuery = useQuery({
+    queryKey: ["meal_audit_logs", eventId, stageId, actionFilter, scopeWindowIds.join(",")],
+    queryFn: async () => {
+      if (!scopeWindowIds.length) return [] as AuditRow[];
       let q = (supabase.from("meal_audit_logs") as any)
         .select("*")
+        .in("meal_window_id", scopeWindowIds)
         .order("created_at", { ascending: false })
         .limit(500);
       if (actionFilter !== "all") q = q.eq("action", actionFilter);
@@ -64,7 +89,7 @@ export default function AlimentacaoAuditoriaPage() {
       if (error) throw error;
       return (data ?? []) as AuditRow[];
     },
-    enabled: canView,
+    enabled: canView && !!eventId && eventWindowsQuery.isSuccess,
   });
 
   const windowIds = useMemo(
@@ -129,28 +154,20 @@ export default function AlimentacaoAuditoriaPage() {
   );
   const actorsMap = useMemo(() => new Map((actorsQuery.data ?? []).map((a: any) => [a.id, a])), [actorsQuery.data]);
 
+  // O escopo de evento/etapa já é aplicado na query (logsQuery só busca
+  // meal_audit_logs com meal_window_id em scopeWindowIds) — aqui só falta o
+  // filtro de busca textual.
   const filteredRows = useMemo(() => {
     const rows = logsQuery.data ?? [];
-    const eventScopedIds = new Set(
-      (windowsQuery.data ?? [])
-        .filter((w: any) => (eventId ? w.event_id === eventId : true) && (stageId ? w.event_stage_id === stageId : true))
-        .map((w: any) => w.id),
-    );
-
-    return rows
-      .filter((r) => {
-        if (!r.meal_window_id) return false;
-        return eventScopedIds.has(r.meal_window_id);
-      })
-      .filter((r) => {
-        if (!searchTerm) return true;
-        const part = r.participant_id ? partsMap.get(r.participant_id) : null;
-        const person = part ? peopleMap.get(part.person_id) : null;
-        const actor = r.actor_id ? actorsMap.get(r.actor_id) : null;
-        const haystack = [person?.full_name, person?.cpf, actor?.full_name, r.reason].filter(Boolean).join(" ").toLowerCase();
-        return haystack.includes(searchTerm.toLowerCase());
-      });
-  }, [logsQuery.data, windowsQuery.data, eventId, stageId, searchTerm, partsMap, peopleMap, actorsMap]);
+    if (!searchTerm) return rows;
+    return rows.filter((r) => {
+      const part = r.participant_id ? partsMap.get(r.participant_id) : null;
+      const person = part ? peopleMap.get(part.person_id) : null;
+      const actor = r.actor_id ? actorsMap.get(r.actor_id) : null;
+      const haystack = [person?.full_name, person?.cpf, actor?.full_name, r.reason].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(searchTerm.toLowerCase());
+    });
+  }, [logsQuery.data, searchTerm, partsMap, peopleMap, actorsMap]);
 
   return (
     <div className="animate-fade-in space-y-6">

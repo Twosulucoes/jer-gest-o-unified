@@ -167,6 +167,16 @@ export default function AlimentacaoPrevisaoPage() {
         }),
       ]);
 
+      // Os 3 RPCs eram silenciosamente engolidos aqui (`.data || []` sem
+      // checar `.error`) — get_present_participant_counts_by_profile lançava
+      // erro real no Postgres ("column p.category_slug does not exist",
+      // corrigido na migration 20260709020000) e "Presentes"/"Previsão"
+      // ficavam sempre 0 para qualquer janela sem regra própria, sem
+      // nenhum aviso na tela.
+      if (profileRes.error) throw profileRes.error;
+      if (delegationRes.error) throw delegationRes.error;
+      if (institutionRes.error) throw institutionRes.error;
+
       const profiles = (profileRes.data as any[]) || [];
       const delegations = (delegationRes.data as any[]) || [];
       const institutions = (institutionRes.data as any[]) || [];
@@ -188,12 +198,33 @@ export default function AlimentacaoPrevisaoPage() {
   const { data: enrolledTotal = 0 } = useQuery<number>({
     queryKey: ["meal_eligibility_enrolled_total", eventId, stageId],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_participant_counts_by_profile" as any, {
+      const { data, error } = await supabase.rpc("get_participant_counts_by_profile" as any, {
         p_event_id: eventId,
         p_stage_id: stageId,
       });
+      if (error) throw error;
       const rows = (data as any[]) || [];
       return rows.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
+    },
+    enabled: !!eventId,
+  });
+
+  // Lista individual (não agregada) dos presentes na data, usada só para
+  // deduplicar por participante em calculateForecast — eligibilityTotals
+  // continua sendo a fonte das contagens agregadas por dimensão (perfil/
+  // delegação/instituição) usadas quando a janela não tem regra própria.
+  const { data: presentParticipantsDetail = [] } = useQuery<
+    Array<{ participant_id: string; participant_type: string; delegation_id: string | null; institution_id: string | null }>
+  >({
+    queryKey: ["meal_eligibility_forecast_present_detail", eventId, stageId, filterDate],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_present_participants_detail" as any, {
+        p_event_id: eventId,
+        p_service_date: filterDate,
+        p_stage_id: stageId,
+      });
+      if (error) throw error;
+      return (data as any[]) || [];
     },
     enabled: !!eventId,
   });
@@ -203,23 +234,24 @@ export default function AlimentacaoPrevisaoPage() {
       return eligibilityTotals.total;
     }
 
-    let forecast = 0;
+    // Deduplica por participante: uma pessoa que se encaixa em mais de uma
+    // regra da mesma janela (ex.: participant_type=atleta E institution=X)
+    // antes era contada uma vez por regra que batia (soma), inflando a
+    // previsão. Agora cada participante conta no máximo uma vez, igual à
+    // união booleana (`rules.some(...)`) já usada em
+    // AlimentacaoDivergenciasPage.tsx para o mesmo modelo de regras.
     const rules = window.meal_window_eligibility;
-    
-    rules.forEach((rule: any) => {
-      if (rule.eligibility_type === "participant_type") {
-        const found = eligibilityTotals.profiles.find((p: any) => p.type === rule.participant_type_value);
-        forecast += Number(found?.count || 0);
-      } else if (rule.eligibility_type === "delegation") {
-        const found = eligibilityTotals.delegations.find((d: any) => d.id === rule.reference_id);
-        forecast += Number(found?.count || 0);
-      } else if (rule.eligibility_type === "institution") {
-        const found = eligibilityTotals.institutions.find((i: any) => i.id === rule.reference_id);
-        forecast += Number(found?.count || 0);
-      }
-    });
-
-    return forecast;
+    const matched = new Set<string>();
+    for (const p of presentParticipantsDetail) {
+      const isEligible = rules.some((rule: any) => {
+        if (rule.eligibility_type === "participant_type") return p.participant_type === rule.participant_type_value;
+        if (rule.eligibility_type === "delegation") return p.delegation_id === rule.reference_id;
+        if (rule.eligibility_type === "institution") return p.institution_id === rule.reference_id;
+        return false;
+      });
+      if (isEligible) matched.add(p.participant_id);
+    }
+    return matched.size;
   };
 
   const filteredWindows = useMemo(() => {

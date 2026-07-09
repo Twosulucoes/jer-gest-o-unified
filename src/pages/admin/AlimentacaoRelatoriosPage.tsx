@@ -100,6 +100,27 @@ export default function AlimentacaoRelatoriosPage() {
     queryFn: async () => {
       if (!eventId) return [];
 
+      // Janelas do evento/etapa — usadas para (a) escopar service_voucher_uses
+      // por context_id (a tabela não tem FK declarada para meal_windows, então
+      // o embed `meal_windows!inner()` do PostgREST não funciona nela — tem
+      // que ser um lookup manual) e (b) resolver os campos de exibição do
+      // voucher (janela/tipo de refeição), mesmo padrão já usado em
+      // AlimentacaoListaConsumosPage.tsx.
+      let windowsQ = supabase
+        .from("meal_windows")
+        .select("id, label, service_date, meal_type_id, event_stage_id, meal_types(name)")
+        .eq("event_id", eventId)
+        .limit(5000);
+      if (isStageScoped && stageId) windowsQ = windowsQ.eq("event_stage_id", stageId);
+      const { data: windowsData, error: windowsError } = await windowsQ;
+      if (windowsError) throw windowsError;
+      const windowList = windowsData ?? [];
+      const windowMap = new Map(windowList.map((w: any) => [w.id, w]));
+      const windowIds = windowList.map((w: any) => w.id);
+
+      // .limit() explícito: sem ele, as 3 queries ficam sujeitas ao corte
+      // padrão de 1000 linhas do PostgREST, subcontando silenciosamente
+      // "Total consumos"/os exports em eventos grandes.
       let linkedQ = supabase
         .from("meal_consumptions")
         .select(`
@@ -109,7 +130,8 @@ export default function AlimentacaoRelatoriosPage() {
         `)
         .eq("meal_windows.event_id", eventId)
         .not("meal_window_id", "is", null)
-        .order("consumed_at", { ascending: false });
+        .order("consumed_at", { ascending: false })
+        .limit(20000);
 
       let unlinkedQ = (supabase as any)
         .from("meal_consumptions_unlinked")
@@ -119,42 +141,63 @@ export default function AlimentacaoRelatoriosPage() {
         `)
         .eq("meal_windows.event_id", eventId)
         .not("meal_window_id", "is", null)
-        .order("consumed_at", { ascending: false });
+        .order("consumed_at", { ascending: false })
+        .limit(20000);
+
+      let voucherQ = windowIds.length > 0
+        ? supabase
+            .from("service_voucher_uses")
+            .select(`
+              id, used_at, context_id,
+              service_vouchers!inner(label, voucher_type, is_nominal, service_eventual_people(full_name))
+            `)
+            .eq("service_kind", "meals")
+            .in("context_id", windowIds)
+            .order("used_at", { ascending: false })
+            .limit(20000)
+        : null;
 
       if (isStageScoped && stageId) {
         linkedQ = linkedQ.eq("meal_windows.event_stage_id", stageId);
         unlinkedQ = unlinkedQ.eq("meal_windows.event_stage_id", stageId);
       }
 
-      // consumed_at é timestamptz; limites sem offset eram interpretados no
-      // fuso da sessão (tipicamente UTC), deslocando o "dia" filtrado em 4h
-      // em relação ao horário local de Roraima e cortando consumos do fim
-      // da noite (ex.: jantar após ~20h local) do dia a que pertencem.
+      // consumed_at/used_at são timestamptz; limites sem offset eram
+      // interpretados no fuso da sessão (tipicamente UTC), deslocando o
+      // "dia" filtrado em 4h em relação ao horário local de Roraima e
+      // cortando consumos do fim da noite (ex.: jantar após ~20h local) do
+      // dia a que pertencem.
       if (startDate) {
         const { startIso } = dayRangeRoraima(startDate);
         linkedQ = linkedQ.gte("consumed_at", startIso);
         unlinkedQ = unlinkedQ.gte("consumed_at", startIso);
+        if (voucherQ) voucherQ = voucherQ.gte("used_at", startIso);
       }
 
       if (endDate) {
         const { endIsoExclusive } = dayRangeRoraima(endDate);
         linkedQ = linkedQ.lt("consumed_at", endIsoExclusive);
         unlinkedQ = unlinkedQ.lt("consumed_at", endIsoExclusive);
+        if (voucherQ) voucherQ = voucherQ.lt("used_at", endIsoExclusive);
       }
 
       if (delegationFilter !== "all") {
         linkedQ = linkedQ.eq("participants.delegation_id", delegationFilter);
-        // QR não vinculado não tem delegação. Então não entra quando filtra delegação.
+        // QR não vinculado e voucher não têm delegação atribuível. Então não
+        // entram quando filtra delegação.
         unlinkedQ = unlinkedQ.eq("id", "00000000-0000-0000-0000-000000000000");
+        voucherQ = null;
       }
 
       const [
         { data: linkedData, error: linkedError },
         { data: unlinkedData, error: unlinkedError },
-      ] = await Promise.all([linkedQ, unlinkedQ]);
+        voucherRes,
+      ] = await Promise.all([linkedQ, unlinkedQ, voucherQ ?? Promise.resolve({ data: [], error: null })]);
 
       if (linkedError) throw linkedError;
       if (unlinkedError) throw unlinkedError;
+      if (voucherRes.error) throw voucherRes.error;
 
       let linked = (linkedData ?? []).map((c: any) => ({
         ...c,
@@ -176,12 +219,32 @@ display_delegation: "Não informado",
         qr_code: c.qr_code,
       }));
 
+      let vouchers = ((voucherRes.data as any[]) ?? []).map((u: any) => {
+        const win = windowMap.get(u.context_id);
+        const sv = u.service_vouchers;
+        const personName = sv?.service_eventual_people?.full_name || sv?.label || "Portador de Voucher";
+        return {
+          id: u.id,
+          consumed_at: u.used_at,
+          meal_window_id: u.context_id,
+          meal_windows: win ?? null,
+          source_type: "voucher",
+          participants: null,
+          display_name: personName,
+          display_delegation: "Não informado",
+          display_method: "voucher",
+          method: "voucher",
+          qr_code: null,
+        };
+      });
+
       if (mealTypeFilter !== "all") {
         linked = linked.filter((c: any) => c.meal_windows?.meal_type_id === mealTypeFilter);
         unlinked = unlinked.filter((c: any) => c.meal_windows?.meal_type_id === mealTypeFilter);
+        vouchers = vouchers.filter((c: any) => c.meal_windows?.meal_type_id === mealTypeFilter);
       }
 
-      return [...linked, ...unlinked].sort(
+      return [...linked, ...unlinked, ...vouchers].sort(
         (a: any, b: any) =>
           new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime(),
       );
@@ -190,10 +253,14 @@ display_delegation: "Não informado",
 
   const linkedConsumptions = consumptions.filter((c: any) => c.source_type === "linked");
   const unlinkedConsumptions = consumptions.filter((c: any) => c.source_type === "unlinked");
+  const voucherConsumptions = consumptions.filter((c: any) => c.source_type === "voucher");
 
   const totalByType = new Map<string, number>();
   const totalByDelegation = new Map<string, number>();
   const totalBySource = new Map<string, number>();
+
+  const sourceLabel = (sourceType: string) =>
+    sourceType === "unlinked" ? "Consumos avulsos" : sourceType === "voucher" ? "Voucher" : "Vinculados";
 
   consumptions.forEach((c: any) => {
     const typeName = c.meal_windows?.meal_types?.name || "Outro";
@@ -202,7 +269,7 @@ display_delegation: "Não informado",
     const delName = c.display_delegation || "Sem delegação";
     totalByDelegation.set(delName, (totalByDelegation.get(delName) || 0) + 1);
 
-    const sourceName = c.source_type === "unlinked" ? "Consumos avulsos" : "Vinculados";
+    const sourceName = sourceLabel(c.source_type);
     totalBySource.set(sourceName, (totalBySource.get(sourceName) || 0) + 1);
   });
 
@@ -212,8 +279,9 @@ display_delegation: "Não informado",
     const rows = ["Tipo,Participante/QR,Delegação,Refeição,Data/Hora,Método,QR"];
 
     for (const c of consumptions) {
+      const tipo = c.source_type === "unlinked" ? "CONSUMO AVULSO" : c.source_type === "voucher" ? "VOUCHER" : "VINCULADO";
       rows.push([
-        `"${c.source_type === "unlinked" ? "CONSUMO AVULSO" : "VINCULADO"}"`,
+        `"${tipo}"`,
         `"${c.display_name || ""}"`,
         `"${c.display_delegation || ""}"`,
         `"${c.meal_windows?.label || c.meal_windows?.meal_types?.name || ""}"`,
@@ -227,6 +295,7 @@ rows.push("");
 rows.push("RESUMO GERAL");
 rows.push(`Credenciais vinculadas,${linkedConsumptions.length}`);
 rows.push(`Leituras avulsas,${unlinkedConsumptions.length}`);
+rows.push(`Vouchers,${voucherConsumptions.length}`);
 rows.push(`Total de consumos,${consumptions.length}`);
 
     rows.push("");
@@ -251,6 +320,7 @@ try {
     { Categoria: "RESUMO GERAL", Valor: "" },
     { Categoria: "Credenciais vinculadas", Valor: linkedConsumptions.length },
     { Categoria: "Consumos avulsos", Valor: unlinkedConsumptions.length },
+    { Categoria: "Vouchers", Valor: voucherConsumptions.length },
     { Categoria: "Total de consumos", Valor: consumptions.length },
     { Categoria: "", Valor: "" },
     { Categoria: "TOTAIS POR TIPO", Valor: "" },
@@ -281,8 +351,16 @@ try {
         Método: c.display_method || "qr_scan",
       }));
 
+      const vouchersData = voucherConsumptions.map((c: any) => ({
+        Portador: c.display_name || "",
+        Refeição: c.meal_windows?.label || c.meal_windows?.meal_types?.name || "",
+        "Data/Hora": c.consumed_at
+          ? format(new Date(c.consumed_at), "dd/MM/yyyy HH:mm")
+          : "",
+      }));
+
 const detalheData = consumptions.map((c: any) => ({
-  Tipo: c.source_type === "unlinked" ? "CONSUMO AVULSO" : "VINCULADO",
+  Tipo: c.source_type === "unlinked" ? "CONSUMO AVULSO" : c.source_type === "voucher" ? "VOUCHER" : "VINCULADO",
   "Participante/QR": c.display_name || "",
   Delegação: c.display_delegation || "",
   Refeição: c.meal_windows?.label || c.meal_windows?.meal_types?.name || "",
@@ -303,6 +381,7 @@ const detalheData = consumptions.map((c: any) => ({
           { name: "Detalhe Geral", rows: detalheData },
           { name: "Vinculados", rows: vinculadosData },
           { name: "QR Nao Vinculados", rows: naoVinculadosData },
+          { name: "Vouchers", rows: vouchersData },
         ],
         filename,
       );
@@ -345,6 +424,7 @@ autoTable(doc, {
   body: [
     ["Participantes vinculados", linkedConsumptions.length.toString()],
     ["Consumos avulsos", unlinkedConsumptions.length.toString()],
+    ["Vouchers", voucherConsumptions.length.toString()],
     ["Total geral", consumptions.length.toString()],
   ],
   theme: "striped",
@@ -364,7 +444,7 @@ autoTable(doc, {
       doc.text("Detalhamento", 14, (doc as any).lastAutoTable.finalY + 10);
 
 const detailsTable = consumptions.map((c: any) => [
-  c.source_type === "unlinked" ? "CONSUMO AVULSO" : "VINCULADO",
+  c.source_type === "unlinked" ? "CONSUMO AVULSO" : c.source_type === "voucher" ? "VOUCHER" : "VINCULADO",
   c.display_name || "",
   c.display_delegation || "",
   c.meal_windows?.label || c.meal_windows?.meal_types?.name || "",
@@ -445,6 +525,7 @@ data.push({
   "Total Realizado": items.length,
   Vinculados: items.filter((i: any) => i.source_type === "linked").length,
   "Consumos Avulsos": items.filter((i: any) => i.source_type === "unlinked").length,
+  Vouchers: items.filter((i: any) => i.source_type === "voucher").length,
   Status: "Finalizado",
 });
 
@@ -640,6 +721,17 @@ data.push({
     </p>
     <p className="text-xs text-muted-foreground">
       Consumos avulsos
+    </p>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardContent className="pt-4 text-center">
+    <p className="text-2xl font-bold text-blue-500">
+      {voucherConsumptions.length}
+    </p>
+    <p className="text-xs text-muted-foreground">
+      Voucher
     </p>
   </CardContent>
 </Card>
