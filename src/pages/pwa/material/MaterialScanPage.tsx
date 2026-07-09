@@ -87,7 +87,6 @@ export default function MaterialScanPage() {
 
   const [kits, setKits] = useState<MaterialKit[]>([]);
   const [kitId, setKitId] = useState("");
-  const [kitCount, setKitCount] = useState(0);
   const [totalToday, setTotalToday] = useState(0);
   const [myCount, setMyCount] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -201,56 +200,6 @@ export default function MaterialScanPage() {
     if (kitId && kits.some((k) => k.id === kitId)) return;
     if (kits.length > 0) setKitId(kits[0].id);
   }, [kits]);
-
-  useEffect(() => {
-    if (!kitId) {
-      setKitCount(0);
-      return;
-    }
-    const fetchCount = async () => {
-      const [linkedRes, unlinkedRes] = await Promise.all([
-        (supabase as any)
-          .from("material_deliveries")
-          .select("*", { count: "exact", head: true })
-          .eq("kit_id", kitId)
-          .eq("status", "active"),
-        (supabase as any)
-          .from("material_deliveries_unlinked")
-          .select("*", { count: "exact", head: true })
-          .eq("kit_id", kitId),
-      ]);
-      setKitCount((linkedRes.count || 0) + (unlinkedRes.count || 0));
-    };
-    void fetchCount();
-
-    const channel = supabase
-      .channel(`material_deliveries_${kitId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "material_deliveries",
-          filter: `kit_id=eq.${kitId}`,
-        },
-        () => void fetchCount(),
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "material_deliveries_unlinked",
-          filter: `kit_id=eq.${kitId}`,
-        },
-        () => void fetchCount(),
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [kitId]);
 
   useEffect(() => {
     if (!activeEventId || kits.length === 0) {
@@ -860,18 +809,8 @@ export default function MaterialScanPage() {
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          <KpiCard label="Meus Registros" value={myCount} tone="blue" large />
-          <KpiCard label="Total Geral" value={totalToday} tone="default" large />
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <KpiCard label="Kit" value={kitCount} tone="blue" />
-          <KpiCard label="OK" value={telemetry.ok} tone="green" />
-          <KpiCard
-            label="Erro"
-            value={telemetry.error}
-            tone={telemetry.error > 0 ? "red" : "muted"}
-          />
+          <KpiCard label="Meus Registros" value={myCount} tone="blue" />
+          <KpiCard label="Total Geral" value={totalToday} tone="default" />
         </div>
 
         {!scannerOpen && (
@@ -1111,43 +1050,19 @@ function KpiCard({
   label,
   value,
   tone,
-  large,
 }: {
   label: string;
   value: number;
-  tone: "default" | "blue" | "green" | "red" | "muted";
-  large?: boolean;
+  tone: "default" | "blue";
 }) {
-  const valueClass = {
-    default: "text-foreground",
-    blue: "text-blue-400",
-    green: "text-green-400",
-    red: "text-red-400",
-    muted: "text-zinc-500",
-  }[tone];
+  const valueClass = tone === "blue" ? "text-blue-400" : "text-foreground";
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-border/70 bg-card/60 text-center",
-        large ? "px-3 py-3" : "px-2 py-2",
-      )}
-    >
-      <p
-        className={cn(
-          "font-bold uppercase tracking-wider text-muted-foreground",
-          large ? "text-[10px]" : "text-[9px]",
-        )}
-      >
+    <div className="rounded-xl border border-border/70 bg-card/60 px-3 py-3 text-center">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p
-        className={cn(
-          "mt-0.5 font-extrabold tabular-nums leading-none",
-          large ? "text-3xl" : "text-2xl",
-          valueClass,
-        )}
-      >
+      <p className={cn("mt-0.5 text-3xl font-extrabold tabular-nums leading-none", valueClass)}>
         {value}
       </p>
     </div>
