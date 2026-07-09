@@ -46,19 +46,29 @@ SELECT
     SELECT COUNT(*) FROM public.lodging_occupancies lo
     WHERE lo.participant_id = pa.id
   ), 0)                               AS lodging_nights,
+  -- voucher_uses_total era SUM(current_uses)::int (tipo integer) na versão
+  -- anterior — CREATE OR REPLACE VIEW não permite mudar o tipo de uma
+  -- coluna existente (rejeita com 42804 "cannot change data type"), então
+  -- o COUNT(*) (bigint por padrão) precisa do mesmo cast ::int explícito.
+  COALESCE((
+    SELECT COUNT(*)
+    FROM public.service_voucher_uses svu
+    JOIN public.service_vouchers sv ON sv.id = svu.voucher_id
+    WHERE sv.participant_id = pa.id
+  )::int, 0)                          AS voucher_uses_total,
+  -- Coluna nova precisa ir DEPOIS de voucher_uses_total: CREATE OR REPLACE
+  -- VIEW não permite reordenar/renomear colunas existentes, só acrescentar
+  -- ao final (Postgres trata qualquer troca de posição como "rename" e
+  -- rejeita com 42P16 — foi exatamente o que quebrou o preview do Supabase
+  -- na primeira versão desta migration, com meal_voucher_uses antes de
+  -- voucher_uses_total).
   COALESCE((
     SELECT COUNT(*)
     FROM public.service_voucher_uses svu
     JOIN public.service_vouchers sv ON sv.id = svu.voucher_id
     WHERE sv.participant_id = pa.id
       AND svu.service_kind = 'meals'
-  ), 0)                               AS meal_voucher_uses,
-  COALESCE((
-    SELECT COUNT(*)
-    FROM public.service_voucher_uses svu
-    JOIN public.service_vouchers sv ON sv.id = svu.voucher_id
-    WHERE sv.participant_id = pa.id
-  ), 0)                               AS voucher_uses_total
+  )::int, 0)                          AS meal_voucher_uses
 FROM public.people p
 JOIN  public.participants  pa ON pa.person_id    = p.id
 LEFT JOIN public.delegations   d  ON d.id            = pa.delegation_id
