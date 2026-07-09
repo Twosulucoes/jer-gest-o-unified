@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useUserSportLinks } from "@/hooks/useUserSportLinks";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -102,9 +103,10 @@ export function useMinhasModalidades() {
 
 export function usePartidasModalidade(sportEventId: string | null) {
   const eventId = useActiveEventId();
+  const qc = useQueryClient();
   usePwaAudit("resultados/partidas", eventId);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["partidas-modalidade", sportEventId, eventId],
     queryFn: async () => {
       if (!sportEventId || !eventId) return [];
@@ -162,12 +164,24 @@ export function usePartidasModalidade(sportEventId: string | null) {
     },
     enabled: !!sportEventId && !!eventId,
   });
+
+  useRealtimeSync({
+    channelName: `partidas-modalidade-${sportEventId}`,
+    tables: [{ table: "competition_matches", filter: `sport_event_id=eq.${sportEventId}` }],
+    onChange: () => qc.invalidateQueries({ queryKey: ["partidas-modalidade", sportEventId, eventId] }),
+    enabled: !!sportEventId && !!eventId,
+    debounceMs: 400,
+  });
+
+  return query;
 }
 
 // ─── Detalhe de uma partida ───────────────────────────────────────────────────
 
 export function usePartidaDetalhe(matchId: string | null) {
-  return useQuery({
+  const qc = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["partida-detalhe", matchId],
     queryFn: async () => {
       if (!matchId) return null;
@@ -220,12 +234,29 @@ export function usePartidaDetalhe(matchId: string | null) {
     },
     enabled: !!matchId,
   });
+
+  useRealtimeSync({
+    channelName: `partida-detalhe-${matchId}`,
+    tables: [
+      { table: "competition_matches", filter: `id=eq.${matchId}` },
+      { table: "match_scores", filter: `match_id=eq.${matchId}` },
+      { table: "competition_match_results", filter: `match_id=eq.${matchId}` },
+      { table: "match_user_assignments", filter: `match_id=eq.${matchId}` },
+    ],
+    onChange: () => qc.invalidateQueries({ queryKey: ["partida-detalhe", matchId] }),
+    enabled: !!matchId,
+    debounceMs: 400,
+  });
+
+  return query;
 }
 
 // ─── Árbitros da partida ──────────────────────────────────────────────────────
 
 export function useArbitrosPartida(matchId: string | null) {
-  return useQuery({
+  const qc = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["arbitros-partida", matchId],
     queryFn: async () => {
       if (!matchId) return [];
@@ -239,6 +270,16 @@ export function useArbitrosPartida(matchId: string | null) {
     },
     enabled: !!matchId,
   });
+
+  useRealtimeSync({
+    channelName: `arbitros-partida-${matchId}`,
+    tables: [{ table: "match_officials", filter: `match_id=eq.${matchId}` }],
+    onChange: () => qc.invalidateQueries({ queryKey: ["arbitros-partida", matchId] }),
+    enabled: !!matchId,
+    debounceMs: 400,
+  });
+
+  return query;
 }
 
 export function useAdicionarArbitro(matchId: string) {
@@ -398,7 +439,9 @@ export function usePublicarResultado(matchId: string) {
 // ─── Anexos ───────────────────────────────────────────────────────────────────
 
 export function useAnexosPartida(matchId: string | null) {
-  return useQuery({
+  const qc = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["anexos-partida", matchId],
     queryFn: async () => {
       if (!matchId) return [];
@@ -412,6 +455,16 @@ export function useAnexosPartida(matchId: string | null) {
     },
     enabled: !!matchId,
   });
+
+  useRealtimeSync({
+    channelName: `anexos-partida-${matchId}`,
+    tables: [{ table: "match_attachments", filter: `match_id=eq.${matchId}` }],
+    onChange: () => qc.invalidateQueries({ queryKey: ["anexos-partida", matchId] }),
+    enabled: !!matchId,
+    debounceMs: 400,
+  });
+
+  return query;
 }
 
 export function useUploadAnexo(matchId: string) {

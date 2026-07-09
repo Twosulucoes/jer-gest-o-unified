@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface MatchRow {
   id: string;
@@ -32,6 +33,35 @@ export default function CoordenacaoHomePage() {
 
   usePwaAudit("coordenacao-tecnica", activeEventId);
 
+  const fetchDashboardData = useCallback(async () => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const [todayRes, andamentoRes, finalizadasRes, totalRes, incidentsRes, agendaRes] = await Promise.all([
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("match_date", today),
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "in_progress"),
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finished"),
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
+      supabase.from("operational_incidents").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("incident_status", "pending"),
+      supabase
+        .from("competition_matches")
+        .select("id, match_date, start_time, status, sport_event_id, venue_id, venue:venues(name)")
+        .eq("event_id", activeEventId)
+        .eq("match_date", today)
+        .order("start_time", { ascending: true })
+        .limit(8),
+    ]);
+
+    setKpis({
+      partidasHoje: todayRes.count || 0,
+      emAndamento: andamentoRes.count || 0,
+      finalizadas: finalizadasRes.count || 0,
+      totalPartidas: totalRes.count || 0,
+      pendingIncidents: incidentsRes.count || 0,
+    });
+    setAgenda((agendaRes.data as any) || []);
+    setLoading(false);
+  }, [activeEventId]);
+
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -40,34 +70,22 @@ export default function CoordenacaoHomePage() {
       const { data: profile } = await supabase.from("profiles").select("active").eq("id", session.user.id).single();
       if (!profile?.active) { navigate("/pwa", { replace: true }); return; }
 
-      const today = new Date().toISOString().slice(0, 10);
-
-      const [todayRes, andamentoRes, finalizadasRes, totalRes, incidentsRes, agendaRes] = await Promise.all([
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("match_date", today),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "in_progress"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("status", "finished"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("event_id", activeEventId),
-        supabase.from("operational_incidents").select("id", { count: "exact", head: true }).eq("event_id", activeEventId).eq("incident_status", "pending"),
-        supabase
-          .from("competition_matches")
-          .select("id, match_date, start_time, status, sport_event_id, venue_id, venue:venues(name)")
-          .eq("event_id", activeEventId)
-          .eq("match_date", today)
-          .order("start_time", { ascending: true })
-          .limit(8),
-      ]);
-
-      setKpis({
-        partidasHoje: todayRes.count || 0,
-        emAndamento: andamentoRes.count || 0,
-        finalizadas: finalizadasRes.count || 0,
-        totalPartidas: totalRes.count || 0,
-        pendingIncidents: incidentsRes.count || 0,
-      });
-      setAgenda((agendaRes.data as any) || []);
-      setLoading(false);
+      await fetchDashboardData();
     })();
-  }, [navigate, activeEventId]);
+  }, [navigate, activeEventId, fetchDashboardData]);
+
+  // Realtime: partidas e ocorrências do evento ativo mudam em outros dispositivos
+  // (ex: coordenador registra incidente, mesa lança resultado) — refaz o fetch dos KPIs/agenda.
+  useRealtimeSync({
+    channelName: `coordenacao-home-${activeEventId ?? "none"}`,
+    tables: [
+      { table: "competition_matches", filter: `event_id=eq.${activeEventId}` },
+      { table: "operational_incidents", filter: `event_id=eq.${activeEventId}` },
+    ],
+    onChange: () => { fetchDashboardData(); },
+    enabled: !!activeEventId,
+    debounceMs: 400,
+  });
 
   // Status canônico de competition_matches: scheduled / in_progress / finished
   // (+ outros eventuais). Branches PT-BR (em_andamento, finalizada) removidos

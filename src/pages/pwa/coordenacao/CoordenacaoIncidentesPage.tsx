@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { AlertTriangle, ClipboardList, Filter, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -98,6 +99,16 @@ export default function CoordenacaoIncidentesPage() {
   useEffect(() => {
     fetchIncidents();
   }, [fetchIncidents]);
+
+  // Realtime: novas ocorrências/atualizações de status registradas por outros
+  // dispositivos devem aparecer aqui sem refresh manual.
+  useRealtimeSync({
+    channelName: `coordenacao-incidentes-${activeEventId ?? "none"}`,
+    tables: [{ table: "operational_incidents", filter: `event_id=eq.${activeEventId}` }],
+    onChange: () => { fetchIncidents(); },
+    enabled: !!activeEventId,
+    debounceMs: 400,
+  });
 
   const handleLoadMore = () => {
     fetchIncidents(true);

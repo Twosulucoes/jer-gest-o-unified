@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,28 +58,41 @@ export default function AlojamentoOcupacaoPage() {
   const [kpis, setKpis] = useState({ assigned: 0, total: 0, hospedados: 0 });
   const facilityId = getSelectedFacility();
 
-  useEffect(() => {
+  const fetchOcupacao = useCallback(async () => {
     if (!facilityId) {
       setLoading(false);
       setKpiLoading(false);
       return;
     }
-    (async () => {
-      const [{ data: occ }, { data: kpi }] = await Promise.all([
-        supabase.rpc("get_alojamento_ocupacao" as any, { p_facility_id: facilityId }),
-        supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId }),
-      ]);
-      setBlocks((Array.isArray(occ) ? occ : []) as BlockInfo[]);
-      setLoading(false);
-      const k = (kpi || {}) as Record<string, number>;
-      setKpis({
-        assigned: k.assigned_beds ?? 0,
-        total: Math.max(1, k.total_beds ?? 1),
-        hospedados: k.hospedados ?? 0,
-      });
-      setKpiLoading(false);
-    })();
+    const [{ data: occ }, { data: kpi }] = await Promise.all([
+      supabase.rpc("get_alojamento_ocupacao" as any, { p_facility_id: facilityId }),
+      supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId }),
+    ]);
+    setBlocks((Array.isArray(occ) ? occ : []) as BlockInfo[]);
+    setLoading(false);
+    const k = (kpi || {}) as Record<string, number>;
+    setKpis({
+      assigned: k.assigned_beds ?? 0,
+      total: Math.max(1, k.total_beds ?? 1),
+      hospedados: k.hospedados ?? 0,
+    });
+    setKpiLoading(false);
   }, [facilityId]);
+
+  useEffect(() => { fetchOcupacao(); }, [fetchOcupacao]);
+
+  // Outro aparelho pode fazer check-in/check-out ou alterar a estrutura de
+  // quartos deste local enquanto esta tela está aberta.
+  useRealtimeSync({
+    channelName: `alojamento-ocupacao-${facilityId || "sem-local"}`,
+    tables: [
+      { table: "lodging_occupancies", filter: `checked_in_location_id=eq.${facilityId}` },
+      { table: "lodging_units", filter: `location_id=eq.${facilityId}` },
+    ],
+    onChange: () => fetchOcupacao(),
+    enabled: !!facilityId,
+    debounceMs: 400,
+  });
 
   useEffect(() => {
     if (!search.trim() || search.length < 3) {

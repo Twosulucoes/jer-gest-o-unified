@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { toast } from "sonner";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import PwaLayout from "@/components/pwa/PwaLayout";
@@ -34,6 +35,20 @@ export default function RefereeProfilePage() {
       
       return data;
     },
+  });
+
+  // Sincronização em tempo real: se a coordenação técnica atualizar o
+  // status do cadastro (ex.: aprovação) em outro dispositivo, refletir aqui.
+  useRealtimeSync({
+    channelName: `pwa-arb-perfil-${user?.id}`,
+    tables: [
+      { table: "referee_profiles", filter: `user_id=eq.${user?.id}` },
+    ],
+    onChange: () => {
+      qc.invalidateQueries({ queryKey: ["referee-profile-pwa", user?.id] });
+    },
+    enabled: !!user?.id,
+    debounceMs: 400,
   });
 
   useEffect(() => {

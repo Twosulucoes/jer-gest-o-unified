@@ -34,6 +34,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import {
   AlertDialog,
@@ -746,6 +747,69 @@ export default function VincularCredencialPage() {
       setCreatingParticipant(false);
     }
   };
+
+  /**
+   * Reavalia o dono da credencial escaneada (Passo 1). Cobre o caso de dois
+   * operadores lendo o mesmo crachá quase ao mesmo tempo: se outro aparelho
+   * vincula/desvincula essa credencial enquanto esta tela ainda mostra o
+   * resultado da leitura, o estado aqui é atualizado sozinho — sem precisar
+   * reescanear — evitando que o operador tente vincular um código que
+   * acabou de ser assumido por outro dispositivo.
+   */
+  const refreshScannedCredential = async () => {
+    if (!scannedCode) return;
+
+    try {
+      const res = await resolveQrCredential(scannedCode, { eventId: activeEventId });
+      setResolved(res);
+
+      if (res) {
+        setCurrentOwner({
+          name: res.full_name || "Sem nome",
+          id: res.participant_id,
+        });
+
+        if (res.source !== "cpf") {
+          void fetchConsumption(res.participant_id);
+        } else {
+          setConsumptionData(null);
+        }
+      } else {
+        setCurrentOwner(null);
+        setConsumptionData(null);
+      }
+    } catch (err) {
+      console.error("refreshScannedCredential:", err);
+    }
+  };
+
+  // Sincroniza em tempo real com outros aparelhos: se a credencial
+  // atualmente escaneada nesta tela for vinculada/desvinculada em outro
+  // dispositivo (tabela `external_credentials`, habilitada para Realtime),
+  // refaz a resolução aqui automaticamente.
+  useRealtimeSync({
+    channelName: `pwa_credenciamento_vincular_${activeEventId ?? "sem-evento"}_${scannedCode ?? "sem-codigo"}`,
+    tables:
+      activeEventId && scannedCode
+        ? [
+            {
+              table: "external_credentials",
+              filter: `credential_code=eq.${scannedCode}`,
+            },
+          ]
+        : [],
+    onChange: (payload) => {
+      // O filtro do canal cobre só `credential_code` (a API de Realtime não
+      // combina duas condições aqui) — o mesmo código pode existir em outro
+      // evento (a unicidade é por evento), então confirmamos o event_id no
+      // cliente antes de refazer a resolução.
+      const row = (payload.new ?? payload.old) as { event_id?: string } | undefined;
+      if (row?.event_id && activeEventId && row.event_id !== activeEventId) return;
+      void refreshScannedCredential();
+    },
+    enabled: !!activeEventId && !!scannedCode,
+    debounceMs: 400,
+  });
 
   return (
     <PwaLayout backTo="/pwa" moduleTitle="Credenciamento">

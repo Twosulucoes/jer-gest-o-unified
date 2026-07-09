@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { toast } from "sonner";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -100,6 +101,20 @@ export default function ArbitragemAgendaPage() {
         phase_name: row.competition_matches?.competition_phases?.name ?? null,
       })) as AgendaRow[];
     },
+  });
+
+  // Sincronização em tempo real: convocação/confirmação/indisponibilidade
+  // feita em outro dispositivo deve refletir aqui sem refresh manual.
+  useRealtimeSync({
+    channelName: `pwa-arb-agenda-${user?.id}`,
+    tables: [
+      { table: "match_user_assignments", filter: `user_id=eq.${user?.id}` },
+    ],
+    onChange: () => {
+      qc.invalidateQueries({ queryKey: ["pwa-arb-agenda", user?.id, activeEventId] });
+    },
+    enabled: !!user?.id && !!activeEventId,
+    debounceMs: 400,
   });
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);

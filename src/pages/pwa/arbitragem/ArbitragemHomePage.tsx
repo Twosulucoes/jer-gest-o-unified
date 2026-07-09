@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
 import { PwaStatTriplet } from "@/components/pwa/PwaDashboardPrimitives";
 import { PwaActionGrid } from "@/components/pwa/PwaActionGrid";
@@ -51,6 +52,7 @@ export default function ArbitragemHomePage() {
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
   const stageId = useActiveStageId();
+  const qc = useQueryClient();
   const [refereeStatus, setRefereeStatus] = useState<string | null>(null);
   usePwaAudit("arbitragem");
 
@@ -109,6 +111,20 @@ export default function ArbitragemHomePage() {
         venue_name: row.competition_matches?.venues?.name ?? null,
       })) as AssignmentRow[];
     },
+  });
+
+  // Sincronização em tempo real: outros dispositivos/coordenação podem
+  // criar/alterar designações deste árbitro enquanto a tela está aberta.
+  useRealtimeSync({
+    channelName: `pwa-arb-home-${user?.id}`,
+    tables: [
+      { table: "match_user_assignments", filter: `user_id=eq.${user?.id}` },
+    ],
+    onChange: () => {
+      qc.invalidateQueries({ queryKey: ["pwa-arb-home-assignments", user?.id, activeEventId, stageId] });
+    },
+    enabled: !!user?.id && !!activeEventId,
+    debounceMs: 400,
   });
 
   const kpis = useMemo(() => {

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { resolveQrCredential } from "@/lib/resolveQrCredential";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
@@ -149,6 +150,17 @@ export default function TransporteEmbarquePage() {
   useEffect(() => {
     if (authorized === true) void fetchPassengers();
   }, [fetchPassengers, authorized]);
+
+  // Sincroniza embarques em tempo real: se outro dispositivo (ou o scanner
+  // dedicado em /pwa/transporte/scan) registrar um embarque nesta viagem,
+  // a lista atualiza sozinha.
+  useRealtimeSync({
+    channelName: `pwa-transporte-embarque-${tripId}`,
+    tables: [{ table: "transport_passengers", filter: `trip_id=eq.${tripId}` }],
+    onChange: () => { void fetchPassengers(); },
+    enabled: authorized === true && !!tripId,
+    debounceMs: 400,
+  });
 
   const boardedCount = passengers.filter((p) => p.boarded).length;
 

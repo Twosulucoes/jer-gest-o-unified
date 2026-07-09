@@ -28,6 +28,7 @@ import {
 } from "@/lib/alojamentoRpc";
 import { extractQrToken } from "@/lib/resolveQrCredential";
 import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { isVoucherQr, tryRedeemVoucher } from "@/lib/voucherScan";
 import { voucherErrorMessage, voucherSuccessMessage } from "@/lib/voucherMessages";
 import { getSystemMessage, getPwaLang } from "@/lib/systemMessages";
@@ -104,42 +105,54 @@ export default function AlojamentoScanPage() {
     loadFacilities();
   }, [eventId, stageId]);
 
-  useEffect(() => {
-    async function loadUnits() {
-      if (!facilityId) {
-        setUnits([]);
-        return;
-      }
-
-      // RPC para obter ocupação atual e calcular vagas
-      const { data: occData } = await supabase.rpc("get_alojamento_ocupacao" as any, { 
-        p_facility_id: facilityId 
-      });
-
-      // Pegamos os quartos do primeiro bloco (dummy block)
-      const rooms = (occData && Array.isArray(occData) && occData[0]?.rooms) || [];
-      
-      // Carregamos detalhes extras (restrição de gênero) que o RPC acima talvez não retorne completo
-      const { data: unitsDetail } = await supabase
-        .from("lodging_units")
-        .select("id, gender_restriction")
-        .eq("location_id", facilityId)
-        .eq("is_active", true);
-
-      const detailMap = new Map(unitsDetail?.map(u => [u.id, u.gender_restriction]) || []);
-
-      const enrichedUnits = rooms.map((r: any) => ({
-        id: r.id,
-        name: r.code,
-        capacity: r.capacity,
-        occupied: r.occupied,
-        gender_restriction: detailMap.get(r.id) || 'mixed'
-      }));
-      
-      setUnits(enrichedUnits);
+  const loadUnits = useCallback(async () => {
+    if (!facilityId) {
+      setUnits([]);
+      return;
     }
-    loadUnits();
+
+    // RPC para obter ocupação atual e calcular vagas
+    const { data: occData } = await supabase.rpc("get_alojamento_ocupacao" as any, {
+      p_facility_id: facilityId
+    });
+
+    // Pegamos os quartos do primeiro bloco (dummy block)
+    const rooms = (occData && Array.isArray(occData) && occData[0]?.rooms) || [];
+
+    // Carregamos detalhes extras (restrição de gênero) que o RPC acima talvez não retorne completo
+    const { data: unitsDetail } = await supabase
+      .from("lodging_units")
+      .select("id, gender_restriction")
+      .eq("location_id", facilityId)
+      .eq("is_active", true);
+
+    const detailMap = new Map(unitsDetail?.map(u => [u.id, u.gender_restriction]) || []);
+
+    const enrichedUnits = rooms.map((r: any) => ({
+      id: r.id,
+      name: r.code,
+      capacity: r.capacity,
+      occupied: r.occupied,
+      gender_restriction: detailMap.get(r.id) || 'mixed'
+    }));
+
+    setUnits(enrichedUnits);
   }, [facilityId]);
+
+  useEffect(() => { loadUnits(); }, [loadUnits]);
+
+  // Vagas/ocupação do quarto podem mudar por check-in/check-out feito em
+  // outro aparelho enquanto o operador está escolhendo a unidade aqui.
+  useRealtimeSync({
+    channelName: `alojamento-scan-unidades-${facilityId ?? "sem-local"}`,
+    tables: [
+      { table: "lodging_occupancies", filter: `checked_in_location_id=eq.${facilityId}` },
+      { table: "lodging_units", filter: `location_id=eq.${facilityId}` },
+    ],
+    onChange: () => loadUnits(),
+    enabled: !!facilityId,
+    debounceMs: 400,
+  });
 
   const handleFacilityChange = (val: string) => {
     const id = val === "none" ? null : val;

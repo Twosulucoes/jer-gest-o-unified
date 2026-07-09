@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Gavel, FileText, Paperclip } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 export default function DelegacaoProtestoDetalhePage() {
   const { id } = useParams();
@@ -14,19 +15,33 @@ export default function DelegacaoProtestoDetalhePage() {
   const [attachments, setAttachments] = useState<any[]>([]);
   const [audit, setAudit] = useState<any[]>([]);
 
-  useEffect(() => {
+  const fetchDetalhe = useCallback(async () => {
     if (!id) return;
-    (async () => {
-      const [p, a, au] = await Promise.all([
-        supabase.from("protests").select("*").eq("id", id).maybeSingle(),
-        supabase.from("protest_attachments").select("*").eq("protest_id", id),
-        supabase.from("protest_audit_log").select("*").eq("protest_id", id).order("performed_at", { ascending: false }),
-      ]);
-      setProtest(p.data);
-      setAttachments(a.data ?? []);
-      setAudit(au.data ?? []);
-    })();
+    const [p, a, au] = await Promise.all([
+      supabase.from("protests").select("*").eq("id", id).maybeSingle(),
+      supabase.from("protest_attachments").select("*").eq("protest_id", id),
+      supabase.from("protest_audit_log").select("*").eq("protest_id", id).order("performed_at", { ascending: false }),
+    ]);
+    setProtest(p.data);
+    setAttachments(a.data ?? []);
+    setAudit(au.data ?? []);
   }, [id]);
+
+  useEffect(() => {
+    fetchDetalhe();
+  }, [fetchDetalhe]);
+
+  useRealtimeSync({
+    channelName: `delegacao-protesto-detalhe-${id ?? "unscoped"}`,
+    tables: [
+      { table: "protests", filter: id ? `id=eq.${id}` : undefined },
+      { table: "protest_attachments", filter: id ? `protest_id=eq.${id}` : undefined },
+      { table: "protest_audit_log", filter: id ? `protest_id=eq.${id}` : undefined },
+    ],
+    onChange: fetchDetalhe,
+    enabled: !!id,
+    debounceMs: 400,
+  });
 
   const downloadFile = async (path: string, name: string) => {
     const { data } = await supabase.storage.from("protestos").createSignedUrl(path, 60);

@@ -15,6 +15,7 @@ import { PwaStatusBadge } from "@/components/pwa/PwaStatusBadge";
 import { useEventContext } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import PwaLayout from "@/components/pwa/PwaLayout";
 
 interface TripRow {
@@ -63,6 +64,22 @@ export default function TransporteHomePage() {
   }, [navigate, activeEventId, stageId]);
 
   useEffect(() => { fetchTrips(); }, [fetchTrips]);
+
+  // Sincroniza em tempo real: viagens do evento (troca de motorista/status) e
+  // passageiros (embarque em qualquer viagem) — transport_passengers não tem
+  // coluna de escopo por evento, então observamos a tabela sem filtro e
+  // deixamos o refetch reaplicar o filtro correto (event_id/stage) já usado
+  // em fetchTrips.
+  useRealtimeSync({
+    channelName: `pwa-transporte-home-${activeEventId || "none"}-${stageId || "all"}`,
+    tables: [
+      { table: "transport_trips", filter: `event_id=eq.${activeEventId}` },
+      { table: "transport_passengers" },
+    ],
+    onChange: () => { fetchTrips(); },
+    enabled: !!activeEventId,
+    debounceMs: 400,
+  });
 
   const handleCheckIn = async (tripId: string) => {
     if (!userId) return;

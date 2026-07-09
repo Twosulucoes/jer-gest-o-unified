@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 type IncidentDetail = {
   id: string;
@@ -111,6 +112,16 @@ export default function CoordenacaoIncidentePage() {
   useEffect(() => {
     fetchIncident();
   }, [fetchIncident]);
+
+  // Realtime: outro coordenador pode atualizar status/resposta deste mesmo
+  // incidente em outro dispositivo — mantém a tela sincronizada.
+  useRealtimeSync({
+    channelName: `coordenacao-incidente-${incidentId ?? "none"}`,
+    tables: [{ table: "operational_incidents", filter: `id=eq.${incidentId}` }],
+    onChange: () => { fetchIncident(); },
+    enabled: !!incidentId,
+    debounceMs: 400,
+  });
 
   const handleUpdate = async () => {
     if (!incidentId || !row) return;
