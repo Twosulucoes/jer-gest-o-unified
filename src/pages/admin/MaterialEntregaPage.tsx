@@ -84,16 +84,26 @@ interface PendingParticipantRow {
   escola: string;
 }
 
-interface DuplicateAttemptRow {
+interface DuplicateAttemptEntry {
   id: string;
   created_at: string;
+  operator_name: string | null;
+}
+
+interface DuplicateAttemptGroup {
+  recordId: string;
   linked: boolean;
   full_name: string;
   cpf: string | null;
   participant_type: string | null;
   escola: string;
   qr_code: string | null;
-  operator_name: string | null;
+  original: {
+    delivered_at: string | null;
+    method: string | null;
+    operator_name: string | null;
+  } | null;
+  attempts: DuplicateAttemptEntry[];
 }
 
 const SEM_ESCOLA = "Sem escola/delegação";
@@ -359,8 +369,8 @@ export default function MaterialEntregaPage() {
     },
   });
 
-  // Nome do participante das tentativas com crachá vinculado (busca pela
-  // entrega já existente, referenciada em record_id/payload.existing_delivery_id).
+  // Registro que efetivamente foi salvo no banco (o "vencedor" que bloqueou
+  // as reentregas), referenciado em record_id/payload.existing_delivery_id.
   const linkedAttemptDeliveryIds = useMemo(
     () =>
       Array.from(
@@ -373,20 +383,28 @@ export default function MaterialEntregaPage() {
     [duplicateAttemptsRaw],
   );
 
-  const { data: attemptParticipantsById = {} } = useQuery({
-    queryKey: ["material_duplicate_attempt_participants", linkedAttemptDeliveryIds],
+  const { data: originalDeliveriesById = {} } = useQuery({
+    queryKey: ["material_duplicate_attempt_originals", linkedAttemptDeliveryIds],
     enabled: linkedAttemptDeliveryIds.length > 0,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("material_deliveries")
         .select(
-          "id, participants!inner(participant_type, people!inner(full_name, cpf), delegations(institutions(name)))",
+          "id, delivered_at, delivered_by, method, participants!inner(participant_type, people!inner(full_name, cpf), delegations(institutions(name)))",
         )
         .in("id", linkedAttemptDeliveryIds);
       if (error) throw error;
       const map: Record<
         string,
-        { full_name: string; cpf: string | null; participant_type: string | null; escola: string }
+        {
+          full_name: string;
+          cpf: string | null;
+          participant_type: string | null;
+          escola: string;
+          delivered_at: string;
+          delivered_by: string | null;
+          method: string;
+        }
       > = {};
       for (const r of (data ?? []) as any[]) {
         map[r.id] = {
@@ -394,16 +412,68 @@ export default function MaterialEntregaPage() {
           cpf: r.participants?.people?.cpf || null,
           participant_type: r.participants?.participant_type || null,
           escola: r.participants?.delegations?.institutions?.name || SEM_ESCOLA,
+          delivered_at: r.delivered_at,
+          delivered_by: r.delivered_by,
+          method: r.method,
         };
       }
       return map;
     },
   });
 
-  // Nome de quem operou o scan que gerou a tentativa.
-  const attemptOperatorIds = useMemo(
-    () => Array.from(new Set(duplicateAttemptsRaw.map((r) => r.created_by).filter(Boolean))),
+  // Idem para crachás não vinculados — id do registro em
+  // material_deliveries_unlinked que já havia recebido o kit.
+  const unlinkedAttemptDeliveryIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          duplicateAttemptsRaw
+            .filter((r) => r.table_name === "material_deliveries_unlinked")
+            .map((r) => r.record_id as string),
+        ),
+      ),
     [duplicateAttemptsRaw],
+  );
+
+  const { data: originalUnlinkedDeliveriesById = {} } = useQuery({
+    queryKey: ["material_duplicate_attempt_originals_unlinked", unlinkedAttemptDeliveryIds],
+    enabled: unlinkedAttemptDeliveryIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("material_deliveries_unlinked")
+        .select("id, qr_code, delivered_at, delivered_by, method")
+        .in("id", unlinkedAttemptDeliveryIds);
+      if (error) throw error;
+      const map: Record<
+        string,
+        { qr_code: string; delivered_at: string; delivered_by: string | null; method: string }
+      > = {};
+      for (const r of (data ?? []) as any[]) {
+        map[r.id] = {
+          qr_code: r.qr_code,
+          delivered_at: r.delivered_at,
+          delivered_by: r.delivered_by,
+          method: r.method,
+        };
+      }
+      return map;
+    },
+  });
+
+  // Nome de quem operou o scan que gerou a tentativa E de quem fez a
+  // entrega original que ficou registrada no banco.
+  const attemptOperatorIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            ...duplicateAttemptsRaw.map((r) => r.created_by),
+            ...Object.values(originalDeliveriesById).map((d: any) => d.delivered_by),
+            ...Object.values(originalUnlinkedDeliveriesById).map((d: any) => d.delivered_by),
+          ].filter(Boolean),
+        ),
+      ),
+    [duplicateAttemptsRaw, originalDeliveriesById, originalUnlinkedDeliveriesById],
   );
 
   const { data: attemptOperatorNamesById = {} } = useQuery({
@@ -421,25 +491,64 @@ export default function MaterialEntregaPage() {
     },
   });
 
-  const duplicateAttempts = useMemo<DuplicateAttemptRow[]>(
-    () =>
-      duplicateAttemptsRaw.map((r) => {
-        const linked = r.table_name === "material_deliveries";
-        const participant = linked ? attemptParticipantsById[r.record_id] : null;
-        return {
-          id: r.id,
-          created_at: r.created_at,
+  // Agrupa as tentativas pelo registro que efetivamente foi salvo no banco
+  // — cada grupo mostra o registro vencedor uma vez e todas as tentativas
+  // de reentrega bloqueadas por ele, mais recente primeiro.
+  const duplicateGroups = useMemo<DuplicateAttemptGroup[]>(() => {
+    const groups = new Map<string, DuplicateAttemptGroup>();
+    for (const r of duplicateAttemptsRaw) {
+      const linked = r.table_name === "material_deliveries";
+      const recordId = r.record_id as string;
+      if (!groups.has(recordId)) {
+        const original = linked
+          ? originalDeliveriesById[recordId]
+          : originalUnlinkedDeliveriesById[recordId];
+        groups.set(recordId, {
+          recordId,
           linked,
-          full_name: participant?.full_name || "",
-          cpf: participant?.cpf || null,
-          participant_type: participant?.participant_type || null,
-          escola: participant?.escola || (linked ? SEM_ESCOLA : ""),
-          qr_code: r.payload?.qr_code || null,
-          operator_name: (r.created_by && attemptOperatorNamesById[r.created_by]) || null,
-        };
-      }),
-    [duplicateAttemptsRaw, attemptParticipantsById, attemptOperatorNamesById],
+          full_name: linked ? (original as any)?.full_name || "" : "",
+          cpf: linked ? (original as any)?.cpf || null : null,
+          participant_type: linked ? (original as any)?.participant_type || null : null,
+          escola: linked ? (original as any)?.escola || SEM_ESCOLA : "",
+          qr_code: linked ? null : (original as any)?.qr_code || r.payload?.qr_code || null,
+          original: original
+            ? {
+                delivered_at: original.delivered_at,
+                method: original.method,
+                operator_name:
+                  (original.delivered_by && attemptOperatorNamesById[original.delivered_by]) ||
+                  null,
+              }
+            : null,
+          attempts: [],
+        });
+      }
+      groups.get(recordId)!.attempts.push({
+        id: r.id,
+        created_at: r.created_at,
+        operator_name: (r.created_by && attemptOperatorNamesById[r.created_by]) || null,
+      });
+    }
+    return Array.from(groups.values())
+      .map((g) => ({
+        ...g,
+        attempts: g.attempts.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        ),
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.attempts[0].created_at).getTime() -
+          new Date(a.attempts[0].created_at).getTime(),
+      );
+  }, [duplicateAttemptsRaw, originalDeliveriesById, originalUnlinkedDeliveriesById, attemptOperatorNamesById]);
+
+  const duplicateAttemptsCount = useMemo(
+    () => duplicateGroups.reduce((sum, g) => sum + g.attempts.length, 0),
+    [duplicateGroups],
   );
+
+  const methodLabel = (m: string | null) => (m === "manual" ? "Manual" : "QR Code");
 
   // Atualização ao vivo: qualquer entrega/estorno/crachá não vinculado
   // neste kit recarrega os dados (as duas tabelas de entrega precisam
@@ -678,8 +787,8 @@ export default function MaterialEntregaPage() {
     ...(unlinkedDeliveries.length > 0
       ? [{ label: "Não vinculados", value: unlinkedDeliveries.length, tone: "warning" as const }]
       : []),
-    ...(duplicateAttempts.length > 0
-      ? [{ label: "Duplicadas", value: duplicateAttempts.length, tone: "warning" as const }]
+    ...(duplicateAttemptsCount > 0
+      ? [{ label: "Duplicadas", value: duplicateAttemptsCount, tone: "warning" as const }]
       : []),
   ]);
 
@@ -772,14 +881,14 @@ export default function MaterialEntregaPage() {
           <button
             type="button"
             onClick={() => scrollTo(duplicadasRef)}
-            disabled={duplicateAttempts.length === 0}
+            disabled={duplicateAttemptsCount === 0}
             className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-colors hover:bg-amber-500/10 disabled:cursor-default disabled:opacity-60 disabled:hover:bg-amber-500/5"
           >
             <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
               Duplicadas
             </p>
             <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-amber-700 dark:text-amber-400">
-              {duplicateAttempts.length}
+              {duplicateAttemptsCount}
             </p>
             <p className="text-[10px] text-muted-foreground">tentativas de reentrega</p>
           </button>
@@ -1256,58 +1365,78 @@ export default function MaterialEntregaPage() {
           </p>
           {loadingDuplicates ? (
             <Skeleton className="h-16 w-full" />
-          ) : duplicateAttempts.length === 0 ? (
+          ) : duplicateGroups.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Nenhuma tentativa de duplicação registrada para este kit.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs text-muted-foreground">
-                    <th className="py-2 pr-2 font-medium">Participante</th>
-                    <th className="py-2 pr-2 font-medium">Escola</th>
-                    <th className="py-2 pr-2 font-medium">Tipo</th>
-                    <th className="py-2 pr-2 font-medium">Operador</th>
-                    <th className="py-2 font-medium">Tentativa em</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {duplicateAttempts.map((d) => (
-                    <tr key={d.id} className="border-b last:border-0">
-                      <td className="py-2 pr-2">
-                        {d.linked ? (
-                          <>
-                            <p className="font-medium">{d.full_name || "—"}</p>
-                            {d.cpf && (
-                              <p className="text-xs text-muted-foreground">{d.cpf}</p>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <p className="font-medium text-amber-600 dark:text-amber-400">
-                              Crachá não vinculado
-                            </p>
-                            <p className="font-mono text-xs text-muted-foreground">
-                              {d.qr_code}
-                            </p>
-                          </>
-                        )}
-                      </td>
-                      <td className="py-2 pr-2 text-muted-foreground">{d.escola || "—"}</td>
-                      <td className="py-2 pr-2 text-muted-foreground">
-                        {d.linked ? ptLabel(d.participant_type) : "—"}
-                      </td>
-                      <td className="py-2 pr-2 text-muted-foreground">
-                        {d.operator_name || "—"}
-                      </td>
-                      <td className="py-2 text-muted-foreground">
-                        {format(new Date(d.created_at), "dd/MM HH:mm")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {duplicateGroups.map((g) => (
+                <div key={g.recordId} className="rounded-lg border">
+                  {/* Cabeçalho: quem é e o registro que efetivamente foi salvo no banco */}
+                  <div className="flex flex-wrap items-start justify-between gap-2 border-b bg-muted/40 p-3">
+                    <div>
+                      {g.linked ? (
+                        <>
+                          <p className="font-medium">{g.full_name || "—"}</p>
+                          {g.cpf && <p className="text-xs text-muted-foreground">{g.cpf}</p>}
+                          <p className="text-xs text-muted-foreground">
+                            {g.escola || "—"} · {ptLabel(g.participant_type)}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-amber-600 dark:text-amber-400">
+                            Crachá não vinculado
+                          </p>
+                          <p className="font-mono text-xs text-muted-foreground">{g.qr_code}</p>
+                        </>
+                      )}
+                    </div>
+                    <div className="text-right text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground">Registro salvo no banco</p>
+                      {g.original ? (
+                        <>
+                          <p>
+                            {format(new Date(g.original.delivered_at!), "dd/MM HH:mm")} ·{" "}
+                            {methodLabel(g.original.method)}
+                          </p>
+                          <p>por {g.original.operator_name || "—"}</p>
+                        </>
+                      ) : (
+                        <p>—</p>
+                      )}
+                    </div>
+                  </div>
+                  {/* Tentativas bloqueadas por este registro */}
+                  <div className="overflow-x-auto p-3">
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      {g.attempts.length}{" "}
+                      {g.attempts.length === 1 ? "tentativa bloqueada" : "tentativas bloqueadas"}
+                    </p>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs text-muted-foreground">
+                          <th className="py-1.5 pr-2 font-medium">Tentativa em</th>
+                          <th className="py-1.5 font-medium">Operador</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {g.attempts.map((a) => (
+                          <tr key={a.id} className="border-b last:border-0">
+                            <td className="py-1.5 pr-2 text-muted-foreground">
+                              {format(new Date(a.created_at), "dd/MM HH:mm")}
+                            </td>
+                            <td className="py-1.5 text-muted-foreground">
+                              {a.operator_name || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
