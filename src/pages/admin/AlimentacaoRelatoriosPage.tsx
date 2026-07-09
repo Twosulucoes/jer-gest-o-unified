@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { KpiStatCard } from "@/components/shared/KpiStatCard";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -700,41 +701,28 @@ data.push({
 
       {consumptions.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-2xl font-bold">{consumptions.length}</p>
-              <p className="text-xs text-muted-foreground">Total consumos</p>
-            </CardContent>
-          </Card>
+          <KpiStatCard label="Total consumos" value={consumptions.length} align="center" />
 
-          <Card>
-            <CardContent className="pt-4 text-center">
-              <p className="text-2xl font-bold text-green-500">{linkedConsumptions.length}</p>
-              <p className="text-xs text-muted-foreground">Vinculados</p>
-            </CardContent>
-          </Card>
+          <KpiStatCard
+            label="Vinculados"
+            value={linkedConsumptions.length}
+            tone="success"
+            align="center"
+          />
 
-<Card>
-  <CardContent className="pt-4 text-center">
-    <p className="text-2xl font-bold text-yellow-500">
-      {unlinkedConsumptions.length}
-    </p>
-    <p className="text-xs text-muted-foreground">
-      Consumos avulsos
-    </p>
-  </CardContent>
-</Card>
+          <KpiStatCard
+            label="Consumos avulsos"
+            value={unlinkedConsumptions.length}
+            tone="warning"
+            align="center"
+          />
 
-<Card>
-  <CardContent className="pt-4 text-center">
-    <p className="text-2xl font-bold text-blue-500">
-      {voucherConsumptions.length}
-    </p>
-    <p className="text-xs text-muted-foreground">
-      Voucher
-    </p>
-  </CardContent>
-</Card>
+          <KpiStatCard
+            label="Voucher"
+            value={voucherConsumptions.length}
+            tone="info"
+            align="center"
+          />
 
           {/* totalByType é um Map na ordem de primeira ocorrência (consumptions
               vem ordenado por consumed_at desc) — sem o sort, este card mostrava
@@ -743,13 +731,8 @@ data.push({
             .sort((a, b) => b[1] - a[1])
             .slice(0, 1)
             .map(([k, v]) => (
-            <Card key={k}>
-              <CardContent className="pt-4 text-center">
-                <p className="text-2xl font-bold">{v}</p>
-                <p className="text-xs text-muted-foreground">{k}</p>
-              </CardContent>
-            </Card>
-          ))}
+              <KpiStatCard key={k} label={k} value={v} align="center" />
+            ))}
         </div>
       )}
 
