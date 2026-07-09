@@ -18,6 +18,8 @@ import {
   Settings2,
   Layers,
   Package,
+  Usb,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import QrCodeScanner from "@/components/pwa/QrCodeScanner";
@@ -116,14 +118,25 @@ export default function MaterialScanPage() {
   const [debouncedManual, setDebouncedManual] = useState("");
   const [manualHits, setManualHits] = useState<ParticipantManualSearchRow[]>([]);
   const [manualSearching, setManualSearching] = useState(false);
+  // Busca manual/leitor USB fica escondida atrás de uma ação explícita por
+  // padrão — a maioria dos scans é câmera. Some usuário com leitor USB, o
+  // campo fica sempre visível e focado (é o alvo da "digitação" do leitor).
+  const [manualSearchOpen, setManualSearchOpen] = useState(false);
+  const showManualSearch = manualSearchOpen || !!prefs.usbReaderMode;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Só refoca automaticamente o campo quando há leitor USB conectado — em
+   * celular (padrão), forçar foco nesse input abre o teclado virtual sozinho
+   * e empurra a tela (era a causa do "teclado abre/rola" reportado).
+   */
   const focusUsbInput = useCallback(() => {
+    if (!prefs.usbReaderMode) return;
     setTimeout(() => {
       if (!scannerOpen) usbInputRef.current?.focus();
     }, 150);
-  }, [scannerOpen]);
+  }, [scannerOpen, prefs.usbReaderMode]);
 
   useEffect(() => {
     if (!scannerOpen) focusUsbInput();
@@ -709,6 +722,9 @@ export default function MaterialScanPage() {
       recordOutcome("error");
     } finally {
       setIsSubmitting(false);
+      // Sem leitor USB, a busca foi aberta pra essa escolha pontual — fecha
+      // depois de escolher, em vez de deixar o campo aberto ocupando espaço.
+      if (!prefs.usbReaderMode) setManualSearchOpen(false);
       focusUsbInput();
     }
   };
@@ -869,89 +885,121 @@ export default function MaterialScanPage() {
         )}
 
         <div className="space-y-2">
-          <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-[11px] text-blue-700 dark:text-blue-300">
-            <strong>Leitor USB ativo:</strong> conecte o leitor, clique no campo abaixo e passe o crachá. A câmera do celular continua funcionando no botão acima.
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              ref={usbInputRef}
-              autoFocus
-              placeholder="Leitor USB / Nome / CPF…"
-              value={manualQuery}
-              disabled={isSubmitting}
-              onChange={(e) => setManualQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const code = manualQuery.trim();
-                  if (code.length >= 3) {
-                    setManualQuery("");
-                    setDebouncedManual("");
-                    setManualHits([]);
-                    void handleScan(code).finally(() => focusUsbInput());
-                  }
-                }
-              }}
-              onBlur={() => {
-                if (!scannerOpen) focusUsbInput();
-              }}
-              className="h-12 border-border/80 bg-card/90 pl-10 text-base font-mono"
-            />
-          </div>
-
-          {!activeEventId && (
-            <p className="text-center text-[11px] text-amber-600 dark:text-amber-400">
-              Selecione o evento ativo para habilitar a busca.
-            </p>
+          {!showManualSearch && (
+            <button
+              type="button"
+              onClick={() => setManualSearchOpen(true)}
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-card/40 px-3 py-2.5 text-xs font-semibold text-muted-foreground active:scale-[0.98] transition-transform"
+            >
+              <Search className="h-3.5 w-3.5" />
+              Busca manual por nome ou CPF
+            </button>
           )}
 
-          {activeEventId && debouncedManual.length >= 2 && (
-            <Card className="max-h-44 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
-              <CardContent className="p-0">
-                {manualSearching && (
-                  <div className="flex items-center justify-center gap-2 py-5 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">Buscando…</span>
-                  </div>
-                )}
+          {showManualSearch && (
+            <>
+              {prefs.usbReaderMode && (
+                <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-[11px] text-blue-700 dark:text-blue-300">
+                  <strong>Leitor USB ativo:</strong> conecte o leitor, clique no campo abaixo e passe o crachá. A câmera do celular continua funcionando no botão acima.
+                </div>
+              )}
 
-                {!manualSearching && manualHits.length === 0 && (
-                  <p className="px-4 py-5 text-center text-sm text-muted-foreground">
-                    Nenhum participante encontrado neste evento.
-                  </p>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  ref={usbInputRef}
+                  autoFocus
+                  placeholder={prefs.usbReaderMode ? "Leitor USB / Nome / CPF…" : "Nome ou CPF…"}
+                  value={manualQuery}
+                  disabled={isSubmitting}
+                  onChange={(e) => setManualQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const code = manualQuery.trim();
+                      if (code.length >= 3) {
+                        setManualQuery("");
+                        setDebouncedManual("");
+                        setManualHits([]);
+                        void handleScan(code).finally(() => focusUsbInput());
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!scannerOpen) focusUsbInput();
+                  }}
+                  className="h-12 border-border/80 bg-card/90 pl-10 pr-10 text-base font-mono"
+                />
+                {!prefs.usbReaderMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualSearchOpen(false);
+                      setManualQuery("");
+                      setDebouncedManual("");
+                      setManualHits([]);
+                    }}
+                    aria-label="Fechar busca manual"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 )}
+              </div>
 
-                {!manualSearching &&
-                  manualHits.map((h) => (
-                    <button
-                      key={h.participant_id}
-                      type="button"
-                      onClick={() => void handleManualPick(h)}
-                      disabled={isSubmitting}
-                      className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
-                        <User className="h-4 w-4" />
+              {!activeEventId && (
+                <p className="text-center text-[11px] text-amber-600 dark:text-amber-400">
+                  Selecione o evento ativo para habilitar a busca.
+                </p>
+              )}
+
+              {activeEventId && debouncedManual.length >= 2 && (
+                <Card className="max-h-44 overflow-y-auto border-border/80 bg-card/95 shadow-app-sm">
+                  <CardContent className="p-0">
+                    {manualSearching && (
+                      <div className="flex items-center justify-center gap-2 py-5 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="text-sm">Buscando…</span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {h.full_name}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {h.participant_type}
-                        </p>
-                      </div>
-                      {h.is_active === false && (
-                        <span className="ml-2 shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                          inativo
-                        </span>
-                      )}
-                    </button>
-                  ))}
-              </CardContent>
-            </Card>
+                    )}
+
+                    {!manualSearching && manualHits.length === 0 && (
+                      <p className="px-4 py-5 text-center text-sm text-muted-foreground">
+                        Nenhum participante encontrado neste evento.
+                      </p>
+                    )}
+
+                    {!manualSearching &&
+                      manualHits.map((h) => (
+                        <button
+                          key={h.participant_id}
+                          type="button"
+                          onClick={() => void handleManualPick(h)}
+                          disabled={isSubmitting}
+                          className="flex w-full items-center gap-3 border-b border-border/60 px-4 py-3 text-left last:border-0 hover:bg-muted/40 active:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--module-accent)/0.18)] text-[hsl(var(--module-accent))]">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {h.full_name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {h.participant_type}
+                            </p>
+                          </div>
+                          {h.is_active === false && (
+                            <span className="ml-2 shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                              inativo
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
 
@@ -1039,6 +1087,23 @@ export default function MaterialScanPage() {
             />
           </label>
         </div>
+
+        <label className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 cursor-pointer">
+          <Usb className="h-4 w-4 text-module shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold leading-tight truncate">Leitor USB conectado</p>
+            <p className="text-[10px] text-muted-foreground">
+              {prefs.usbReaderMode
+                ? "Campo de captura sempre visível e focado"
+                : "Desligado — recomendado no celular"}
+            </p>
+          </div>
+          <Switch
+            checked={!!prefs.usbReaderMode}
+            onCheckedChange={(v) => updatePrefs({ ...prefs, usbReaderMode: v })}
+            aria-label="Leitor USB conectado"
+          />
+        </label>
 
         <SyncStatusLine online={online} />
       </main>
