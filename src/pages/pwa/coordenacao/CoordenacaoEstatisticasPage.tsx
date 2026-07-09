@@ -1,33 +1,45 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 export default function CoordenacaoEstatisticasPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, agendadas: 0, emAndamento: 0, finalizadas: 0, canceladas: 0 });
 
-  useEffect(() => {
-    (async () => {
-      const [totalRes, agendRes, andRes, finRes, canRes] = await Promise.all([
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "scheduled"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "in_progress"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "finished"),
-        supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "cancelled"),
-      ]);
-      setStats({
-        total: totalRes.count || 0,
-        agendadas: agendRes.count || 0,
-        emAndamento: andRes.count || 0,
-        finalizadas: finRes.count || 0,
-        canceladas: canRes.count || 0,
-      });
-      setLoading(false);
-    })();
+  const fetchStats = useCallback(async () => {
+    const [totalRes, agendRes, andRes, finRes, canRes] = await Promise.all([
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }),
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "scheduled"),
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "in_progress"),
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "finished"),
+      supabase.from("competition_matches").select("id", { count: "exact", head: true }).eq("status", "cancelled"),
+    ]);
+    setStats({
+      total: totalRes.count || 0,
+      agendadas: agendRes.count || 0,
+      emAndamento: andRes.count || 0,
+      finalizadas: finRes.count || 0,
+      canceladas: canRes.count || 0,
+    });
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  // Realtime: contadores não são filtrados por evento hoje (mesmo comportamento
+  // do fetch acima), então observamos a tabela inteira.
+  useRealtimeSync({
+    channelName: "coordenacao-estatisticas",
+    tables: [{ table: "competition_matches" }],
+    onChange: () => { fetchStats(); },
+    debounceMs: 400,
+  });
 
   const items = [
     { label: "Total de partidas", value: stats.total, color: "text-foreground" },

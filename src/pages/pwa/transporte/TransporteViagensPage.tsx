@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -10,6 +10,7 @@ import { ArrowLeft, Clock, MapPin, Bus } from "lucide-react";
 import { format } from "date-fns";
 import { PwaRefreshButton } from "@/components/pwa/PwaRefreshButton";
 import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface Trip {
   id: string;
@@ -26,33 +27,43 @@ export default function TransporteViagensPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      const today = new Date().toLocaleDateString("fr-CA");
-      const { startIso, endIsoExclusive } = dayRangeRoraima(today);
-      let query = supabase
-        .from("transport_trips")
-        .select("id, scheduled_at, status, transport_vehicles(plate, label), transport_routes(name)")
-        .eq("event_id", eventId)
-        .gte("scheduled_at", startIso)
-        .lt("scheduled_at", endIsoExclusive);
+  const fetchTrips = useCallback(async () => {
+    const today = new Date().toLocaleDateString("fr-CA");
+    const { startIso, endIsoExclusive } = dayRangeRoraima(today);
+    let query = supabase
+      .from("transport_trips")
+      .select("id, scheduled_at, status, transport_vehicles(plate, label), transport_routes(name)")
+      .eq("event_id", eventId)
+      .gte("scheduled_at", startIso)
+      .lt("scheduled_at", endIsoExclusive);
 
-      if (stageId) {
-        query = query.eq("event_stage_id", stageId);
-      }
+    if (stageId) {
+      query = query.eq("event_stage_id", stageId);
+    }
 
-      const { data } = await query.order("scheduled_at");
+    const { data } = await query.order("scheduled_at");
 
-      setTrips((data as any)?.map((t: any) => ({
-        id: t.id,
-        departure_time: t.scheduled_at,
-        status: t.status,
-        vehicle: t.transport_vehicles,
-        route: t.transport_routes,
-      })) || []);
-      setLoading(false);
-    })();
+    setTrips((data as any)?.map((t: any) => ({
+      id: t.id,
+      departure_time: t.scheduled_at,
+      status: t.status,
+      vehicle: t.transport_vehicles,
+      route: t.transport_routes,
+    })) || []);
+    setLoading(false);
   }, [eventId, stageId]);
+
+  useEffect(() => { void fetchTrips(); }, [fetchTrips]);
+
+  // Sincroniza em tempo real: status/horário de viagens do dia mudando em
+  // outros dispositivos (ex: motorista iniciando/concluindo viagem).
+  useRealtimeSync({
+    channelName: `pwa-transporte-viagens-${eventId || "none"}-${stageId || "all"}`,
+    tables: [{ table: "transport_trips", filter: `event_id=eq.${eventId}` }],
+    onChange: () => { void fetchTrips(); },
+    enabled: !!eventId,
+    debounceMs: 400,
+  });
 
   const statusColor = (s: string) => {
     if (s === "em_transito") return "default";

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,42 +16,55 @@ export default function AlojamentoUnidadeFaltososPage() {
   const [missing, setMissing] = useState<MissingPerson[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!unitId) return;
-    async function loadData() {
-      // Load unit name
-      const { data: unit } = await supabase
-        .from("lodging_units")
-        .select("name")
-        .eq("id", unitId)
-        .single();
-      if (unit) setUnitName(unit.name);
+    // Load unit name
+    const { data: unit } = await supabase
+      .from("lodging_units")
+      .select("name")
+      .eq("id", unitId)
+      .single();
+    if (unit) setUnitName(unit.name);
 
-      // Load missing: allocated but no check-in
-      const { data, error } = await supabase
-        .from("lodging_occupancies")
-        .select(`
-          participant_id,
-          participants(
-            people(full_name),
-            delegations(institutions(name))
-          )
-        `)
-        .eq("unit_id", unitId)
-        .eq("status", "allocated");
+    // Load missing: allocated but no check-in
+    const { data, error } = await supabase
+      .from("lodging_occupancies")
+      .select(`
+        participant_id,
+        participants(
+          people(full_name),
+          delegations(institutions(name))
+        )
+      `)
+      .eq("unit_id", unitId)
+      .eq("status", "allocated");
 
-      if (data) {
-        const formatted = data.map((d: any) => ({
-          id: d.participant_id,
-          full_name: d.participants?.people?.full_name || "N/A",
-          delegation_name: d.participants?.delegations?.institutions?.name || "N/A"
-        }));
-        setMissing(formatted);
-      }
-      setLoading(false);
+    if (data) {
+      const formatted = data.map((d: any) => ({
+        id: d.participant_id,
+        full_name: d.participants?.people?.full_name || "N/A",
+        delegation_name: d.participants?.delegations?.institutions?.name || "N/A"
+      }));
+      setMissing(formatted);
     }
-    loadData();
+    setLoading(false);
   }, [unitId]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Se outro aparelho fizer check-in de alguém desta unidade (ou a
+  // coordenação realocar/alterar a unidade), a lista de faltosos atualiza
+  // sozinha.
+  useRealtimeSync({
+    channelName: `alojamento-unidade-faltosos-${unitId ?? "sem-unidade"}`,
+    tables: [
+      { table: "lodging_occupancies", filter: `unit_id=eq.${unitId}` },
+      { table: "lodging_units", filter: `id=eq.${unitId}` },
+    ],
+    onChange: () => loadData(),
+    enabled: !!unitId,
+    debounceMs: 400,
+  });
 
   return (
     <div className="min-h-screen bg-background">

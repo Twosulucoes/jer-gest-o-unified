@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { rpcCheckin, rpcCheckout, getDeviceId, getSelectedFacility } from "@/lib/alojamentoRpc";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { ArrowLeft, User, LogIn, LogOut, Bed, ScanLine, AlertCircle, Building, Loader2 } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { useEventContext } from "@/contexts/EventContext";
@@ -90,6 +91,17 @@ export default function AlojamentoPessoaPage() {
   };
 
   useEffect(() => { loadPerson(); }, [id, facilityId, activeEvent?.id]);
+
+  // Outro operador pode fazer check-in/check-out desta mesma pessoa
+  // (ex: dois aparelhos escaneando a mesma credencial) — mantém o status
+  // exibido em sincronia.
+  useRealtimeSync({
+    channelName: `alojamento-pessoa-${id ?? "sem-id"}`,
+    tables: [{ table: "lodging_occupancies", filter: `participant_id=eq.${id}` }],
+    onChange: () => loadPerson(),
+    enabled: !!id && !!facilityId,
+    debounceMs: 400,
+  });
 
   const handleCheckin = async () => {
     if (!id || !facilityId) return;

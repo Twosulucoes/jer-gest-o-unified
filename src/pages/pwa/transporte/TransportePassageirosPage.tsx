@@ -4,6 +4,7 @@ import { usePersistedState } from "@/hooks/usePersistedState";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -139,6 +140,17 @@ export default function TransportePassageirosPage() {
   useEffect(() => {
     if (authorized === true) void fetchPassengers();
   }, [fetchPassengers, authorized]);
+
+  // Sincroniza em tempo real: embarques/no-show feitos por outro dispositivo
+  // (ex: motorista na tela de Embarque ou operador no Scanner) refletem aqui
+  // sem precisar de refresh manual.
+  useRealtimeSync({
+    channelName: `pwa-transporte-passageiros-${tripId}`,
+    tables: [{ table: "transport_passengers", filter: `trip_id=eq.${tripId}` }],
+    onChange: () => { void fetchPassengers(); },
+    enabled: authorized === true && !!tripId,
+    debounceMs: 400,
+  });
 
   // Derived
   const delegations = useMemo(() => {

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { usePersistedState } from "@/hooks/usePersistedState";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { useActiveStageId } from "@/contexts/StageContext";
@@ -46,6 +47,21 @@ export default function AlojamentoListaCompletaPage() {
   useEffect(() => {
     if (eventId) loadGuests();
   }, [eventId, stageId]);
+
+  // Check-in/check-out feito em outro aparelho deve refletir aqui sem
+  // refresh manual (a lista de hóspedes é derivada de lodging_occupancies).
+  useRealtimeSync({
+    channelName: `alojamento-lista-completa-${eventId ?? "sem-evento"}-${stageId ?? "todas-etapas"}`,
+    tables: [
+      {
+        table: "lodging_occupancies",
+        filter: stageId ? `event_stage_id=eq.${stageId}` : `event_id=eq.${eventId}`,
+      },
+    ],
+    onChange: () => loadGuests(),
+    enabled: !!eventId,
+    debounceMs: 400,
+  });
 
   async function loadGuests() {
     setLoading(true);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, MapPin, Clock } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface MatchDetail {
   id: string;
@@ -30,23 +31,35 @@ export default function CoordenacaoPartidaDetalhePage() {
   const [match, setMatch] = useState<MatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchMatch = useCallback(async () => {
     if (!matchId) return;
-    (async () => {
-      const { data } = await supabase
-        .from("competition_matches")
-        .select(`
-          id, match_date, start_time, status, match_number, notes,
-          venue:venues(name),
-          phase:competition_phases(name),
-          entries:competition_match_entries(id, side, team:teams(name), participant_sport_event:participant_sport_events(participant:participants(person:people(full_name))))
-        `)
-        .eq("id", matchId)
-        .single();
-      setMatch((data as any) || null);
-      setLoading(false);
-    })();
+    const { data } = await supabase
+      .from("competition_matches")
+      .select(`
+        id, match_date, start_time, status, match_number, notes,
+        venue:venues(name),
+        phase:competition_phases(name),
+        entries:competition_match_entries(id, side, team:teams(name), participant_sport_event:participant_sport_events(participant:participants(person:people(full_name))))
+      `)
+      .eq("id", matchId)
+      .single();
+    setMatch((data as any) || null);
+    setLoading(false);
   }, [matchId]);
+
+  useEffect(() => {
+    fetchMatch();
+  }, [fetchMatch]);
+
+  // Realtime: status/horário desta partida pode ser atualizado por outro
+  // dispositivo (ex: mesa da modalidade) enquanto esta tela está aberta.
+  useRealtimeSync({
+    channelName: `coordenacao-partida-detalhe-${matchId ?? "none"}`,
+    tables: [{ table: "competition_matches", filter: `id=eq.${matchId}` }],
+    onChange: () => { fetchMatch(); },
+    enabled: !!matchId,
+    debounceMs: 400,
+  });
 
   const statusLabels: Record<string, string> = {
     agendada: "Agendada", em_andamento: "Em andamento", finalizada: "Finalizada", cancelada: "Cancelada",

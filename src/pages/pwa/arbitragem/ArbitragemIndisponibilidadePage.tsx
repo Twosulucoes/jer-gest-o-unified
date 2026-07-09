@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +43,7 @@ function formatDateTime(date: string | null, time: string | null) {
 export default function ArbitragemIndisponibilidadePage() {
   const { user } = useAuth();
   const { activeEventId } = useEventContext();
+  const qc = useQueryClient();
   usePwaAudit("arbitragem/indisponibilidade");
 
   const { data: rows = [], isLoading } = useQuery({
@@ -76,6 +78,20 @@ export default function ArbitragemIndisponibilidadePage() {
         venue_name: row.competition_matches?.venues?.name ?? null,
       })) as IndisponibilidadeRow[];
     },
+  });
+
+  // Sincronização em tempo real: novo report de indisponibilidade feito em
+  // outro dispositivo deve aparecer aqui sem refresh manual.
+  useRealtimeSync({
+    channelName: `pwa-arb-indisponibilidade-${user?.id}`,
+    tables: [
+      { table: "match_user_assignments", filter: `user_id=eq.${user?.id}` },
+    ],
+    onChange: () => {
+      qc.invalidateQueries({ queryKey: ["pwa-arb-indisponibilidades", user?.id, activeEventId] });
+    },
+    enabled: !!user?.id && !!activeEventId,
+    debounceMs: 400,
   });
 
   return (

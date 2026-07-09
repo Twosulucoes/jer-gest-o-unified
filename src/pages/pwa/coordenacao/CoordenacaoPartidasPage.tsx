@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePersistedState } from "@/hooks/usePersistedState";
 
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { ClipboardList, Search } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface MatchItem {
   id: string;
@@ -24,18 +25,29 @@ export default function CoordenacaoPartidasPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = usePersistedState("coordenacao_partidas_filter", "");
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("competition_matches")
-        .select("id, match_date, status, match_number, phase:competition_phases(name)")
-        .in("status", ["agendada", "em_andamento"])
-        .order("match_date")
-        .limit(50);
-      setMatches((data as any) || []);
-      setLoading(false);
-    })();
+  const fetchMatches = useCallback(async () => {
+    const { data } = await supabase
+      .from("competition_matches")
+      .select("id, match_date, status, match_number, phase:competition_phases(name)")
+      .in("status", ["agendada", "em_andamento"])
+      .order("match_date")
+      .limit(50);
+    setMatches((data as any) || []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchMatches();
+  }, [fetchMatches]);
+
+  // Realtime: lista não é filtrada por evento hoje (mesmo comportamento do fetch acima),
+  // então observamos a tabela inteira para refletir mudanças de status feitas em outros dispositivos.
+  useRealtimeSync({
+    channelName: "coordenacao-partidas-lista",
+    tables: [{ table: "competition_matches" }],
+    onChange: () => { fetchMatches(); },
+    debounceMs: 400,
+  });
 
   const filtered = filter
     ? matches.filter(m => m.phase?.name?.toLowerCase().includes(filter.toLowerCase()) || String(m.match_number).includes(filter))

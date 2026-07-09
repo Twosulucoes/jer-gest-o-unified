@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,21 +35,31 @@ export default function AlojamentoIncidentesPage() {
   const [statusFilter, setStatusFilter] = useState("aberta");
   const facilityId = getSelectedFacility();
 
-  useEffect(() => {
+  const fetchIncidents = useCallback(async () => {
     if (!facilityId) {
       setLoading(false);
       return;
     }
     setLoading(true);
-    (async () => {
-      const { data } = await supabase.rpc("get_alojamento_incidents" as any, {
-        p_facility_id: facilityId,
-        p_status: statusFilter,
-      });
-      setIncidents((Array.isArray(data) ? data : []) as Incident[]);
-      setLoading(false);
-    })();
+    const { data } = await supabase.rpc("get_alojamento_incidents" as any, {
+      p_facility_id: facilityId,
+      p_status: statusFilter,
+    });
+    setIncidents((Array.isArray(data) ? data : []) as Incident[]);
+    setLoading(false);
   }, [facilityId, statusFilter]);
+
+  useEffect(() => { fetchIncidents(); }, [fetchIncidents]);
+
+  // Outro operador pode registrar/atualizar uma ocorrência deste local a
+  // qualquer momento — mantém a lista viva sem refresh manual.
+  useRealtimeSync({
+    channelName: `alojamento-incidentes-${facilityId || "sem-local"}`,
+    tables: [{ table: "lodging_incidents", filter: `location_id=eq.${facilityId}` }],
+    onChange: () => fetchIncidents(),
+    enabled: !!facilityId,
+    debounceMs: 400,
+  });
 
   return (
     <div className="min-h-screen bg-background">

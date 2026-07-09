@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchVenueIdsForStage } from "@/hooks/useVenuesByStage";
@@ -11,6 +11,7 @@ import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 interface MatchItem {
   id: string;
@@ -29,33 +30,50 @@ export default function CoordenacaoAgendaPage() {
   const [matches, setMatches] = useState<MatchItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      const today = new Date().toISOString().slice(0, 10);
+  const fetchAgenda = useCallback(async () => {
+    const today = new Date().toISOString().slice(0, 10);
 
-      // Resolve venues da etapa via fonte única (null = todas as etapas)
-      const venueIdsFilter = await fetchVenueIdsForStage(stageId);
-      if (venueIdsFilter && venueIdsFilter.length === 0) {
-        setMatches([]);
-        setLoading(false);
-        return;
-      }
-
-      let query = supabase
-        .from("competition_matches")
-        .select("id, match_date, start_time, status, match_number, venue:venues!inner(name, event_id), phase:competition_phases(name, sport_event:sport_events(sport:sports(name), category:categories(name)))")
-        .eq("match_date", today)
-        .eq("venues.event_id", eventId);
-
-      if (venueIdsFilter) {
-        query = query.in("venue_id", venueIdsFilter);
-      }
-
-      const { data } = await query.order("start_time");
-      setMatches((data as any) || []);
+    // Resolve venues da etapa via fonte única (null = todas as etapas)
+    const venueIdsFilter = await fetchVenueIdsForStage(stageId);
+    if (venueIdsFilter && venueIdsFilter.length === 0) {
+      setMatches([]);
       setLoading(false);
-    })();
+      return;
+    }
+
+    let query = supabase
+      .from("competition_matches")
+      .select("id, match_date, start_time, status, match_number, venue:venues!inner(name, event_id), phase:competition_phases(name, sport_event:sport_events(sport:sports(name), category:categories(name)))")
+      .eq("match_date", today)
+      .eq("venues.event_id", eventId);
+
+    if (venueIdsFilter) {
+      query = query.in("venue_id", venueIdsFilter);
+    }
+
+    const { data } = await query.order("start_time");
+    setMatches((data as any) || []);
+    setLoading(false);
   }, [eventId, stageId]);
+
+  useEffect(() => {
+    fetchAgenda();
+  }, [fetchAgenda]);
+
+  // Realtime: agenda do dia é escopada pela etapa ativa (quando houver) e,
+  // senão, pelo evento — segue o mesmo escopo usado no fetch acima.
+  useRealtimeSync({
+    channelName: `coordenacao-agenda-${stageId || eventId || "none"}`,
+    tables: [
+      {
+        table: "competition_matches",
+        filter: stageId ? `event_stage_id=eq.${stageId}` : `event_id=eq.${eventId}`,
+      },
+    ],
+    onChange: () => { fetchAgenda(); },
+    enabled: !!eventId,
+    debounceMs: 400,
+  });
 
   const statusStyle: Record<string, { label: string; className: string }> = {
     agendada: { label: "Próximo", className: "bg-muted text-muted-foreground" },

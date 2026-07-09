@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
@@ -6,6 +6,7 @@ import { useActiveStageId } from "@/contexts/StageContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAlojamentoOffline } from "@/hooks/useAlojamentoOffline";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { getSelectedFacility, setSelectedFacility } from "@/lib/alojamentoRpc";
 import { AlojamentoDuplicateAlert } from "@/components/pwa/alojamento/AlojamentoDuplicateAlert";
 import { PwaContainer } from "@/components/pwa/PwaScreen";
@@ -40,96 +41,114 @@ export default function AlojamentoHomePage() {
 
   usePwaAudit("alojamento");
 
-  useEffect(() => {
-    (async () => {
-      if (!eventId) return;
-      
-      // If stageId is missing, we shouldn't show any locations to ensure data integrity
-      if (!stageId) {
-        setFacilities([]);
-        setLoading(false);
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from("lodging_locations")
-        .select("id, name, is_active")
-        .eq("event_id", eventId)
-        .eq("event_stage_id", stageId) // Strict filtering
-        .eq("is_active", true)
-        .order("name");
-      
-      dbTelemetry.log({
-        moduleName: 'alojamento',
-        tableName: 'lodging_locations',
-        operation: 'SELECT',
-        eventId: eventId,
-        isSuccess: !error,
-        errorCode: error?.code,
-        rowsAffected: data?.length || 0
+  const fetchFacilities = useCallback(async () => {
+    if (!eventId) return;
+
+    // If stageId is missing, we shouldn't show any locations to ensure data integrity
+    if (!stageId) {
+      setFacilities([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("lodging_locations")
+      .select("id, name, is_active")
+      .eq("event_id", eventId)
+      .eq("event_stage_id", stageId) // Strict filtering
+      .eq("is_active", true)
+      .order("name");
+
+    dbTelemetry.log({
+      moduleName: 'alojamento',
+      tableName: 'lodging_locations',
+      operation: 'SELECT',
+      eventId: eventId,
+      isSuccess: !error,
+      errorCode: error?.code,
+      rowsAffected: data?.length || 0
+    });
+
+    if (!error) {
+      const list = (data || []) as Facility[];
+
+      const kpiResults = await Promise.all(
+        list.map(f => supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: f.id, p_event_stage_id: stageId }))
+      );
+
+      const enriched: Facility[] = list.map((f, i) => {
+        const kpi = (kpiResults[i].data as any) || {};
+        const total = kpi.total_beds || 0;
+        const occupied = kpi.assigned_beds || 0;
+        return {
+          ...f,
+          occupied,
+          total,
+          occupancy_pct: total > 0 ? Math.round((occupied / total) * 100) : 0,
+        };
       });
 
-      if (!error) {
-        const list = (data || []) as Facility[];
-
-        const kpiResults = await Promise.all(
-          list.map(f => supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: f.id, p_event_stage_id: stageId }))
-        );
-
-        const enriched: Facility[] = list.map((f, i) => {
-          const kpi = (kpiResults[i].data as any) || {};
-          const total = kpi.total_beds || 0;
-          const occupied = kpi.assigned_beds || 0;
-          return {
-            ...f,
-            occupied,
-            total,
-            occupancy_pct: total > 0 ? Math.round((occupied / total) * 100) : 0,
-          };
-        });
-
-        setFacilities(enriched);
-        if (!facilityId && enriched.length > 0) {
-          setFacilityId(enriched[0].id);
+      setFacilities(enriched);
+      setFacilityId((prev) => {
+        if (!prev && enriched.length > 0) {
           setSelectedFacility(enriched[0].id);
-        } else if (enriched.length === 0) {
-          setFacilityId("");
-          setSelectedFacility("");
+          return enriched[0].id;
         }
-      }
-      setLoading(false);
-
-    })();
+        if (enriched.length === 0) {
+          setSelectedFacility("");
+          return "";
+        }
+        return prev;
+      });
+    }
+    setLoading(false);
   }, [eventId, stageId]);
 
-  useEffect(() => {
+  useEffect(() => { fetchFacilities(); }, [fetchFacilities]);
+
+  const fetchKpis = useCallback(async () => {
     if (!facilityId) return;
     setSelectedFacility(facilityId);
-    (async () => {
-      const { data, error } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId, p_event_stage_id: stageId });
-      
-      dbTelemetry.log({
-        moduleName: 'alojamento',
-        tableName: 'RPC:get_alojamento_kpis',
-        operation: 'SELECT',
-        eventId: eventId,
-        isSuccess: !error,
-        errorCode: error?.code
-      });
+    const { data, error } = await supabase.rpc("get_alojamento_kpis" as any, { p_facility_id: facilityId, p_event_stage_id: stageId });
 
-      if (data) {
-        const kpi = data as any;
-        const total = kpi.total_beds || 0;
-        const ocup = kpi.assigned_beds || 0;
-        setKpis({
-          hospedados: ocup,
-          livres: Math.max(0, total - ocup - (kpi.reserved_beds || 0)),
-          reservados: kpi.reserved_beds || 0,
-          ocupacao: total > 0 ? Math.round((ocup / total) * 100) : 0,
-        });
-      }
-    })();
-  }, [facilityId]);
+    dbTelemetry.log({
+      moduleName: 'alojamento',
+      tableName: 'RPC:get_alojamento_kpis',
+      operation: 'SELECT',
+      eventId: eventId,
+      isSuccess: !error,
+      errorCode: error?.code
+    });
+
+    if (data) {
+      const kpi = data as any;
+      const total = kpi.total_beds || 0;
+      const ocup = kpi.assigned_beds || 0;
+      setKpis({
+        hospedados: ocup,
+        livres: Math.max(0, total - ocup - (kpi.reserved_beds || 0)),
+        reservados: kpi.reserved_beds || 0,
+        ocupacao: total > 0 ? Math.round((ocup / total) * 100) : 0,
+      });
+    }
+  }, [facilityId, stageId, eventId]);
+
+  useEffect(() => { fetchKpis(); }, [fetchKpis]);
+
+  // Sincroniza entre dispositivos: check-in/check-out (lodging_occupancies) e
+  // mudanças de capacidade/estrutura (lodging_units, lodging_locations) de
+  // outro aparelho devem refletir aqui sem refresh manual.
+  useRealtimeSync({
+    channelName: `alojamento-home-${eventId ?? "sem-evento"}-${stageId ?? "sem-etapa"}`,
+    tables: [
+      { table: "lodging_locations", filter: `event_stage_id=eq.${stageId}` },
+      { table: "lodging_occupancies", filter: `event_stage_id=eq.${stageId}` },
+      { table: "lodging_units", filter: `event_stage_id=eq.${stageId}` },
+    ],
+    onChange: () => { fetchFacilities(); fetchKpis(); },
+    enabled: !!eventId && !!stageId,
+    debounceMs: 400,
+  });
 
   return (
     <PwaLayout onBack={() => navigate(-1)} moduleTitle="Alojamento">

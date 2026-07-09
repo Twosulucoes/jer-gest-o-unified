@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useActiveEventId } from "@/contexts/EventContext";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 export function useRegistros(sportEventId?: string) {
   const eventId = useActiveEventId();
@@ -39,6 +40,23 @@ export function useRegistros(sportEventId?: string) {
       return data;
     },
     enabled: !!eventId,
+  });
+
+  useRealtimeSync({
+    channelName: `registros-matches-${eventId}-${sportEventId ?? "all"}`,
+    tables: [
+      {
+        table: "competition_matches",
+        filter: `event_id=eq.${eventId}`,
+      },
+      // match_scores/competition_match_results não têm event_id — sem filtro,
+      // então qualquer lançamento de placar em outro dispositivo invalida a lista.
+      { table: "match_scores" },
+      { table: "competition_match_results" },
+    ],
+    onChange: () => qc.invalidateQueries({ queryKey: ["registros-matches", eventId, sportEventId] }),
+    enabled: !!eventId,
+    debounceMs: 400,
   });
 
   const createMatch = useMutation({

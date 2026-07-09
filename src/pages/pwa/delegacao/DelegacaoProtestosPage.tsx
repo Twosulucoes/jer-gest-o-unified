@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Gavel, Plus, FileText } from "lucide-react";
 import { PwaHeader } from "@/components/pwa/PwaHeader";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   protocolado: { label: "Protocolado", variant: "secondary" },
@@ -21,17 +22,37 @@ export default function DelegacaoProtestosPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState<any[]>([]);
+  const [delegationId, setDelegationId] = useState<string | null>(null);
+
+  const fetchList = useCallback(async () => {
+    const { data } = await supabase
+      .from("protests")
+      .select("id, protocol_number, status, decision, created_at, deadline_at, match_id, competition_matches:match_id(match_number, match_date, start_time)")
+      .order("created_at", { ascending: false });
+    setList(data ?? []);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("protests")
-        .select("id, protocol_number, status, decision, created_at, deadline_at, match_id, competition_matches:match_id(match_number, match_date, start_time)")
-        .order("created_at", { ascending: false });
-      setList(data ?? []);
-      setLoading(false);
+      const { data: ud } = await supabase.from("user_delegations").select("delegation_id").maybeSingle();
+      setDelegationId(ud?.delegation_id ?? null);
+      await fetchList();
     })();
-  }, []);
+  }, [fetchList]);
+
+  useRealtimeSync({
+    channelName: `delegacao-protestos-${delegationId ?? "unscoped"}`,
+    tables: [
+      {
+        table: "protests",
+        filter: delegationId ? `delegation_id=eq.${delegationId}` : undefined,
+      },
+    ],
+    onChange: fetchList,
+    enabled: !!delegationId,
+    debounceMs: 400,
+  });
 
   return (
     <div className="min-h-screen bg-background">
