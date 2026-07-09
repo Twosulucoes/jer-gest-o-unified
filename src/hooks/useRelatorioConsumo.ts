@@ -334,6 +334,11 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
       if (etapaId) q = q.eq("event_stage_id", etapaId);
       if (dataInicio) q = q.gte("janela_data", dataInicio);
       if (dataFim) q = q.lte("janela_data", dataFim);
+      // vw_erros_sync é linha-a-linha (não agregada como vw_consumo_por_dia/
+      // por_janela), então operadorId e syncStatus são filtráveis aqui —
+      // antes só a aba "Completo"/resumo aplicava esses dois filtros.
+      if (operadorId) q = q.eq("registrado_por_id", operadorId);
+      if (syncStatus && syncStatus !== "all") q = q.eq("sync_status", syncStatus);
 
       const { data, error } = await q;
       if (error) throw error;

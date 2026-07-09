@@ -86,22 +86,33 @@ export const consolidatedPersonReport: ReportDefinition<ConsolidatedRow> = {
       const svc = (filters.service_filter as string) || 'all';
 
       // Consolida por pessoa (soma todas as funções da mesma pessoa no evento)
+      //
+      // meal_voucher_uses (novo, vw_person_logistics_consumption) conta só os
+      // usos de voucher com service_kind='meals' feitos com o voucher nominal
+      // da própria pessoa — dobra em "Refeições" (meals_consumed), já que do
+      // ponto de vista de "quantas refeições essa pessoa comeu" um resgate
+      // via voucher conta tanto quanto um scan. voucher_uses_total continua
+      // sendo o total bruto (todos os serviços) para a coluna "Vouchers", mas
+      // ao entrar em total_consumption subtrai a parcela de refeições — ela
+      // já foi somada uma vez via meals_consumed, e total_consumption não
+      // pode contar o mesmo uso de voucher duas vezes.
       const byPerson = new Map<string, ConsolidatedRow>();
       for (const r of (data || []) as any[]) {
         const key = r.person_id;
         const existing = byPerson.get(key);
         const transport = Number(r.transport_boardings || 0);
-        const meals = Number(r.meals_consumed || 0);
+        const mealVoucher = Number(r.meal_voucher_uses || 0);
+        const meals = Number(r.meals_consumed || 0) + mealVoucher;
         const lodging = Number(r.lodging_nights || 0);
         const voucher = Number(r.voucher_uses_total || 0);
+        const nonMealVoucher = Math.max(0, voucher - mealVoucher);
 
         if (existing) {
           existing.transport_boardings += transport;
           existing.meals_consumed += meals;
           existing.lodging_nights += lodging;
           existing.voucher_uses_total += voucher;
-          existing.total_consumption =
-            existing.transport_boardings + existing.meals_consumed + existing.lodging_nights;
+          existing.total_consumption += transport + meals + lodging + nonMealVoucher;
           // Mantém função "principal" — concatena se forem diferentes
           if (!existing.participant_type.includes(r.participant_type)) {
             existing.participant_type += `, ${r.participant_type}`;
@@ -119,7 +130,7 @@ export const consolidatedPersonReport: ReportDefinition<ConsolidatedRow> = {
             meals_consumed: meals,
             lodging_nights: lodging,
             voucher_uses_total: voucher,
-            total_consumption: transport + meals + lodging,
+            total_consumption: transport + meals + lodging + nonMealVoucher,
           });
         }
       }

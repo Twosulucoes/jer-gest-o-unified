@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,9 +51,19 @@ interface ParticipantRow {
 export default function DelegacaoAlimentacaoPage() {
   const { activeEventId } = useEventContext();
   usePwaAudit("delegacao/alimentacao");
+  const queryClient = useQueryClient();
 
   const [filterDate, setFilterDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [delegationId, setDelegationId] = useState<string | null>(null);
+
+  // Tick de 30s: sem isso, "Ausências" só recalculava quando os dados eram
+  // refetchados — uma janela que fechasse com a aba aberta não fazia o
+  // card/lista de ausências aparecer sozinho, só recarregando a página.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const tick = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -127,6 +137,22 @@ export default function DelegacaoAlimentacaoPage() {
     },
   });
 
+  // Realtime: sem isso, "Consumos"/"Ausências" só atualizavam com refetch
+  // manual (troca de data) ou reload — um dirigente acompanhando a tela ao
+  // vivo não via os números mudarem enquanto scans aconteciam.
+  useEffect(() => {
+    if (!activeEventId || !delegationId) return;
+    const channel = supabase
+      .channel(`delegacao_alimentacao_${activeEventId}_${delegationId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["delegacao_meal_consumptions"] });
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [activeEventId, delegationId, queryClient]);
+
   // Presença efetiva da delegação na data
   const presentParticipants = useMemo(
     () =>
@@ -147,7 +173,6 @@ export default function DelegacaoAlimentacaoPage() {
   // encerrada (uma janela ainda aberta ou futura não vira "ausência" —
   // o participante ainda pode consumir).
   const ausencias = useMemo(() => {
-    const now = new Date();
     const out: Array<{ id: string; participant: ParticipantRow; window: MealWindowRow }> = [];
     for (const win of windows) {
       if (!isMealWindowClosed(win.service_date, win.end_time, now)) continue;
@@ -172,7 +197,7 @@ export default function DelegacaoAlimentacaoPage() {
       }
     }
     return out;
-  }, [windows, presentParticipants, consumptions]);
+  }, [windows, presentParticipants, consumptions, now]);
 
   const partMap = useMemo(() => new Map(participants.map((p) => [p.id, p])), [participants]);
   const winMap = useMemo(() => new Map(windows.map((w) => [w.id, w])), [windows]);

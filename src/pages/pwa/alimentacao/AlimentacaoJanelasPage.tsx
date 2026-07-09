@@ -46,74 +46,102 @@ export default function AlimentacaoJanelasPage() {
     }
   }, [eventId, stageId]);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setQueryError(null);
-      let query = supabase
-        .from("meal_windows")
-        .select(`
-          id,
-          start_time,
-          end_time,
-          service_date,
-          capacity,
-          location,
-          meal_locations(name),
-          meal_type:meal_types(name)
-        `)
-        .eq("event_id", eventId);
+  async function loadWindows() {
+    setLoading(true);
+    setQueryError(null);
+    let query = supabase
+      .from("meal_windows")
+      .select(`
+        id,
+        start_time,
+        end_time,
+        service_date,
+        capacity,
+        location,
+        meal_locations(name),
+        meal_type:meal_types(name)
+      `)
+      .eq("event_id", eventId);
 
-      if (stageId) {
-        query = query.eq("event_stage_id", stageId);
-      }
+    if (stageId) {
+      query = query.eq("event_stage_id", stageId);
+    }
 
-      const { data, error } = await query.order("service_date").order("start_time");
-      if (error) {
-        setQueryError(error.message);
-        setLoading(false);
-        return;
-      }
-      let list = (data as WindowItem[]) || [];
-
-      if (list.length > 0) {
-        const windowIds = list.map((w) => w.id);
-
-        // vw_consumo_por_janela já agrega meal_consumptions por janela —
-        // reaproveita em vez de buscar linha a linha.
-        let consumoQ = (supabase as any)
-          .from("vw_consumo_por_janela")
-          .select("janela_id, total_consumos")
-          .eq("event_id", eventId)
-          .in("janela_id", windowIds);
-        if (stageId) consumoQ = consumoQ.eq("event_stage_id", stageId);
-
-        const [{ data: consumoRows }, { data: unlinkedRows }] = await Promise.all([
-          consumoQ,
-          (supabase as any)
-            .from("meal_consumptions_unlinked")
-            .select("meal_window_id")
-            .in("meal_window_id", windowIds),
-        ]);
-
-        const consumoMap = new Map<string, number>(
-          (consumoRows ?? []).map((r: any) => [r.janela_id, r.total_consumos ?? 0]),
-        );
-        const unlinkedMap = new Map<string, number>();
-        for (const row of unlinkedRows ?? []) {
-          unlinkedMap.set(row.meal_window_id, (unlinkedMap.get(row.meal_window_id) ?? 0) + 1);
-        }
-
-        list = list.map((w) => ({
-          ...w,
-          consumption_count: (consumoMap.get(w.id) ?? 0) + (unlinkedMap.get(w.id) ?? 0),
-        }));
-      }
-
-      setWindows(list);
+    const { data, error } = await query.order("service_date").order("start_time");
+    if (error) {
+      setQueryError(error.message);
       setLoading(false);
-      if (list.length > 0) writeMealWindowsCache(eventId, stageId, list);
-    })();
+      return;
+    }
+    let list = (data as WindowItem[]) || [];
+
+    if (list.length > 0) {
+      const windowIds = list.map((w) => w.id);
+
+      // vw_consumo_por_janela já agrega meal_consumptions (vinculado +
+      // não vinculado, ver vw_meal_consumptions_all) por janela — reaproveita
+      // em vez de buscar linha a linha. Soma também service_voucher_uses
+      // (service_kind='meals'), que não passa nem por meal_consumptions nem
+      // por meal_consumptions_unlinked — sem isso, "Consumo: X/Y" e o selo
+      // "· lotada" ficavam cegos para refeições resgatadas via voucher.
+      let consumoQ = (supabase as any)
+        .from("vw_consumo_por_janela")
+        .select("janela_id, total_consumos")
+        .eq("event_id", eventId)
+        .in("janela_id", windowIds);
+      if (stageId) consumoQ = consumoQ.eq("event_stage_id", stageId);
+
+      const [{ data: consumoRows }, { data: voucherRows }] = await Promise.all([
+        consumoQ,
+        supabase
+          .from("service_voucher_uses")
+          .select("context_id")
+          .eq("service_kind", "meals")
+          .in("context_id", windowIds)
+          .limit(20000),
+      ]);
+
+      const consumoMap = new Map<string, number>(
+        (consumoRows ?? []).map((r: any) => [r.janela_id, r.total_consumos ?? 0]),
+      );
+      const voucherMap = new Map<string, number>();
+      for (const row of voucherRows ?? []) {
+        if (!row.context_id) continue;
+        voucherMap.set(row.context_id, (voucherMap.get(row.context_id) ?? 0) + 1);
+      }
+
+      list = list.map((w) => ({
+        ...w,
+        consumption_count: (consumoMap.get(w.id) ?? 0) + (voucherMap.get(w.id) ?? 0),
+      }));
+    }
+
+    setWindows(list);
+    setLoading(false);
+    if (list.length > 0) writeMealWindowsCache(eventId, stageId, list);
+  }
+
+  useEffect(() => {
+    loadWindows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, stageId]);
+
+  // Realtime: sem isso, a tela só refletia consumo/ocupação atualizados no
+  // próximo mount — um operador acompanhando a lotação de uma janela via
+  // este painel não via o número subir enquanto scans aconteciam em outro
+  // dispositivo/tela.
+  useEffect(() => {
+    if (!eventId) return;
+    const channel = supabase
+      .channel(`meal_janelas_pwa_${eventId}_${stageId ?? "all"}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions" }, () => loadWindows())
+      .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions_unlinked" }, () => loadWindows())
+      .on("postgres_changes", { event: "*", schema: "public", table: "service_voucher_uses" }, () => loadWindows())
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, stageId]);
 
   const getStatus = (w: WindowItem) => {

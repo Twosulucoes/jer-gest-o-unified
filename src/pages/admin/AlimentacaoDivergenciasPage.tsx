@@ -96,14 +96,39 @@ export default function AlimentacaoDivergenciasPage() {
       if (winError) throw winError;
       if (!windows?.length) return [];
 
-      // 2.2 Fetch all consumptions for these windows
+      // 2.2 Fetch all consumptions for these windows — meal_consumptions
+      // (vinculado) + service_voucher_uses de voucher NOMINAL (service_kind
+      // ='meals', service_vouchers.participant_id preenchido). Sem isso, um
+      // participante elegível que comeu usando voucher nominal em vez de
+      // escanear o crachá nunca aparecia em meal_consumptions e era listado
+      // em "Ausências Detectadas" com o motivo "Presente, elegível, não
+      // consumiu" — uma acusação de ausência falsa para quem de fato comeu.
+      // Voucher avulso/anônimo (sem participant_id) não é atribuível a
+      // ninguém específico, então continua de fora — mesmo critério já
+      // usado nas demais telas para consumo avulso.
       const windowIds = windows.map(w => w.id);
-      const { data: consumptions, error: consError } = await (supabase as any)
-        .from("meal_consumptions")
-        .select("participant_id, meal_window_id")
-        .in("meal_window_id", windowIds);
-      
+      const [{ data: consumptions, error: consError }, { data: voucherConsumptions, error: voucherError }] =
+        await Promise.all([
+          (supabase as any)
+            .from("meal_consumptions")
+            .select("participant_id, meal_window_id")
+            .in("meal_window_id", windowIds),
+          (supabase as any)
+            .from("service_voucher_uses")
+            .select("context_id, service_vouchers!inner(participant_id)")
+            .eq("service_kind", "meals")
+            .in("context_id", windowIds)
+            .not("service_vouchers.participant_id", "is", null),
+        ]);
+
       if (consError) throw consError;
+      if (voucherError) throw voucherError;
+
+      const voucherConsumptionsByWindow = (voucherConsumptions ?? []).map((v: any) => ({
+        participant_id: v.service_vouchers?.participant_id ?? null,
+        meal_window_id: v.context_id,
+      }));
+      const allConsumptions = [...(consumptions ?? []), ...voucherConsumptionsByWindow];
 
       // 2.3 Buscar participantes elegíveis e cruzar com consumos.
       // Etapa 4: filtra por PRESENÇA EFETIVA na data de serviço — só conta
@@ -152,7 +177,7 @@ export default function AlimentacaoDivergenciasPage() {
         if (!isMealWindowClosed(win.service_date, win.end_time, now)) continue;
 
         const rules = win.meal_window_eligibility || [];
-        const winConsumptions = new Set(consumptions?.filter(c => c.meal_window_id === win.id).map(c => c.participant_id));
+        const winConsumptions = new Set(allConsumptions.filter(c => c.meal_window_id === win.id).map(c => c.participant_id));
 
         presentParticipants.forEach((p: any) => {
           // Check eligibility por regras da janela (perfil/delegação/instituição)

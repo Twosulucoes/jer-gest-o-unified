@@ -437,6 +437,7 @@ export default function AlimentacaoRelatoriosConsumoPage() {
         <TabsContent value="dia">
           <TableCard
             title="Consumo por Dia"
+            note="Totais agregados por dia — não são filtrados por Operador/Status de sync/Origem (esses filtros só afetam Completo, Por Operador e Erros Sync)."
             onExport={canExport ? exportCSV.porDia : undefined}
             loading={isLoading}
             empty={porDia.length === 0}
@@ -449,6 +450,7 @@ export default function AlimentacaoRelatoriosConsumoPage() {
         <TabsContent value="janela">
           <TableCard
             title="Consumo por Janela"
+            note="Totais agregados por janela — não são filtrados por Operador/Status de sync/Origem (esses filtros só afetam Completo, Por Operador e Erros Sync)."
             onExport={canExport ? exportCSV.porJanela : undefined}
             loading={isLoading}
             empty={porJanela.length === 0}
@@ -461,6 +463,7 @@ export default function AlimentacaoRelatoriosConsumoPage() {
         <TabsContent value="operador">
           <TableCard
             title="Consumo por Operador"
+            note="Não é filtrada por Status de sync/Origem — as colunas QR/Manual/Voucher já são a quebra por método."
             onExport={canExport ? exportCSV.porOperador : undefined}
             loading={isLoading}
             empty={porOperador.length === 0}
@@ -473,6 +476,7 @@ export default function AlimentacaoRelatoriosConsumoPage() {
         <TabsContent value="etapa">
           <TableCard
             title="Consumo por Etapa"
+            note="Totais da etapa inteira — não são filtrados por Data início/fim nem por Operador/Status de sync/Origem."
             onExport={canExport ? exportCSV.porEtapa : undefined}
             loading={isLoading}
             empty={porEtapa.length === 0}
@@ -549,6 +553,7 @@ function SummaryCard({
 
 function TableCard({
   title,
+  note,
   onExport,
   loading,
   empty,
@@ -556,6 +561,7 @@ function TableCard({
   children,
 }: {
   title: string;
+  note?: string;
   onExport?: () => void;
   loading: boolean;
   empty: boolean;
@@ -565,7 +571,10 @@ function TableCard({
   return (
     <Card className="mt-2">
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div>
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          {note && <p className="text-[11px] text-muted-foreground mt-0.5">{note}</p>}
+        </div>
         {onExport && (
           <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={onExport}>
             <Download className="h-3.5 w-3.5" />
@@ -827,8 +836,12 @@ function PorEtapaTable({ rows }: { rows: ReturnType<typeof useRelatorioConsumo>[
           {th("media_por_dia", "Média/dia", "text-right")}
           {th("total_realtime", "Realtime", "text-right")}
           {th("total_queue", "Fila", "text-right")}
-          {th("total_erros", "Erros", "text-right")}
-          {th("taxa_erro_percent", "% Erro", "text-right")}
+          {/* "Erros"/"% Erro" medem só duplicidade_detectada — fila offline
+              já tem coluna própria ("Fila") ao lado. O rótulo "% Duplic."
+              deixa isso explícito (evita confusão com a aba "Erros Sync",
+              que soma fila OU duplicidade sob o mesmo rótulo "erro"). */}
+          {th("total_erros", "Duplicidades", "text-right")}
+          {th("taxa_erro_percent", "% Duplic.", "text-right")}
         </TableRow>
       </TableHeader>
       <TableBody>
