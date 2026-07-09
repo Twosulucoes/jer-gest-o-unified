@@ -59,34 +59,6 @@ export default function AlimentacaoConsumoPage() {
     setCurrentPage(1);
   }, [selectedWindowId, statusFilter, searchTerm, operatorFilter]);
 
-  useEffect(() => {
-    if (!selectedEventId) return;
-
-    const channel = supabase
-      .channel(`meal_consumptions_consumo_${selectedEventId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "meal_consumptions" },
-        () => {
-          void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
-          void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "meal_consumptions_unlinked" },
-        () => {
-          void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
-          void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [selectedEventId, qc]);
-
   const { data: mealTypes = [] } = useQuery({
     queryKey: ["meal_types", selectedEventId],
     queryFn: async () => {
@@ -126,6 +98,47 @@ export default function AlimentacaoConsumoPage() {
     },
     enabled: !!selectedEventId,
   });
+
+  useEffect(() => {
+    if (!selectedEventId) return;
+
+    // postgres_changes não filtra por evento diretamente (meal_consumptions
+    // não tem event_id — só meal_window_id). Para não invalidar as queries
+    // à toa quando outro evento tem atividade simultânea na mesma base,
+    // ignoramos qualquer mudança cuja janela não pertença às janelas do
+    // evento/etapa atualmente carregadas aqui.
+    const windowIdSet = new Set(windows.map((w: any) => w.id));
+    const isRelevant = (payload: any) => {
+      const windowId = payload?.new?.meal_window_id ?? payload?.old?.meal_window_id;
+      return !windowId || windowIdSet.has(windowId);
+    };
+
+    const channel = supabase
+      .channel(`meal_consumptions_consumo_${selectedEventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meal_consumptions" },
+        (payload) => {
+          if (!isRelevant(payload)) return;
+          void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
+          void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meal_consumptions_unlinked" },
+        (payload) => {
+          if (!isRelevant(payload)) return;
+          void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
+          void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [selectedEventId, qc, windows]);
 
   const stageWindowsCount = windows.length;
   const showingFallbackWindows = false;
@@ -254,7 +267,13 @@ export default function AlimentacaoConsumoPage() {
     ? mealTypesMap.get((selectedWindow as any).meal_type_id)
     : null;
 
-  const { data: kpiCount = 0 } = useQuery({
+  // Contagem exata via count() — não depende da lista `consumptions`, que é
+  // limitada a 2000 linhas por tabela (linkedData/unlinkedData acima) e por
+  // isso não pode alimentar "Vinculados"/"Não vinculados": em eventos com
+  // mais de 2000 registros numa das tabelas, esses dois números ficavam
+  // subcontados e paravam de bater com "Consumos registrados" (kpiCount,
+  // que já era exato). Agora os três vêm da mesma fonte exata.
+  const { data: kpiCounts } = useQuery({
     queryKey: [
       "meal_consumption_kpi_count",
       selectedEventId,
@@ -263,7 +282,9 @@ export default function AlimentacaoConsumoPage() {
       selectedWindowId,
     ],
     queryFn: async () => {
-      if (!selectedEventId || windows.length === 0) return 0;
+      if (!selectedEventId || windows.length === 0) {
+        return { total: 0, linked: 0, unlinked: 0 };
+      }
 
       const windowIds =
         selectedWindowId === "all"
@@ -294,20 +315,18 @@ export default function AlimentacaoConsumoPage() {
       if (linkedError) throw linkedError;
       if (unlinkedError) throw unlinkedError;
 
-      return (linkedCount ?? 0) + (unlinkedCount ?? 0);
+      return {
+        total: (linkedCount ?? 0) + (unlinkedCount ?? 0),
+        linked: linkedCount ?? 0,
+        unlinked: unlinkedCount ?? 0,
+      };
     },
     enabled: !!selectedEventId && windows.length > 0,
   });
 
-  const linkedTotal = useMemo(
-    () => consumptions.filter((c: any) => c.source_type === "linked").length,
-    [consumptions],
-  );
-
-  const unlinkedTotal = useMemo(
-    () => consumptions.filter((c: any) => c.source_type === "unlinked").length,
-    [consumptions],
-  );
+  const kpiCount = kpiCounts?.total ?? 0;
+  const linkedTotal = kpiCounts?.linked ?? 0;
+  const unlinkedTotal = kpiCounts?.unlinked ?? 0;
 
   return (
     <div className="animate-fade-in space-y-6">

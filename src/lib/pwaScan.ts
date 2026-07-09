@@ -32,7 +32,10 @@ export const REOPEN_DELAY_OPTIONS = [
   { value: 1500, label: "Lento (1,5s)" },
 ] as const;
 
-const today = () => new Date().toISOString().slice(0, 10);
+// `fr-CA` produz YYYY-MM-DD respeitando o fuso local do dispositivo (mesma
+// lógica de useTodayString.ts). `toISOString()` usava UTC e fazia a
+// telemetria OK/Erro resetar às 20h em Roraima (UTC-4) em vez de à meia-noite.
+const today = () => new Date().toLocaleDateString("fr-CA");
 
 const prefsKey = (module: ScanModule, userId?: string | null) =>
   `pwaScan:prefs:${module}:${userId ?? "anon"}`;

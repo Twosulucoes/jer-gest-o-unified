@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -173,36 +172,79 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
     origem,
   ];
 
+  // Filtros compartilhados entre a query de detalhe (completoQuery, com
+  // limit) e a de resumo (contagens exatas, sem limit) — mesma regra nos
+  // dois lugares para não divergir.
+  function applyConsumoCompletoFilters(q: any) {
+    let query = q.eq("event_id", eventId);
+    if (etapaId) query = query.eq("event_stage_id", etapaId);
+    if (dataInicio) query = query.gte("janela_data", dataInicio);
+    if (dataFim) query = query.lte("janela_data", dataFim);
+    if (operadorId) query = query.eq("registrado_por_id", operadorId);
+    if (syncStatus && syncStatus !== "all") {
+      if (syncStatus === "duplicidade") {
+        query = query.eq("duplicidade_detectada", true);
+      } else {
+        query = query.eq("sync_status", syncStatus);
+      }
+    }
+    if (origem && origem !== "all") query = query.eq("origem", origem);
+    return query;
+  }
+
   // ── vw_consumo_completo ────────────────────────────────────────────────────
   // PostgREST trunca em 1000 por padrão; com 20k+ consumos por evento isso
-  // mascarava o resumo. Usamos limit alto para garantir contagem correta.
+  // mascarava a tabela "Completo". Usamos limit alto (a aba de detalhe/CSV
+  // "Completo" ainda depende de uma lista de linhas), mas o resumo (cards)
+  // não vem mais daqui — ver resumoQuery abaixo, que usa count() e por isso
+  // não sofre com o mesmo truncamento em eventos muito grandes.
   const completoQuery = useQuery({
     queryKey: [...queryKey, "completo"],
     enabled,
     queryFn: async () => {
-      let q = (supabase as any)
-        .from("vw_consumo_completo")
-        .select("*")
-        .eq("event_id", eventId)
+      const q = applyConsumoCompletoFilters(
+        (supabase as any).from("vw_consumo_completo").select("*"),
+      )
         .order("consumed_at", { ascending: false })
         .limit(50000);
-
-      if (etapaId) q = q.eq("event_stage_id", etapaId);
-      if (dataInicio) q = q.gte("janela_data", dataInicio);
-      if (dataFim) q = q.lte("janela_data", dataFim);
-      if (operadorId) q = q.eq("registrado_por_id", operadorId);
-      if (syncStatus && syncStatus !== "all") {
-        if (syncStatus === "duplicidade") {
-          q = q.eq("duplicidade_detectada", true);
-        } else {
-          q = q.eq("sync_status", syncStatus);
-        }
-      }
-      if (origem && origem !== "all") q = q.eq("origem", origem);
 
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as ConsumoCompletoRow[];
+    },
+  });
+
+  // ── Resumo via count() exato — não depende da lista de 50k linhas acima,
+  // que já truncou silenciosamente uma vez (comentário de 20260511) e
+  // voltaria a truncar em qualquer evento com mais consumos que o limite.
+  const resumoQuery = useQuery({
+    queryKey: [...queryKey, "resumo"],
+    enabled,
+    queryFn: async (): Promise<RelatorioResumo> => {
+      const countOf = async (extra?: (q: any) => any) => {
+        let q = applyConsumoCompletoFilters(
+          (supabase as any).from("vw_consumo_completo").select("id", { count: "exact", head: true }),
+        );
+        if (extra) q = extra(q);
+        const { count, error } = await q;
+        if (error) throw error;
+        return count ?? 0;
+      };
+
+      const [total, realtime, queue, duplicidade] = await Promise.all([
+        countOf(),
+        countOf((q) => q.eq("sync_status", "realtime")),
+        countOf((q) => q.eq("sync_status", "queue")),
+        countOf((q) => q.eq("duplicidade_detectada", true)),
+      ]);
+
+      return {
+        totalRefeicoes: total,
+        totalRealtime: realtime,
+        totalQueue: queue,
+        totalDuplicidade: duplicidade,
+        pctRealtime: total > 0 ? Math.round((realtime / total) * 100) : 100,
+      };
     },
   });
 
@@ -310,21 +352,13 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
     },
   });
 
-  // ── Computed summary numbers ───────────────────────────────────────────────
-  const resumo = useMemo<RelatorioResumo>(() => {
-    const rows = completoQuery.data ?? [];
-    const total = rows.length;
-    const realtime = rows.filter((r) => r.sync_status === "realtime").length;
-    const queue = rows.filter((r) => r.sync_status === "queue").length;
-    const dupl = rows.filter((r) => r.duplicidade_detectada).length;
-    return {
-      totalRefeicoes: total,
-      totalRealtime: realtime,
-      totalQueue: queue,
-      totalDuplicidade: dupl,
-      pctRealtime: total > 0 ? Math.round((realtime / total) * 100) : 100,
-    };
-  }, [completoQuery.data]);
+  const resumo: RelatorioResumo = resumoQuery.data ?? {
+    totalRefeicoes: 0,
+    totalRealtime: 0,
+    totalQueue: 0,
+    totalDuplicidade: 0,
+    pctRealtime: 100,
+  };
 
   // ── CSV export helpers ─────────────────────────────────────────────────────
   function buildCsv<T extends Record<string, unknown>>(rows: T[]): string {
@@ -381,6 +415,7 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
   };
 
   const isLoading =
+    resumoQuery.isLoading ||
     completoQuery.isLoading ||
     porDiaQuery.isLoading ||
     porJanelaQuery.isLoading ||
@@ -389,6 +424,7 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
     porEtapaQuery.isLoading;
 
   const error =
+    resumoQuery.error ||
     completoQuery.error ||
     porDiaQuery.error ||
     porJanelaQuery.error ||

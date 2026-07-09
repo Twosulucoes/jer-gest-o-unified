@@ -11,6 +11,7 @@ import { PwaHeader } from "@/components/pwa/PwaHeader";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { readMealWindowsCache, writeMealWindowsCache } from "@/lib/mealWindowsCache";
 import { useTodayString } from "@/hooks/useTodayString";
+import { mealWindowStatus } from "@/lib/mealWindowStatus";
 
 interface WindowItem {
   id: string;
@@ -73,7 +74,42 @@ export default function AlimentacaoJanelasPage() {
         setLoading(false);
         return;
       }
-      const list = (data as WindowItem[]) || [];
+      let list = (data as WindowItem[]) || [];
+
+      if (list.length > 0) {
+        const windowIds = list.map((w) => w.id);
+
+        // vw_consumo_por_janela já agrega meal_consumptions por janela —
+        // reaproveita em vez de buscar linha a linha.
+        let consumoQ = (supabase as any)
+          .from("vw_consumo_por_janela")
+          .select("janela_id, total_consumos")
+          .eq("event_id", eventId)
+          .in("janela_id", windowIds);
+        if (stageId) consumoQ = consumoQ.eq("event_stage_id", stageId);
+
+        const [{ data: consumoRows }, { data: unlinkedRows }] = await Promise.all([
+          consumoQ,
+          (supabase as any)
+            .from("meal_consumptions_unlinked")
+            .select("meal_window_id")
+            .in("meal_window_id", windowIds),
+        ]);
+
+        const consumoMap = new Map<string, number>(
+          (consumoRows ?? []).map((r: any) => [r.janela_id, r.total_consumos ?? 0]),
+        );
+        const unlinkedMap = new Map<string, number>();
+        for (const row of unlinkedRows ?? []) {
+          unlinkedMap.set(row.meal_window_id, (unlinkedMap.get(row.meal_window_id) ?? 0) + 1);
+        }
+
+        list = list.map((w) => ({
+          ...w,
+          consumption_count: (consumoMap.get(w.id) ?? 0) + (unlinkedMap.get(w.id) ?? 0),
+        }));
+      }
+
       setWindows(list);
       setLoading(false);
       if (list.length > 0) writeMealWindowsCache(eventId, stageId, list);
@@ -82,11 +118,9 @@ export default function AlimentacaoJanelasPage() {
 
   const getStatus = (w: WindowItem) => {
     const date = w.service_date || today;
-    const start = new Date(`${date}T${w.start_time}`);
-    const end = new Date(`${date}T${w.end_time}`);
-    const now = new Date();
-    if (now < start) return { label: "Agendada", variant: "outline" as const };
-    if (now >= start && now <= end) return { label: "Aberta", variant: "default" as const };
+    const status = mealWindowStatus(date, w.start_time, w.end_time);
+    if (status === "futura") return { label: "Agendada", variant: "outline" as const };
+    if (status === "ativa") return { label: "Aberta", variant: "default" as const };
     return { label: "Encerrada", variant: "secondary" as const };
   };
 
@@ -133,9 +167,14 @@ export default function AlimentacaoJanelasPage() {
                     Local: {w.meal_locations?.name || w.location}
                   </p>
                 )}
-                {w.capacity && (
+                {(w.consumption_count !== undefined || w.capacity) && (
                   <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
-                    Capacidade: {w.capacity}
+                    {w.capacity
+                      ? `Consumo: ${w.consumption_count ?? 0}/${w.capacity}`
+                      : `Consumo: ${w.consumption_count ?? 0}`}
+                    {w.capacity && (w.consumption_count ?? 0) >= w.capacity && (
+                      <span className="ml-1 text-amber-600 dark:text-amber-400">· lotada</span>
+                    )}
                   </p>
                 )}
               </CardContent>

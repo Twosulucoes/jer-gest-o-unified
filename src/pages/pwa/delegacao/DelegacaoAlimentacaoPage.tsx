@@ -10,6 +10,7 @@ import { UtensilsCrossed, UserX, CheckCircle, AlertTriangle } from "lucide-react
 import { format } from "date-fns";
 import { useEventContext } from "@/contexts/EventContext";
 import { usePwaAudit } from "@/hooks/usePwaAudit";
+import { isMealWindowClosed } from "@/lib/mealWindowStatus";
 
 interface MealWindowRow {
   id: string;
@@ -142,10 +143,15 @@ export default function DelegacaoAlimentacaoPage() {
     [participants, filterDate],
   );
 
-  // Ausências por janela: presente + elegível + sem consumo
+  // Ausências por janela: presente + elegível + sem consumo + janela já
+  // encerrada (uma janela ainda aberta ou futura não vira "ausência" —
+  // o participante ainda pode consumir).
   const ausencias = useMemo(() => {
+    const now = new Date();
     const out: Array<{ id: string; participant: ParticipantRow; window: MealWindowRow }> = [];
     for (const win of windows) {
+      if (!isMealWindowClosed(win.service_date, win.end_time, now)) continue;
+
       const rules = win.meal_window_eligibility ?? [];
       const consumedSet = new Set(
         consumptions.filter((c) => c.meal_window_id === win.id).map((c) => c.participant_id),
@@ -195,7 +201,11 @@ export default function DelegacaoAlimentacaoPage() {
           />
         </div>
 
-        {/* KPIs */}
+        {/* KPIs — "Consumos" conta só meal_consumptions (participantes
+            credenciados desta delegação). QR não vinculado e voucher não
+            entram aqui de propósito: nenhum dos dois é atribuível a uma
+            delegação específica (não vinculado = participante desconhecido;
+            voucher = geralmente staff/árbitro externo à delegação). */}
         <div className="grid grid-cols-3 gap-2">
           <Card>
             <CardContent className="p-3">
