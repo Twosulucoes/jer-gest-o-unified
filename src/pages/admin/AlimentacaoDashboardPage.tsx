@@ -123,25 +123,45 @@ export default function AlimentacaoDashboardPage() {
     queryFn: async () => {
       const windowIds = mealWindows.map((w) => w.id);
       if (!windowIds.length) return [];
-      let linkedQ = supabase
-        .from("meal_consumptions")
-        .select("id, meal_window_id, participant_id, consumed_at, method")
-        .in("meal_window_id", windowIds);
-      if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
-        linkedQ = linkedQ.in("participant_id", Array.from(stageParticipantIds));
-      }
+
+      // Etapas grandes têm milhares de participantes — passar todos de uma vez
+      // em .in("participant_id", ...) gera uma URL enorme que pode travar/nunca
+      // responder (tela fica "carregando para sempre"). Mesmo chunking de 200
+      // já usado em totalParticipants (abaixo) e em useStageScope.ts.
+      const fetchLinked = async () => {
+        const baseSelect = () =>
+          supabase
+            .from("meal_consumptions")
+            .select("id, meal_window_id, participant_id, consumed_at, method")
+            .in("meal_window_id", windowIds);
+
+        if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
+          const ids = Array.from(stageParticipantIds);
+          const chunks: string[][] = [];
+          for (let i = 0; i < ids.length; i += 200) chunks.push(ids.slice(i, i + 200));
+          const results = await Promise.all(
+            chunks.map((chunk) => baseSelect().in("participant_id", chunk)),
+          );
+          for (const r of results) if (r.error) throw r.error;
+          return results.flatMap((r) => r.data ?? []);
+        }
+
+        const { data, error } = await baseSelect();
+        if (error) throw error;
+        return data ?? [];
+      };
+
       const unlinkedQ = (supabase as any)
         .from("meal_consumptions_unlinked")
         .select("id, meal_window_id, consumed_at, method")
         .in("meal_window_id", windowIds);
 
-      const [{ data: linked, error: linkedError }, { data: unlinked, error: unlinkedError }] =
-        await Promise.all([linkedQ, unlinkedQ]);
-      if (linkedError) throw linkedError;
+      const [linked, { data: unlinked, error: unlinkedError }] =
+        await Promise.all([fetchLinked(), unlinkedQ]);
       if (unlinkedError) throw unlinkedError;
 
       return [
-        ...(linked ?? []),
+        ...linked,
         ...(unlinked ?? []).map((c: any) => ({ ...c, participant_id: null as string | null })),
       ];
     },
