@@ -154,6 +154,18 @@ function findDuplicateMaterialItem(
   return undefined;
 }
 
+/**
+ * Consulta (sem enfileirar) se já existe uma entrega de material pendente
+ * de sincronização para o mesmo kit+participante (ou kit+qr_code) neste
+ * aparelho. Usado antes de acusar "já entregue" para uma pendência que
+ * nunca foi confirmada pelo servidor — ver MaterialScanPage.tsx.
+ */
+export function peekMaterialDuplicate(
+  data: Record<string, unknown>,
+): OfflineQueueItem | undefined {
+  return findDuplicateMaterialItem(getOfflineQueue(), data);
+}
+
 export type AddToOfflineQueueResult =
   | { item: OfflineQueueItem; deduped: false }
   | { item: OfflineQueueItem; deduped: true };

@@ -43,7 +43,12 @@ import {
 import { usePwaAudit } from "@/hooks/usePwaAudit";
 import PwaLayout from "@/components/pwa/PwaLayout";
 import { useParticipantStatusCache } from "@/hooks/pwa/useParticipantStatusCache";
-import { addToOfflineQueue, isOnline } from "@/lib/offlineQueue";
+import {
+  addToOfflineQueue,
+  isOnline,
+  peekMaterialDuplicate,
+  removeFromOfflineQueue,
+} from "@/lib/offlineQueue";
 import { cn } from "@/lib/utils";
 
 interface MaterialKit {
@@ -359,7 +364,60 @@ export default function MaterialScanPage() {
       delivered_by: session.user.id,
     };
 
-    const enqueueAndShowOfflineResult = () => {
+    const enqueueAndShowOfflineResult = async () => {
+      // Antes de acusar duplicidade, verifica se a "pendência" já
+      // encontrada é só uma tentativa anterior que nunca foi confirmada
+      // pelo servidor (ex.: a 1ª leitura deu timeout mas talvez nunca
+      // tenha chegado a gravar). Se estivermos online agora, tenta
+      // confirmar direto com o servidor em vez de confiar cegamente na
+      // fila local — evita informar "JÁ ENTREGUE" para quem na verdade
+      // nunca recebeu o kit.
+      const pendingMatch = peekMaterialDuplicate(payload);
+      if (pendingMatch && isOnline()) {
+        try {
+          const { data: confirmResult, error: confirmError } = await withTimeout(
+            (supabase as any).rpc("record_material_delivery", {
+              p_participant_id: participantId,
+              p_kit_id: kitId,
+              p_method: method,
+              p_delivered_by: session.user.id,
+            }),
+            RPC_TIMEOUT_MS,
+          );
+
+          if (!confirmError) {
+            const confirmRes = confirmResult as { ok: boolean; reason?: string };
+
+            if (confirmRes.ok) {
+              // A tentativa anterior nunca tinha sido gravada de fato —
+              // esta é a entrega real, agora confirmada.
+              removeFromOfflineQueue(pendingMatch.id);
+              const prefix = method === "manual" ? "Busca manual · " : "";
+              const successMsg = `${prefix}Material entregue: ${participantName || ""}`;
+              setResult({ ok: true, source: resultSource, message: successMsg });
+              recordOutcome("ok");
+              if (navigator.vibrate) navigator.vibrate(200);
+              autoContinueOnSuccess();
+              return;
+            }
+
+            if (confirmRes.reason === "ALREADY_DELIVERED") {
+              // Confirmado pelo servidor, não é só um palpite local.
+              removeFromOfflineQueue(pendingMatch.id);
+              const dedupMsg = `JÁ ENTREGUE: ${participantName || "esta pessoa"} já recebeu este kit.`;
+              setResult({ ok: false, message: dedupMsg, source: resultSource, variant: "duplicate" });
+              recordOutcome("error");
+              if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
+              return;
+            }
+          }
+          // Erro diferente de ALREADY_DELIVERED, ou request também falhou:
+          // segue sem certeza — cai no fallback de pendência abaixo.
+        } catch {
+          // Nova tentativa também não respondeu a tempo — segue para o fallback.
+        }
+      }
+
       const enqueueResult = addToOfflineQueue(
         "material",
         payload,
@@ -367,9 +425,9 @@ export default function MaterialScanPage() {
       );
 
       if (enqueueResult.deduped) {
-        const dedupMsg = `JÁ ENTREGUE (pendente offline neste aparelho): ${
+        const dedupMsg = `PENDÊNCIA NÃO CONFIRMADA: uma leitura anterior deste crachá para ${
           participantName || "esta pessoa"
-        }`;
+        } ainda não foi confirmada pelo servidor. Verifique com o participante antes de repetir a entrega.`;
         setResult({ ok: false, message: dedupMsg, source: resultSource, variant: "duplicate" });
         recordOutcome("error");
         if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
@@ -386,7 +444,7 @@ export default function MaterialScanPage() {
     };
 
     if (!isOnline()) {
-      enqueueAndShowOfflineResult();
+      await enqueueAndShowOfflineResult();
       return;
     }
 
@@ -443,7 +501,7 @@ export default function MaterialScanPage() {
       // nunca perde o registro: cai no mesmo caminho de fila offline usado
       // quando já se sabia estar sem internet.
       console.warn("[material] Falha de rede ao registrar entrega, enfileirando:", networkErr);
-      enqueueAndShowOfflineResult();
+      await enqueueAndShowOfflineResult();
     }
   }
 
@@ -477,11 +535,54 @@ export default function MaterialScanPage() {
       delivered_by: session.user.id,
     };
 
-    const enqueueAndShowOfflineResult = () => {
+    const enqueueAndShowOfflineResult = async () => {
+      // Mesmo princípio de registerDelivery: não confiar cegamente numa
+      // pendência local não confirmada pelo servidor antes de acusar
+      // duplicidade — tenta confirmar direto se já estivermos online.
+      const pendingMatch = peekMaterialDuplicate(payload);
+      if (pendingMatch && isOnline()) {
+        try {
+          const { data: confirmResult, error: confirmError } = await withTimeout(
+            (supabase as any).rpc("record_material_delivery_unlinked", {
+              p_qr_code: qrCode,
+              p_kit_id: kitId,
+              p_method: "qr_scan",
+              p_delivered_by: session.user.id,
+            }),
+            RPC_TIMEOUT_MS,
+          );
+
+          if (!confirmError) {
+            const confirmRes = confirmResult as { ok: boolean; reason?: string };
+
+            if (confirmRes.ok) {
+              removeFromOfflineQueue(pendingMatch.id);
+              const successMsg = `Material entregue — crachá não vinculado: ${qrCode}. Nome será associado quando o crachá for reconciliado.`;
+              setResult({ ok: true, source: "qr", message: successMsg });
+              recordOutcome("ok");
+              if (navigator.vibrate) navigator.vibrate(200);
+              autoContinueOnSuccess();
+              return;
+            }
+
+            if (confirmRes.reason === "ALREADY_DELIVERED") {
+              removeFromOfflineQueue(pendingMatch.id);
+              const dedupMsg = `JÁ ENTREGUE — crachá não vinculado: ${qrCode}`;
+              setResult({ ok: false, message: dedupMsg, source: "qr", variant: "duplicate" });
+              recordOutcome("error");
+              if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
+              return;
+            }
+          }
+        } catch {
+          // Nova tentativa também não respondeu a tempo — segue para o fallback.
+        }
+      }
+
       const enqueueResult = addToOfflineQueue("material", payload);
 
       if (enqueueResult.deduped) {
-        const dedupMsg = `JÁ ENTREGUE (pendente offline neste aparelho) — crachá ${qrCode}`;
+        const dedupMsg = `PENDÊNCIA NÃO CONFIRMADA — crachá ${qrCode}: leitura anterior ainda não foi confirmada pelo servidor. Verifique antes de repetir a entrega.`;
         setResult({ ok: false, message: dedupMsg, source: "qr", variant: "duplicate" });
         recordOutcome("error");
         if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
@@ -496,7 +597,7 @@ export default function MaterialScanPage() {
     };
 
     if (!isOnline()) {
-      enqueueAndShowOfflineResult();
+      await enqueueAndShowOfflineResult();
       return;
     }
 
@@ -543,7 +644,7 @@ export default function MaterialScanPage() {
         "[material] Falha de rede ao registrar entrega não vinculada, enfileirando:",
         networkErr,
       );
-      enqueueAndShowOfflineResult();
+      await enqueueAndShowOfflineResult();
     }
   }
 
