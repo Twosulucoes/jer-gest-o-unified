@@ -170,6 +170,11 @@ export function useStageDashboardData(stageId?: string | null) {
 
   const windowIds = (mealWindows ?? []).map(w => w.id);
 
+  // Soma meal_consumptions (vinculado a participante) + meal_consumptions_unlinked
+  // (QR/crachá escaneado sem participant_id resolvido) — mesma definição de
+  // "consumo" já unificada em AlimentacaoDashboardPage.tsx/AlimentacaoConsumoPage.tsx;
+  // antes só lia meal_consumptions e todo crachá avulso desaparecia do card
+  // "Refeições" do Painel da Etapa.
   const consumptionQuery = useQueries({
     queries: [
       {
@@ -177,14 +182,23 @@ export function useStageDashboardData(stageId?: string | null) {
         enabled: enabled && windowIds.length > 0,
         staleTime: STALE,
         queryFn: () => safe(async () => {
-          const { count, error } = await supabase.from("meal_consumptions" as any)
-            .select("id", { count: "exact", head: true })
-            .in("meal_window_id", windowIds);
-          if (error) {
-            console.error("Error fetching meal consumptions count:", error);
-            throw error;
+          const [linked, unlinked] = await Promise.all([
+            supabase.from("meal_consumptions" as any)
+              .select("id", { count: "exact", head: true })
+              .in("meal_window_id", windowIds),
+            supabase.from("meal_consumptions_unlinked" as any)
+              .select("id", { count: "exact", head: true })
+              .in("meal_window_id", windowIds),
+          ]);
+          if (linked.error) {
+            console.error("Error fetching meal consumptions count:", linked.error);
+            throw linked.error;
           }
-          return count ?? 0;
+          if (unlinked.error) {
+            console.error("Error fetching unlinked meal consumptions count:", unlinked.error);
+            throw unlinked.error;
+          }
+          return (linked.count ?? 0) + (unlinked.count ?? 0);
         }, 0),
       },
       {
@@ -193,16 +207,27 @@ export function useStageDashboardData(stageId?: string | null) {
         staleTime: STALE,
         queryFn: () => safe(async () => {
           const { startISO, endISO } = brtDayBounds(todayISO());
-          const { count, error } = await supabase.from("meal_consumptions" as any)
-            .select("id", { count: "exact", head: true })
-            .in("meal_window_id", windowIds)
-            .gte("consumed_at", startISO)
-            .lt("consumed_at", endISO);
-          if (error) {
-            console.error("Error fetching today meal consumptions count:", error);
-            throw error;
+          const [linked, unlinked] = await Promise.all([
+            supabase.from("meal_consumptions" as any)
+              .select("id", { count: "exact", head: true })
+              .in("meal_window_id", windowIds)
+              .gte("consumed_at", startISO)
+              .lt("consumed_at", endISO),
+            supabase.from("meal_consumptions_unlinked" as any)
+              .select("id", { count: "exact", head: true })
+              .in("meal_window_id", windowIds)
+              .gte("consumed_at", startISO)
+              .lt("consumed_at", endISO),
+          ]);
+          if (linked.error) {
+            console.error("Error fetching today meal consumptions count:", linked.error);
+            throw linked.error;
           }
-          return count ?? 0;
+          if (unlinked.error) {
+            console.error("Error fetching today unlinked meal consumptions count:", unlinked.error);
+            throw unlinked.error;
+          }
+          return (linked.count ?? 0) + (unlinked.count ?? 0);
         }, 0),
       },
     ]
