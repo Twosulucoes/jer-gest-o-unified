@@ -145,19 +145,6 @@ export default function AlimentacaoRelatoriosPage() {
         .order("consumed_at", { ascending: false })
         .limit(20000);
 
-      let voucherQ = windowIds.length > 0
-        ? supabase
-            .from("service_voucher_uses")
-            .select(`
-              id, used_at, context_id,
-              service_vouchers!inner(label, voucher_type, is_nominal, service_eventual_people(full_name))
-            `)
-            .eq("service_kind", "meals")
-            .in("context_id", windowIds)
-            .order("used_at", { ascending: false })
-            .limit(20000)
-        : null;
-
       if (isStageScoped && stageId) {
         linkedQ = linkedQ.eq("meal_windows.event_stage_id", stageId);
         unlinkedQ = unlinkedQ.eq("meal_windows.event_stage_id", stageId);
@@ -168,33 +155,61 @@ export default function AlimentacaoRelatoriosPage() {
       // "dia" filtrado em 4h em relação ao horário local de Roraima e
       // cortando consumos do fim da noite (ex.: jantar após ~20h local) do
       // dia a que pertencem.
-      if (startDate) {
-        const { startIso } = dayRangeRoraima(startDate);
-        linkedQ = linkedQ.gte("consumed_at", startIso);
-        unlinkedQ = unlinkedQ.gte("consumed_at", startIso);
-        if (voucherQ) voucherQ = voucherQ.gte("used_at", startIso);
+      const startBound = startDate ? dayRangeRoraima(startDate).startIso : null;
+      const endBound = endDate ? dayRangeRoraima(endDate).endIsoExclusive : null;
+
+      if (startBound) {
+        linkedQ = linkedQ.gte("consumed_at", startBound);
+        unlinkedQ = unlinkedQ.gte("consumed_at", startBound);
       }
 
-      if (endDate) {
-        const { endIsoExclusive } = dayRangeRoraima(endDate);
-        linkedQ = linkedQ.lt("consumed_at", endIsoExclusive);
-        unlinkedQ = unlinkedQ.lt("consumed_at", endIsoExclusive);
-        if (voucherQ) voucherQ = voucherQ.lt("used_at", endIsoExclusive);
+      if (endBound) {
+        linkedQ = linkedQ.lt("consumed_at", endBound);
+        unlinkedQ = unlinkedQ.lt("consumed_at", endBound);
       }
 
+      // QR não vinculado e voucher não têm delegação atribuível → não entram
+      // quando filtra delegação.
+      const voucherDisabled = delegationFilter !== "all";
       if (delegationFilter !== "all") {
         linkedQ = linkedQ.eq("participants.delegation_id", delegationFilter);
-        // QR não vinculado e voucher não têm delegação atribuível. Então não
-        // entram quando filtra delegação.
         unlinkedQ = unlinkedQ.eq("id", "00000000-0000-0000-0000-000000000000");
-        voucherQ = null;
       }
+
+      // Voucher: busca em chunks de context_id. windowIds pode chegar a
+      // milhares (limit 5000 acima) e um único .in() estouraria o tamanho da
+      // URL do PostgREST (F1).
+      const fetchVouchers = async (): Promise<{ data: any[]; error: any }> => {
+        if (voucherDisabled || windowIds.length === 0) return { data: [], error: null };
+        const CHUNK = 150;
+        const chunks: string[][] = [];
+        for (let i = 0; i < windowIds.length; i += CHUNK) chunks.push(windowIds.slice(i, i + CHUNK));
+        const results = await Promise.all(
+          chunks.map((chunk) => {
+            let q = supabase
+              .from("service_voucher_uses")
+              .select(`
+                id, used_at, context_id,
+                service_vouchers!inner(label, voucher_type, is_nominal, service_eventual_people(full_name))
+              `)
+              .eq("service_kind", "meals")
+              .in("context_id", chunk)
+              .order("used_at", { ascending: false })
+              .limit(20000);
+            if (startBound) q = q.gte("used_at", startBound);
+            if (endBound) q = q.lt("used_at", endBound);
+            return q;
+          }),
+        );
+        const firstError = results.find((r) => r.error)?.error ?? null;
+        return { data: results.flatMap((r) => (r.data as any[]) ?? []), error: firstError };
+      };
 
       const [
         { data: linkedData, error: linkedError },
         { data: unlinkedData, error: unlinkedError },
         voucherRes,
-      ] = await Promise.all([linkedQ, unlinkedQ, voucherQ ?? Promise.resolve({ data: [], error: null })]);
+      ] = await Promise.all([linkedQ, unlinkedQ, fetchVouchers()]);
 
       if (linkedError) throw linkedError;
       if (unlinkedError) throw unlinkedError;
@@ -672,7 +687,7 @@ data.push({
           </div>
 
           <div className="w-52">
-            <label className="text-xs font-medium mb-1 block">Tifffpo de refeição</label>
+            <label className="text-xs font-medium mb-1 block">Tipo de refeição</label>
             <Select value={mealTypeFilter} onValueChange={setMealTypeFilter}>
               <SelectTrigger>
                 <SelectValue />
@@ -764,7 +779,7 @@ data.push({
               <TableRow>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Participante / QR</TableHead>
-                <TableHead>Delhegação</TableHead>
+                <TableHead>Delegação</TableHead>
                 <TableHead>Refeição</TableHead>
                 <TableHead>Data/Hora</TableHead>
                 <TableHead>Método</TableHead>
@@ -777,7 +792,9 @@ data.push({
       <TableCell>
         {c.source_type === "unlinked"
           ? "Consumo avulso"
-          : "Vinculado"}
+          : c.source_type === "voucher"
+            ? "Voucher"
+            : "Vinculado"}
       </TableCell>
 
       <TableCell className="font-medium">

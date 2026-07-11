@@ -179,6 +179,10 @@ export default function AlimentacaoRelatoriosConsumoPage() {
     operadorId: operadorId || undefined,
     syncStatus,
     origem,
+    // A aba "Completo" é a única que usa a lista bruta (e seu botão de export
+    // só existe lá) — carrega sob demanda para não puxar até 50k linhas em
+    // toda visita à tela.
+    loadCompleto: tab === "completo",
   };
 
   const { completo, porDia, porJanela, porOperador, erros, porEtapa, resumo, isLoading, exportCSV } =

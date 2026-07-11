@@ -13,6 +13,12 @@ export interface RelatorioFiltros {
   operadorId?: string;
   syncStatus?: SyncStatus;
   origem?: OrigemFilter;
+  // Carrega a lista bruta de vw_consumo_completo (até 50k linhas) só quando
+  // necessário — a aba "Completo" está aberta ou o usuário vai exportá-la.
+  // Sem isso, toda visita à tela puxava dezenas de milhares de linhas mesmo
+  // que o usuário só olhasse "Por Dia". Os cards de resumo continuam vindo de
+  // resumoQuery (count exato, barato), então nada no topo depende disto.
+  loadCompleto?: boolean;
 }
 
 // ── Row types matching each view ──────────────────────────────────────────────
@@ -158,6 +164,7 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
     operadorId,
     syncStatus,
     origem,
+    loadCompleto,
   } = debouncedFiltros;
 
   const enabled = !!eventId;
@@ -200,7 +207,7 @@ export function useRelatorioConsumo(filtros: RelatorioFiltros) {
   // não sofre com o mesmo truncamento em eventos muito grandes.
   const completoQuery = useQuery({
     queryKey: [...queryKey, "completo"],
-    enabled,
+    enabled: enabled && !!loadCompleto,
     queryFn: async () => {
       const q = applyConsumoCompletoFilters(
         (supabase as any).from("vw_consumo_completo").select("*"),
