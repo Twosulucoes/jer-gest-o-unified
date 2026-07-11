@@ -29,9 +29,11 @@ export default function AlimentacaoDashboardPage() {
   // e evitar refetch do dashboard inteiro a cada scan em qualquer evento.
   const mealWindowIdsRef = useRef<Set<string>>(new Set());
 
-  // Auto-refresh every 30 seconds (fallback caso o canal realtime caia)
+  // Fallback de 60s caso o canal realtime caia — o refresh primário vem do
+  // canal postgres_changes abaixo, então este intervalo só existe como rede
+  // de segurança; 60s (em vez de 30s) reduz pela metade o tráfego ocioso.
   useEffect(() => {
-    const interval = setInterval(() => setRefreshKey((k) => k + 1), 30000);
+    const interval = setInterval(() => setRefreshKey((k) => k + 1), 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -123,17 +125,22 @@ export default function AlimentacaoDashboardPage() {
     queryFn: async () => {
       const windowIds = mealWindows.map((w) => w.id);
       if (!windowIds.length) return [];
-      let linkedQ = supabase
+      // Não filtramos participant_id no banco: as janelas já estão escopadas
+      // por etapa (mealWindows), e o escopo por participante é reaplicado em
+      // memória em filteredConsumptions. Um .in("participant_id", ...) com
+      // milhares de IDs estouraria o tamanho da URL (F1) sem alterar o
+      // resultado final. .limit() explícito evita o corte padrão de 1000 do
+      // PostgREST (F2) em dias muito movimentados.
+      const linkedQ = supabase
         .from("meal_consumptions")
         .select("id, meal_window_id, participant_id, consumed_at, method")
-        .in("meal_window_id", windowIds);
-      if (isStageScoped && stageParticipantIds && stageParticipantIds.size > 0) {
-        linkedQ = linkedQ.in("participant_id", Array.from(stageParticipantIds));
-      }
+        .in("meal_window_id", windowIds)
+        .limit(20000);
       const unlinkedQ = (supabase as any)
         .from("meal_consumptions_unlinked")
         .select("id, meal_window_id, consumed_at, method")
-        .in("meal_window_id", windowIds);
+        .in("meal_window_id", windowIds)
+        .limit(20000);
 
       const [{ data: linked, error: linkedError }, { data: unlinked, error: unlinkedError }] =
         await Promise.all([linkedQ, unlinkedQ]);
@@ -256,10 +263,15 @@ export default function AlimentacaoDashboardPage() {
     staleTime: 15_000,
   });
 
-  // Filtered consumptions — also apply stage participant filter when scoped
+  // Filtered consumptions — also apply stage participant filter when scoped.
+  // Consumos avulsos (participant_id null) NÃO são descartados: eles já vêm
+  // restritos às janelas da etapa (a query de janelas é escopada) e devem
+  // somar nos totais gerais, igual às telas Relatórios/Consumo (as views
+  // incluem unlinked). Sem o `!c.participant_id`, todo avulso sumia do
+  // dashboard em escopo de etapa — divergindo das outras telas.
   const filteredConsumptions = useMemo(() => {
     let result = isStageScoped && stageParticipantIds
-      ? consumptions.filter((c) => stageParticipantIds.has(c.participant_id))
+      ? consumptions.filter((c) => !c.participant_id || stageParticipantIds.has(c.participant_id))
       : consumptions;
     if (filterMealType !== "all") {
       const windowIdsForType = mealWindows
@@ -271,7 +283,7 @@ export default function AlimentacaoDashboardPage() {
       result = result.filter((c) => participantDelegationMap.get(c.participant_id) === filterDelegation);
     }
     return result;
-  }, [consumptions, filterMealType, filterDelegation, mealWindows, participantDelegationMap]);
+  }, [consumptions, isStageScoped, stageParticipantIds, filterMealType, filterDelegation, mealWindows, participantDelegationMap]);
 
   // Stats per meal window
   const windowStats = useMemo(() => {
