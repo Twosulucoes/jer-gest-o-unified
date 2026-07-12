@@ -67,6 +67,16 @@ async function makeVapidJwt(audience: string): Promise<string> {
 }
 
 // ─── Web Push (AES-128-GCM + VAPID) ──────────────────────
+// HKDF (RFC 5869) — o salt é parâmetro: cada etapa da RFC 8291 usa um salt diferente.
+async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
+  const keyMat = await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
+  return new Uint8Array(await crypto.subtle.deriveBits(
+    { name: "HKDF", hash: "SHA-256", salt, info },
+    keyMat, length * 8,
+  ));
+}
+
+// Web Push conforme RFC 8291 (aes128gcm) — mesma implementação de monitoring-push.
 async function sendPush(
   sub: { endpoint: string; p256dh: string; auth: string },
   messageJson: string,
@@ -74,9 +84,8 @@ async function sendPush(
   const url     = new URL(sub.endpoint);
   const audience = `${url.protocol}//${url.host}`;
   const jwt      = await makeVapidJwt(audience);
-  const authInfo = enc.encode("Content-Encoding: auth\0");
-  const clientPub = b64uToBytes(sub.p256dh);
-  const clientAuth = b64uToBytes(sub.auth);
+  const clientPub  = b64uToBytes(sub.p256dh);   // 65 bytes (P-256 uncompressed)
+  const clientAuth = b64uToBytes(sub.auth);     // 16 bytes
 
   const serverKey = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
   const serverPubRaw = new Uint8Array(await crypto.subtle.exportKey("raw", serverKey.publicKey));
@@ -86,38 +95,29 @@ async function sendPush(
     serverKey.privateKey, 256,
   ));
 
-  const salt = crypto.getRandomValues(new Uint8Array(16));
+  // PRK_key = HKDF(salt=auth, ikm=ecdh, info="WebPush: info\0" || ua_pub || server_pub, 32)
+  const keyInfo = concat(enc.encode("WebPush: info\0"), clientPub, serverPubRaw);
+  const ikm = await hkdf(clientAuth, sharedBits, keyInfo, 32);
 
-  async function hkdf(ikm: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
-    const keyMat = await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
-    return new Uint8Array(await crypto.subtle.deriveBits(
-      { name: "HKDF", hash: "SHA-256", salt: clientAuth, info },
-      keyMat, length * 8,
-    ));
-  }
-
-  const prk    = await hkdf(concat(sharedBits), authInfo, 32);
-  const keyInfo = concat(enc.encode("Content-Encoding: aesgcm\0"), new Uint8Array([0x41]), clientPub, serverPubRaw);
-  const nonceInfo = concat(enc.encode("Content-Encoding: nonce\0"), new Uint8Array([0x41]), clientPub, serverPubRaw);
-  const cekKey   = await hkdf(prk, keyInfo, 16);
-  const nonceRaw = await hkdf(prk, nonceInfo, 12);
+  // CEK e nonce derivam do salt aleatório (que também vai no cabeçalho do corpo).
+  const salt     = crypto.getRandomValues(new Uint8Array(16));
+  const cekKey   = await hkdf(salt, ikm, enc.encode("Content-Encoding: aes128gcm\0"), 16);
+  const nonceRaw = await hkdf(salt, ikm, enc.encode("Content-Encoding: nonce\0"), 12);
 
   const aesKey = await crypto.subtle.importKey("raw", cekKey, "AES-GCM", false, ["encrypt"]);
-  const plaintext = enc.encode(messageJson);
-  const padded    = concat(new Uint8Array(2), plaintext);
+  const padded = concat(enc.encode(messageJson), new Uint8Array([0x02])); // padding delimiter (último registro)
   const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonceRaw }, aesKey, padded));
 
-  const rs  = 4096;
-  const body = concat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([serverPubRaw.length]), serverPubRaw, ciphertext);
+  // Corpo aes128gcm: salt(16) || rs(4=4096) || idlen(1) || keyid(server_pub) || ciphertext
+  const header = concat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([serverPubRaw.length]), serverPubRaw);
+  const body = concat(header, ciphertext);
 
   const res = await fetch(sub.endpoint, {
     method: "POST",
     headers: {
-      "Authorization": `vapid t=${jwt},k=${VAPID_PUBLIC}`,
+      "Authorization": `vapid t=${jwt}, k=${VAPID_PUBLIC}`,
       "Content-Type": "application/octet-stream",
-      "Content-Encoding": "aesgcm",
-      "Encryption": `salt=${bytesToB64u(salt)}`,
-      "Crypto-Key": `dh=${bytesToB64u(serverPubRaw)};p256ecdsa=${VAPID_PUBLIC}`,
+      "Content-Encoding": "aes128gcm",
       "TTL": "86400",
     },
     body,

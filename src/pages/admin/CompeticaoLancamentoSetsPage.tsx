@@ -109,8 +109,11 @@ export default function CompeticaoLancamentoSetsPage() {
 
   const modalityName = (rulesData as any)?.sport_name || "Modalidade";
   
-  const schoolA = match?.entries?.find((e: any) => e.side === 'A' || e.side === 'left');
-  const schoolB = match?.entries?.find((e: any) => e.side === 'B' || e.side === 'right');
+  // As entries podem usar a convenção "home"/"away" (DisputeBuilder, useRegistros, PreValidacao)
+  // ou "A"/"B" (MatchScoreFormDrawer, LancamentoEvento). Aceitar ambas, senão os confrontos
+  // criados pelo fluxo mais comum ("home"/"away") nunca conseguem lançar resultado.
+  const schoolA = match?.entries?.find((e: any) => e.side === 'A' || e.side === 'home' || e.side === 'left');
+  const schoolB = match?.entries?.find((e: any) => e.side === 'B' || e.side === 'away' || e.side === 'right');
 
   // Config from rules
   const bestOf = (rules as any)?.scoring?.best_of || 3;

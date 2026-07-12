@@ -77,7 +77,10 @@ export default function CentralResultsTab({ eventId, sportEventId, isCollective 
     for (const m of matchesWithResults as any[]) {
       for (const e of m.competition_match_entries ?? []) {
         const label = e.teams?.name ?? e.participant_sport_events?.participants?.people?.full_name ?? "—";
-        const r = e.competition_match_results;
+        // Embed aninhado do Supabase retorna um array por entry.
+        const r = Array.isArray(e.competition_match_results)
+          ? e.competition_match_results[0]
+          : e.competition_match_results;
         rows.push([
           m.match_number ?? "",
           m.competition_phases?.name ?? "",
@@ -223,7 +226,10 @@ export default function CentralResultsTab({ eventId, sportEventId, isCollective 
                     const entries = m.competition_match_entries ?? [];
                     const labels = entries.map((e: any) => {
                       const name = e.teams?.name ?? e.participant_sport_events?.participants?.people?.full_name ?? "?";
-                      const result = e.competition_match_results;
+                      // Embed aninhado do Supabase retorna um array por entry.
+                      const result = Array.isArray(e.competition_match_results)
+                        ? e.competition_match_results[0]
+                        : e.competition_match_results;
                       const outcome = result?.outcome ?? "";
                       return `${name} (${outcome || "—"})`;
                     });

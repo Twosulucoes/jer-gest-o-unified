@@ -136,9 +136,12 @@ export default function QrCodeScanner({
 
       onScanRef.current(raw);
 
+      // Em modo contínuo (fila de refeição/embarque) o lock de processamento não pode
+      // bloquear um crachá DIFERENTE por 2s — isso derrubaria leituras de pessoas
+      // seguintes. A repetição do MESMO código já é barrada pelo cooldown acima.
       setTimeout(() => {
         isProcessingRef.current = false;
-      }, 2000);
+      }, continuousRef.current ? 700 : 2000);
     },
     [isValidPayload, stopScanner],
   );
@@ -301,6 +304,11 @@ export default function QrCodeScanner({
     setTimeout(() => {
       if (mountedRef.current) {
         setIsValidating(false);
+        // Entrada manual é uma ação explícita do operador: não deve ser engolida
+        // pelo cooldown do mesmo código nem pelo lock de processamento da câmera.
+        lastScannedRef.current = "";
+        lastScannedAtRef.current = 0;
+        isProcessingRef.current = false;
         handleDetected(val);
         setManualCode("");
       }

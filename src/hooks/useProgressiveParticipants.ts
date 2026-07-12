@@ -52,7 +52,9 @@ export function useProgressiveParticipants<T = any>(opts: Options) {
 
   const filtersKey = JSON.stringify(baseFilters);
   const statusKey = (statusIn ?? []).join(",");
-  const scopeKey = participantIdsScope?.length ?? -1;
+  // Baseado no conteúdo, não no tamanho: dois escopos com a mesma quantidade de IDs
+  // mas conteúdo diferente precisam disparar refetch.
+  const scopeKey = participantIdsScope ? participantIdsScope.join(",") : "__all__";
 
   useEffect(() => {
     // Cada execução do efeito tem seu próprio token de cancelamento.

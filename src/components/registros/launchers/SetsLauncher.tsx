@@ -19,9 +19,20 @@ export default function SetsLauncher({ entries, onSave, isSaving, initialData, r
   const bestOf = rules?.scoring?.best_of || 3;
   const setsToWin = Math.ceil(bestOf / 2);
 
+  // As entries podem usar a convenção "home"/"away" ou "A"/"B"; aceitar ambas e cair
+  // para a ordem posicional como último recurso.
+  const entryA = useMemo(
+    () => entries.find(e => e.side === "home" || e.side === "A" || e.side === "left") ?? entries[0],
+    [entries],
+  );
+  const entryB = useMemo(
+    () => entries.find(e => e.side === "away" || e.side === "B" || e.side === "right") ?? entries[1],
+    [entries],
+  );
+
   const [sets, setSets] = useState<Array<{ a: string; b: string }>>(() => {
     // Try to load from initialData/entries
-    const entryA = entries.find(e => e.side === "home" || e.side === "left");
+    const entryA = entries.find(e => e.side === "home" || e.side === "A" || e.side === "left");
     const json = entryA?.score?.score_detail?.sets_score_json;
     if (json && Array.isArray(json.sets_a)) {
       return json.sets_a.map((ptsA: any, i: number) => ({
@@ -68,19 +79,31 @@ export default function SetsLauncher({ entries, onSave, isSaving, initialData, r
   };
 
   const handleSave = () => {
-    const entryA = entries.find(e => e.side === "home" || e.side === "left");
-    const entryB = entries.find(e => e.side === "away" || e.side === "right");
-
     if (!entryA || !entryB) return;
 
     const setsA = sets.map(s => Number(s.a) || 0);
     const setsB = sets.map(s => Number(s.b) || 0);
 
+    // O override de W.O. identifica QUAL lado venceu; o adversário recebe o resultado
+    // oposto. Aplicar o mesmo valor aos dois marcaria ambos como vencedores (estado inválido).
+    let outcomeA: string;
+    let outcomeB: string;
+    if (outcomeOverride === "wo_a") {
+      outcomeA = "wo_win";
+      outcomeB = "wo_loss";
+    } else if (outcomeOverride === "wo_b") {
+      outcomeA = "wo_loss";
+      outcomeB = "wo_win";
+    } else {
+      outcomeA = stats.wonA > stats.wonB ? "win" : "loss";
+      outcomeB = stats.wonB > stats.wonA ? "win" : "loss";
+    }
+
     const payload = [
       {
         entryId: entryA.id,
         scoreFinal: stats.wonA.toString(),
-        outcome: outcomeOverride || (stats.wonA > stats.wonB ? "win" : "loss"),
+        outcome: outcomeA,
         scoreDetail: {
           sets_score_json: { sets_a: setsA, sets_b: setsB }
         }
@@ -88,7 +111,7 @@ export default function SetsLauncher({ entries, onSave, isSaving, initialData, r
       {
         entryId: entryB.id,
         scoreFinal: stats.wonB.toString(),
-        outcome: outcomeOverride || (stats.wonB > stats.wonA ? "win" : "loss"),
+        outcome: outcomeB,
         scoreDetail: {
           sets_score_json: { sets_a: setsA, sets_b: setsB }
         }
@@ -159,13 +182,17 @@ export default function SetsLauncher({ entries, onSave, isSaving, initialData, r
 
       <div className="pt-2">
         <Label className="text-[10px] text-muted-foreground uppercase font-bold">Casos Especiais</Label>
-        <Select onValueChange={setOutcomeOverride}>
+        <Select value={outcomeOverride ?? undefined} onValueChange={setOutcomeOverride}>
           <SelectTrigger className="mt-1">
             <SelectValue placeholder="Resultado Normal" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="wo_win">Vitória W.O.</SelectItem>
-            <SelectItem value="wo_loss">Derrota W.O.</SelectItem>
+            <SelectItem value="wo_a">
+              Vitória W.O. — {entryA?.team?.name || entries[0]?.team?.name || "Lado A"}
+            </SelectItem>
+            <SelectItem value="wo_b">
+              Vitória W.O. — {entryB?.team?.name || entries[1]?.team?.name || "Lado B"}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>

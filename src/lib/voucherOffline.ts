@@ -37,8 +37,17 @@ function releaseVoucherLock() {
 
 function resetStuckVoucherItems() {
   const queue = getVoucherQueue();
-  const hasLock = !!localStorage.getItem(SYNC_LOCK_KEY);
-  if (hasLock) return;
+  // Ignora o reset apenas se houver um lock RECENTE; um lock expirado (sync anterior
+  // interrompido) deve ser tratado como ausente para reclamar itens presos em "syncing".
+  const raw = localStorage.getItem(SYNC_LOCK_KEY);
+  if (raw) {
+    try {
+      const { ts } = JSON.parse(raw) as { ts: number };
+      if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return;
+    } catch {
+      /* lock corrompido: trata como ausente */
+    }
+  }
   const changed = queue.map((item) =>
     item.status === "syncing" ? { ...item, status: "failed" as const, last_error: "Sync interrompido" } : item,
   );
@@ -107,12 +116,16 @@ let isVoucherSyncing = false;
 
 export const syncVoucherQueue = async () => {
   if (isVoucherSyncing || !navigator.onLine) return { count: 0, conflicts: 0 };
-  if (!acquireVoucherLock()) return { count: 0, conflicts: 0 };
+  // Reclama itens presos ANTES de adquirir o lock (o reset é no-op sob lock recente).
   resetStuckVoucherItems();
+  if (!acquireVoucherLock()) return { count: 0, conflicts: 0 };
 
   const queue = getVoucherQueue();
   const pending = queue.filter(i => i.status === "pending" || i.status === "failed");
-  if (pending.length === 0) return { count: 0, conflicts: 0 };
+  if (pending.length === 0) {
+    releaseVoucherLock(); // libera o lock adquirido acima; senão vazaria até o timeout
+    return { count: 0, conflicts: 0 };
+  }
 
   isVoucherSyncing = true;
   let syncedCount = 0;

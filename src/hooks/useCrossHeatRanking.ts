@@ -36,7 +36,9 @@ export function useCrossHeatRanking(
     error,
     refetch,
   } = useQuery({
-    queryKey: ["cross-heat-ranking", eventId, sportEventId, currentMatchId],
+    // family e config são consumidos dentro do queryFn (computeCrossHeatRanking); sem
+    // eles na chave, o ranking não recomputa quando o config carrega/muda de forma assíncrona.
+    queryKey: ["cross-heat-ranking", eventId, sportEventId, currentMatchId, family, JSON.stringify(config ?? null)],
     queryFn: async () => {
       // 1. Find the heats phase for this sport_event
       const { data: phases, error: phErr } = await supabase

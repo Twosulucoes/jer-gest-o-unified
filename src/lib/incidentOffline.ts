@@ -44,8 +44,17 @@ function releaseLock() {
 
 function resetStuckItems() {
   const queue = getIncidentQueue();
-  const hasLock = !!localStorage.getItem(SYNC_LOCK_KEY);
-  if (hasLock) return;
+  // Ignora o reset apenas sob lock RECENTE; lock expirado = sync anterior interrompido,
+  // tratado como ausente para reclamar itens presos em "syncing".
+  const raw = localStorage.getItem(SYNC_LOCK_KEY);
+  if (raw) {
+    try {
+      const { ts } = JSON.parse(raw) as { ts: number };
+      if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return;
+    } catch {
+      /* lock corrompido: trata como ausente */
+    }
+  }
   const changed = queue.map((item) =>
     item.status === "syncing" ? { ...item, status: "pending" as const } : item,
   );
@@ -108,12 +117,16 @@ export async function syncIncidentQueue(): Promise<{
   if (isSyncing || typeof navigator === "undefined" || !navigator.onLine) {
     return { synced: 0, failed: 0 };
   }
-  if (!acquireLock()) return { synced: 0, failed: 0 };
+  // Reclama itens presos ANTES de adquirir o lock (reset é no-op sob lock recente).
   resetStuckItems();
+  if (!acquireLock()) return { synced: 0, failed: 0 };
   const pending = getIncidentQueue().filter(
     (i) => i.status === "pending" || i.status === "failed",
   );
-  if (pending.length === 0) return { synced: 0, failed: 0 };
+  if (pending.length === 0) {
+    releaseLock(); // libera o lock adquirido acima; senão vazaria até o timeout
+    return { synced: 0, failed: 0 };
+  }
 
   isSyncing = true;
   let synced = 0;
