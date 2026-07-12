@@ -44,7 +44,10 @@ export function AlimentacaoDuplicateAlert({
     (async () => {
       setLoading(true);
       setError(null);
-      const today = serviceDate ?? new Date().toISOString().slice(0, 10);
+      // Fuso de Roraima (UTC-4); toISOString() retorna UTC e pode dar "amanhã" às 21h local,
+      // fazendo a checagem de duplicidades consultar o dia errado durante a janela do jantar.
+      const today =
+        serviceDate ?? new Date().toLocaleDateString("en-CA", { timeZone: "America/Boa_Vista" });
       const { data, error: rpcError } = await supabase.rpc("get_alimentacao_duplicates" as any, {
         p_event_id: eventId ?? null,
         p_event_stage_id: eventStageId ?? null,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CloudOff, RefreshCw, CheckCircle2, Ticket } from "lucide-react";
@@ -20,21 +20,26 @@ export function OfflineSyncStatus() {
     setIncidentQueueCount(getPendingIncidentCount());
   };
 
+  // O intervalo de auto-sync é criado uma única vez (deps []), então precisa chamar
+  // sempre o handleSync mais recente. Sem o ref, ele capturaria o closure do primeiro
+  // render (contadores = 0) e as guardas internas nunca sincronizariam nada.
+  const handleSyncRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     updateQueueCounts();
-    
+
     const handleOnline = () => setOnline(true);
     const handleOffline = () => setOnline(false);
-    
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
-    
+
     const interval = setInterval(updateQueueCounts, 5000);
-    
+
     // Auto-sync effect
     const autoSyncInterval = setInterval(() => {
       if (isOnline()) {
-        handleSync();
+        handleSyncRef.current();
       }
     }, 30000);
     
@@ -96,6 +101,9 @@ export function OfflineSyncStatus() {
       setIsSyncing(false);
     }
   };
+
+  // Mantém o ref apontando para o handleSync do render atual (contadores frescos).
+  handleSyncRef.current = handleSync;
 
   const totalPending = queueCount + voucherQueueCount + incidentQueueCount;
   if (totalPending === 0 && online) return null;

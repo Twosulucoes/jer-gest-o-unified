@@ -25,7 +25,10 @@ export function computeScoreStandings(data: BulletinDataset): Map<string, Standi
   for (const r of data.results) resultByEntry.set(r.match_entry_id, r);
 
   for (const m of data.matches) {
-    if (m.status !== "completed" && m.status !== "publicado") continue;
+    // O fluxo de lançamento de resultados grava status "finished" (valor canônico);
+    // "completed" só aparece nas provas individuais auto-criadas. Aceitar os três,
+    // senão a classificação de grupos sai sempre vazia.
+    if (m.status !== "finished" && m.status !== "completed" && m.status !== "publicado") continue;
     const ents = entriesByMatch.get(m.id) || [];
     if (ents.length < 2) continue;
     const groupKey = m.group_id ?? "__no_group__";

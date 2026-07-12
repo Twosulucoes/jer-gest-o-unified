@@ -128,7 +128,9 @@ export function useModalitySchools(sportEventId: string | undefined) {
         return {
           team_id: t.id,
           school_id: t.delegation_id,
-          school_name: Array.isArray(institutions) ? institutions[0]?.name : institutions?.name || "Sem Nome"
+          // `||` liga mais forte que `?:`, então o default só valia no ramo não-array;
+          // usar `??` em cada ramo garante o fallback também para array sem nome.
+          school_name: (Array.isArray(institutions) ? institutions[0]?.name : institutions?.name) ?? "Sem Nome"
         };
       });
     },

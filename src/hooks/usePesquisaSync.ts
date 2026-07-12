@@ -16,7 +16,9 @@ export function usePesquisaSync() {
     const remaining = [...queue];
     let changed = false;
 
-    for (const item of remaining) {
+    // Itera sobre um snapshot estável: o loop remove itens sincronizados de `remaining`
+    // via splice, e iterar diretamente sobre o array que está sendo mutado pularia itens.
+    for (const item of [...remaining]) {
       try {
         const { data, error } = await supabase.rpc('pesquisa_pwa_submit_survey', {
           p_session_id: session.session_id,

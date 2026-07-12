@@ -92,6 +92,21 @@ Deno.serve(async (req) => {
       return !!data;
     }
 
+    // Simetria com a restrição de atribuição: quem NÃO pode conceder admin/secretaria/
+    // super_admin também não pode removê-los nem desativar quem os possui. Sem isto, um
+    // coordenador (que passa no gate) conseguiria rebaixar/desativar um admin, pois
+    // set_role/set_roles apagam TODOS os papéis antes de inserir e isProtectedTarget só
+    // cobre super_admin.
+    async function callerMayModifyTarget(targetUserId: string): Promise<boolean> {
+      if (callerIsAdmin || callerIsSuper) return true;
+      const { data } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", targetUserId)
+        .in("role", ["admin", "secretaria", "super_admin"]);
+      return (data ?? []).length === 0;
+    }
+
 
     // Envia email de recuperação de senha pelo endpoint público do GoTrue,
     // que passa pelo SMTP customizado configurado em Auth → SMTP Settings.
@@ -363,6 +378,9 @@ Deno.serve(async (req) => {
         if (await isProtectedTarget(user_id)) {
           return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
         }
+        if (!(await callerMayModifyTarget(user_id))) {
+          return jsonResponse({ error: "Sem permissão para alterar este usuário." }, 403);
+        }
 
         // Only super_admin can assign super_admin
         if (!callerIsSuper && role === "super_admin") {
@@ -391,6 +409,9 @@ Deno.serve(async (req) => {
         }
         if (await isProtectedTarget(user_id)) {
           return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
+        if (!(await callerMayModifyTarget(user_id))) {
+          return jsonResponse({ error: "Sem permissão para alterar este usuário." }, 403);
         }
 
         for (const r of newRoles) {
@@ -427,6 +448,9 @@ Deno.serve(async (req) => {
         }
         if (await isProtectedTarget(user_id)) {
           return jsonResponse({ error: "Operação não permitida sobre este usuário." }, 403);
+        }
+        if (!(await callerMayModifyTarget(user_id))) {
+          return jsonResponse({ error: "Sem permissão para alterar este usuário." }, 403);
         }
 
         // Prevent deactivating self

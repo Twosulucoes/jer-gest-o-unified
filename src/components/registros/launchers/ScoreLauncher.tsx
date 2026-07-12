@@ -70,8 +70,15 @@ export default function ScoreLauncher({ entries, onSave, isSaving, initialData, 
   useEffect(() => {
     if (entries.length !== 2) return;
     const [eA, eB] = entries;
-    const valA = Number(scores[eA.id]?.scoreFinal);
-    const valB = Number(scores[eB.id]?.scoreFinal);
+    const rawA = scores[eA.id]?.scoreFinal;
+    const rawB = scores[eB.id]?.scoreFinal;
+
+    // Number("") === 0 (não NaN), então sem esta guarda dois placares vazios seriam
+    // interpretados como 0×0 e marcariam ambos como "empate" automaticamente.
+    if (rawA === "" || rawA == null || rawB === "" || rawB == null) return;
+
+    const valA = Number(rawA);
+    const valB = Number(rawB);
 
     if (isNaN(valA) || isNaN(valB)) return;
 

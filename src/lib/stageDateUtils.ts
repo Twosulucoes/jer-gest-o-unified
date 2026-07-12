@@ -11,6 +11,8 @@
  * etapas passadas e futuras para gestão.
  */
 
+import { RORAIMA_TZ_OFFSET } from "@/lib/dayRangeRoraima";
+
 interface StageDates {
   starts_at: string | null;
   ends_at: string | null;
@@ -101,8 +103,10 @@ export function isWindowNearNow(
   graceMinutes = 60,
 ): boolean {
   const now = new Date();
-  const start = new Date(`${serviceDate}T${startTime}`);
-  const end = new Date(`${serviceDate}T${endTime}`);
+  // Ancorar a janela no fuso de Roraima (UTC-4); sem o offset, as strings seriam
+  // interpretadas no fuso do dispositivo — mesmo padrão de mealWindowStatus.ts.
+  const start = new Date(`${serviceDate}T${startTime}${RORAIMA_TZ_OFFSET}`);
+  const end = new Date(`${serviceDate}T${endTime}${RORAIMA_TZ_OFFSET}`);
   const graceMs = graceMinutes * 60 * 1000;
   return now.getTime() >= start.getTime() - graceMs && now.getTime() <= end.getTime() + graceMs;
 }

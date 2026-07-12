@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEventContext } from "@/contexts/EventContext";
+import { reportError } from "@/lib/monitoring/errorReporter";
 
 /**
  * Hook to audit PWA module access and usage.

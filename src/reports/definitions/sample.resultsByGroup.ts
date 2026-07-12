@@ -80,7 +80,7 @@ export const resultsByGroupReport: ReportDefinition<ResultRow> = {
       {
         key: 'completed',
         label: 'Jogos Finalizados',
-        fn: (rows) => rows.filter((r) => r.status === 'completed').length,
+        fn: (rows) => rows.filter((r) => r.status === 'completed' || r.status === 'finished').length,
       },
     ],
   },

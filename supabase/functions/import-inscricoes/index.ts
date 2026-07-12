@@ -1403,6 +1403,30 @@ Deno.serve(async (req: Request) => {
     }
     const operatorId = claimsData.claims.sub as string;
 
+    // Autorização por papel (mesmo conjunto de import-referees e das rotas /admin/importacao).
+    // Sem isto, qualquer usuário autenticado poderia commitar imports de elenco e resolver
+    // pendências via service role (RLS ignorada).
+    {
+      const roleClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      const { data: callerRoles } = await roleClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", operatorId);
+      const roles = (callerRoles ?? []).map((r: any) => r.role);
+      const isAuthorized =
+        roles.includes("admin") ||
+        roles.includes("secretaria") ||
+        roles.includes("super_admin");
+      if (!isAuthorized) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const body = await req.json();
 
     // ── Ação: marcar pendência como revisada (qualquer tipo, com sugestão IA opcional) ──

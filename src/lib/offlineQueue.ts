@@ -19,8 +19,18 @@ function releaseSyncLock() {
 
 function resetStuckSyncingItems() {
   const queue = getOfflineQueue();
-  const lock = localStorage.getItem(SYNC_LOCK_KEY);
-  if (lock) return; // lock ativo, outra aba ainda está sincronizando
+  // Só ignora o reset se houver um lock RECENTE (outra aba sincronizando agora).
+  // Um lock expirado (interrupção anterior) deve ser tratado como ausente, senão
+  // itens deixados em "syncing" por uma aba morta nunca voltam para "failed".
+  const raw = localStorage.getItem(SYNC_LOCK_KEY);
+  if (raw) {
+    try {
+      const { ts } = JSON.parse(raw) as { ts: number };
+      if (Date.now() - ts < SYNC_LOCK_TIMEOUT) return;
+    } catch {
+      /* lock corrompido: trata como ausente */
+    }
+  }
   const changed = queue.map((item) =>
     item.status === "syncing" ? { ...item, status: "failed" as const, lastError: "Sync interrompido" } : item,
   );
@@ -219,27 +229,37 @@ let isSyncing = false;
 
 export const syncOfflineQueue = async () => {
   if (isSyncing || !navigator.onLine) return { success: false, count: 0 };
+
+  // Reclama itens presos em "syncing" por uma sincronização anterior interrompida
+  // ANTES de adquirir o lock (o reset é no-op enquanto um lock recente existir).
+  resetStuckSyncingItems();
+
   if (!acquireSyncLock()) return { success: false, count: 0 };
 
-  resetStuckSyncingItems();
   purgeExpiredOfflineItems();
 
   const queue = getOfflineQueue();
   const pending = queue.filter(item => item.status === "pending" || item.status === "failed");
   
-  if (pending.length === 0) return { success: true, count: 0 };
+  if (pending.length === 0) {
+    releaseSyncLock(); // libera o lock adquirido acima; senão ele vazaria até o timeout
+    return { success: true, count: 0 };
+  }
 
   isSyncing = true;
   let successCount = 0;
   let errorCount = 0;
-  const updatedQueue = [...queue];
 
   for (const item of pending) {
-    const idx = updatedQueue.findIndex(i => i.id === item.id);
+    // Relê o estado atual a cada iteração. Usar um snapshot fixo reescreveria
+    // itens já removidos após uma sincronização bem-sucedida, ressuscitando-os
+    // e gerando incidentes DUPLICATE falsos no próximo envio.
+    const fresh = getOfflineQueue();
+    const idx = fresh.findIndex(i => i.id === item.id);
     if (idx === -1) continue;
-    
-    updatedQueue[idx].status = "syncing";
-    saveOfflineQueue(updatedQueue);
+
+    fresh[idx].status = "syncing";
+    saveOfflineQueue(fresh);
 
     try {
       if (item.module === "alimentacao") {
