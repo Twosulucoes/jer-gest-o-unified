@@ -263,16 +263,15 @@ export default function AlimentacaoDashboardPage() {
     staleTime: 15_000,
   });
 
-  // Filtered consumptions — also apply stage participant filter when scoped.
-  // Consumos avulsos (participant_id null) NÃO são descartados: eles já vêm
-  // restritos às janelas da etapa (a query de janelas é escopada) e devem
-  // somar nos totais gerais, igual às telas Relatórios/Consumo (as views
-  // incluem unlinked). Sem o `!c.participant_id`, todo avulso sumia do
-  // dashboard em escopo de etapa — divergindo das outras telas.
+  // Filtered consumptions. NÃO refiltramos por participante da etapa: as
+  // janelas já são escopadas por etapa (mealWindows), então todo consumo aqui
+  // é um bipe real ocorrido numa janela desta etapa. Participantes vinculados
+  // a outra etapa que comem nestas janelas contam nos totais — o filtro
+  // antigo por stageParticipantIds descartava ~40% dos consumos vinculados
+  // (bipes reais) sem indicação na tela. Avulsos (participant_id null)
+  // idem: sempre contam, como nas telas Relatórios/Consumo.
   const filteredConsumptions = useMemo(() => {
-    let result = isStageScoped && stageParticipantIds
-      ? consumptions.filter((c) => !c.participant_id || stageParticipantIds.has(c.participant_id))
-      : consumptions;
+    let result = consumptions;
     if (filterMealType !== "all") {
       const windowIdsForType = mealWindows
         .filter((w) => w.meal_type_id === filterMealType)
@@ -283,7 +282,7 @@ export default function AlimentacaoDashboardPage() {
       result = result.filter((c) => participantDelegationMap.get(c.participant_id) === filterDelegation);
     }
     return result;
-  }, [consumptions, isStageScoped, stageParticipantIds, filterMealType, filterDelegation, mealWindows, participantDelegationMap]);
+  }, [consumptions, filterMealType, filterDelegation, mealWindows, participantDelegationMap]);
 
   // Stats per meal window
   const windowStats = useMemo(() => {
@@ -335,11 +334,19 @@ export default function AlimentacaoDashboardPage() {
   // Participants with zero consumptions today — usa filteredConsumptions para
   // refletir os filtros aplicados (delegação/refeição) e não o conjunto bruto.
   // Filtra null (consumo avulso não tem participant_id — não deve contar
-  // como "1 participante que consumiu" no Set).
-  const consumingParticipantIds = useMemo(
-    () => new Set(filteredConsumptions.map((c) => c.participant_id).filter((id): id is string => !!id)),
-    [filteredConsumptions]
-  );
+  // como "1 participante que consumiu" no Set). Em escopo de etapa, o Set é
+  // restrito ao elenco da etapa: o denominador (totalParticipants) só conta
+  // participantes vinculados à etapa, então consumidores de outras etapas
+  // (que agora somam nos totais gerais) não podem entrar na subtração — ou
+  // "Sem refeição hoje" ficaria artificialmente menor.
+  const consumingParticipantIds = useMemo(() => {
+    const ids = filteredConsumptions
+      .map((c) => c.participant_id)
+      .filter((id): id is string => !!id);
+    return new Set(
+      isStageScoped && stageParticipantIds ? ids.filter((id) => stageParticipantIds.has(id)) : ids
+    );
+  }, [filteredConsumptions, isStageScoped, stageParticipantIds]);
   const zeroConsumptionCount = Math.max(0, totalParticipants - consumingParticipantIds.size);
 
   useStageModuleKpis([
@@ -387,7 +394,8 @@ export default function AlimentacaoDashboardPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Etapa: {stage.name}</AlertTitle>
           <AlertDescription>
-            Exibindo apenas janelas de refeição e consumos vinculados a esta etapa.
+            Exibindo as janelas de refeição desta etapa. Todos os consumos bipados nessas
+            janelas são contabilizados, inclusive de participantes vinculados a outras etapas.
           </AlertDescription>
         </Alert>
       )}
