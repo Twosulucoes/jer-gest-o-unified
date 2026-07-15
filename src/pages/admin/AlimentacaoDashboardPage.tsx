@@ -47,9 +47,12 @@ export default function AlimentacaoDashboardPage() {
   useEffect(() => {
     if (!eventId) return;
     const handleChange = (payload: { new?: unknown; old?: unknown }) => {
-      const windowId =
-        (payload.new as { meal_window_id?: string } | undefined)?.meal_window_id ??
-        (payload.old as { meal_window_id?: string } | undefined)?.meal_window_id;
+      // service_voucher_uses referencia a janela via context_id (não tem
+      // coluna meal_window_id) — aceita os dois nomes no payload.
+      const row = (payload.new ?? payload.old) as
+        | { meal_window_id?: string; context_id?: string }
+        | undefined;
+      const windowId = row?.meal_window_id ?? row?.context_id;
       if (windowId && !mealWindowIdsRef.current.has(windowId)) return;
       setRefreshKey((k) => k + 1);
     };
@@ -63,6 +66,11 @@ export default function AlimentacaoDashboardPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meal_consumptions_unlinked" },
+        handleChange,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "service_voucher_uses" },
         handleChange,
       )
       .subscribe();
@@ -88,16 +96,20 @@ export default function AlimentacaoDashboardPage() {
     staleTime: 60_000,
   });
 
-  // Meal windows for the selected date — restritos à etapa quando aplicável
+  // Meal windows for the selected date — restritos à etapa quando aplicável.
+  // NÃO filtra is_active: desativar uma janela depois de consumos registrados
+  // nela (ex.: janela recriada com outro horário) escondia esses bipes reais
+  // do dashboard, divergindo das views de relatório (vw_consumo_por_dia etc.),
+  // que sempre contaram janelas desativadas. Janelas desativadas aparecem
+  // sinalizadas nos cards e continuam somando nos totais.
   const { data: mealWindows = [] } = useQuery({
     queryKey: ["meal-windows-dash", eventId, filterDate, stageId],
     queryFn: async () => {
       let q = supabase
         .from("meal_windows")
-        .select("id, label, meal_type_id, start_time, end_time, service_date, event_stage_id")
+        .select("id, label, meal_type_id, start_time, end_time, service_date, event_stage_id, is_active")
         .eq("event_id", eventId)
         .eq("service_date", filterDate)
-        .eq("is_active", true)
         .order("start_time");
       if (isStageScoped && stageId) q = q.eq("event_stage_id", stageId);
       const { data, error } = await q;
@@ -113,13 +125,18 @@ export default function AlimentacaoDashboardPage() {
   }, [mealWindows]);
 
   // Consumptions for the date — também filtradas por participantes da etapa.
-  // Soma meal_consumptions (vinculado) + meal_consumptions_unlinked (QR não
-  // resolvido a participante) — mesma definição de "consumo" já unificada em
-  // AlimentacaoConsumoPage.tsx; antes só lia meal_consumptions e todo scan
-  // avulso desaparecia dos cards, do gráfico e de "Delegações com maior
-  // consumo". Registros avulsos não têm participant_id, então não entram no
+  // Soma as TRÊS fontes de consumo — mesma união das views de relatório
+  // (vw_meal_consumptions_all) e de AlimentacaoRelatoriosPage.tsx:
+  //   1. meal_consumptions            (credencial vinculada)
+  //   2. meal_consumptions_unlinked   (QR não resolvido a participante)
+  //   3. service_voucher_uses         (voucher de refeição, service_kind='meals';
+  //      context_id é a janela — mesma resolução manual usada em
+  //      AlimentacaoRelatoriosPage.tsx, a tabela não tem FK p/ meal_windows)
+  // Antes só somava (1)+(2) e o dashboard subcontava em relação ao Relatório
+  // de Consumo. Registros avulsos não têm participant_id, então não entram no
   // filtro de escopo de etapa nem em "Delegações com maior consumo" (não há
-  // como atribuí-los a uma delegação) — só somam nos totais gerais.
+  // como atribuí-los a uma delegação) — só somam nos totais gerais. Voucher
+  // nominal tem participant_id e conta normalmente por delegação.
   const { data: consumptions = [], isLoading, isError } = useQuery({
     queryKey: ["meal-consumptions-dash", eventId, filterDate, refreshKey, stageId, stageParticipantIds?.size ?? -1],
     queryFn: async () => {
@@ -141,15 +158,32 @@ export default function AlimentacaoDashboardPage() {
         .select("id, meal_window_id, consumed_at, method")
         .in("meal_window_id", windowIds)
         .limit(20000);
+      const voucherQ = (supabase as any)
+        .from("service_voucher_uses")
+        .select("id, used_at, context_id, service_vouchers!inner(participant_id)")
+        .eq("service_kind", "meals")
+        .in("context_id", windowIds)
+        .limit(20000);
 
-      const [{ data: linked, error: linkedError }, { data: unlinked, error: unlinkedError }] =
-        await Promise.all([linkedQ, unlinkedQ]);
+      const [
+        { data: linked, error: linkedError },
+        { data: unlinked, error: unlinkedError },
+        { data: vouchers, error: voucherError },
+      ] = await Promise.all([linkedQ, unlinkedQ, voucherQ]);
       if (linkedError) throw linkedError;
       if (unlinkedError) throw unlinkedError;
+      if (voucherError) throw voucherError;
 
       return [
         ...(linked ?? []),
         ...(unlinked ?? []).map((c: any) => ({ ...c, participant_id: null as string | null })),
+        ...(vouchers ?? []).map((v: any) => ({
+          id: v.id,
+          meal_window_id: v.context_id,
+          participant_id: (v.service_vouchers?.participant_id ?? null) as string | null,
+          consumed_at: v.used_at,
+          method: "voucher",
+        })),
       ];
     },
     enabled: mealWindows.length > 0 && (!isStageScoped || !!stageParticipantIds),
@@ -294,6 +328,7 @@ export default function AlimentacaoDashboardPage() {
         label: w.label,
         count,
         start: w.start_time?.slice(0, 5) ?? "",
+        inactive: w.is_active === false,
       };
     });
   }, [mealWindows, filteredConsumptions, mealTypes]);
@@ -395,7 +430,8 @@ export default function AlimentacaoDashboardPage() {
           <AlertTitle>Etapa: {stage.name}</AlertTitle>
           <AlertDescription>
             Exibindo as janelas de refeição desta etapa. Todos os consumos bipados nessas
-            janelas são contabilizados, inclusive de participantes vinculados a outras etapas.
+            janelas são contabilizados — inclusive de participantes vinculados a outras etapas,
+            consumos avulsos, vouchers e janelas desativadas com consumo registrado.
           </AlertDescription>
         </Alert>
       )}
@@ -465,15 +501,24 @@ export default function AlimentacaoDashboardPage() {
                 <p className="text-xs text-muted-foreground">Consumos registrados</p>
               </CardContent>
             </Card>
-            {windowStats.map((ws) => (
-              <Card key={ws.label}>
-                <CardContent className="pt-4 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">{ws.name} ({ws.start})</p>
-                  <p className="text-2xl font-bold">{ws.count}</p>
-                  <p className="text-xs text-muted-foreground">{ws.label}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {windowStats
+              // Janela desativada sem nenhum consumo é ruído — só aparece se
+              // tiver bipes registrados (que continuam contando nos totais).
+              .filter((ws) => !ws.inactive || ws.count > 0)
+              .map((ws) => (
+                <Card key={ws.label} className={ws.inactive ? "border-dashed" : undefined}>
+                  <CardContent className="pt-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">{ws.name} ({ws.start})</p>
+                    <p className="text-2xl font-bold">{ws.count}</p>
+                    <p className="text-xs text-muted-foreground">{ws.label}</p>
+                    {ws.inactive && (
+                      <Badge variant="outline" className="mt-1 text-[10px] text-muted-foreground">
+                        Janela desativada
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
             {zeroConsumptionCount > 0 && (
               <Card className="border-destructive/50">
                 <CardContent className="pt-4 text-center">
