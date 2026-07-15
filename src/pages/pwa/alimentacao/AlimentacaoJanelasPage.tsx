@@ -78,12 +78,12 @@ export default function AlimentacaoJanelasPage() {
     if (list.length > 0) {
       const windowIds = list.map((w) => w.id);
 
-      // vw_consumo_por_janela já agrega meal_consumptions (vinculado +
-      // não vinculado, ver vw_meal_consumptions_all) por janela — reaproveita
-      // em vez de buscar linha a linha. Soma também service_voucher_uses
-      // (service_kind='meals'), que não passa nem por meal_consumptions nem
-      // por meal_consumptions_unlinked — sem isso, "Consumo: X/Y" e o selo
-      // "· lotada" ficavam cegos para refeições resgatadas via voucher.
+      // vw_consumo_por_janela já agrega as TRÊS fontes de consumo por janela
+      // (vinculado + não vinculado + voucher, ver vw_meal_consumptions_all
+      // após 20260710000000_consumo_views_include_vouchers.sql) — reaproveita
+      // em vez de buscar linha a linha. Não somar service_voucher_uses no
+      // cliente por cima: a view já inclui vouchers e a soma manual dobrava
+      // a contagem deles em "Consumo: X/Y" e no selo "· lotada".
       let consumoQ = (supabase as any)
         .from("vw_consumo_por_janela")
         .select("janela_id, total_consumos")
@@ -91,28 +91,15 @@ export default function AlimentacaoJanelasPage() {
         .in("janela_id", windowIds);
       if (stageId) consumoQ = consumoQ.eq("event_stage_id", stageId);
 
-      const [{ data: consumoRows }, { data: voucherRows }] = await Promise.all([
-        consumoQ,
-        supabase
-          .from("service_voucher_uses")
-          .select("context_id")
-          .eq("service_kind", "meals")
-          .in("context_id", windowIds)
-          .limit(20000),
-      ]);
+      const { data: consumoRows } = await consumoQ;
 
       const consumoMap = new Map<string, number>(
         (consumoRows ?? []).map((r: any) => [r.janela_id, r.total_consumos ?? 0]),
       );
-      const voucherMap = new Map<string, number>();
-      for (const row of voucherRows ?? []) {
-        if (!row.context_id) continue;
-        voucherMap.set(row.context_id, (voucherMap.get(row.context_id) ?? 0) + 1);
-      }
 
       list = list.map((w) => ({
         ...w,
-        consumption_count: (consumoMap.get(w.id) ?? 0) + (voucherMap.get(w.id) ?? 0),
+        consumption_count: consumoMap.get(w.id) ?? 0,
       }));
     }
 

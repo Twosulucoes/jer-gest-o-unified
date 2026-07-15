@@ -102,11 +102,13 @@ export default function AlimentacaoPrevisaoPage() {
     enabled: !!eventId,
   });
 
-  // 4. Fetch Real-time Consumption Counts for these windows — soma
-  // meal_consumptions (vinculado) + meal_consumptions_unlinked (QR não
-  // resolvido a participante, mas liberado mesmo assim). Antes só contava
-  // vinculado, subestimando "Realizado"/"Ocupação"/"Saldo" e escondendo
-  // excedente real sobre a previsão quando havia consumo avulso.
+  // 4. Fetch Real-time Consumption Counts for these windows — soma as TRÊS
+  // fontes de consumo (mesma união de vw_meal_consumptions_all e das telas
+  // Relatórios/Consumo/Dashboard): meal_consumptions (vinculado) +
+  // meal_consumptions_unlinked (QR não resolvido a participante) +
+  // service_voucher_uses (voucher de refeição, janela via context_id).
+  // Antes faltava a fonte voucher, subestimando "Realizado"/"Ocupação"/
+  // "Saldo" quando havia refeição resgatada por voucher.
   const windowIdsKey = windows.map(w => w.id).join(",");
   const { data: consumptionCounts = {} } = useQuery({
     queryKey: ["meal_consumption_counts", windowIdsKey],
@@ -114,25 +116,39 @@ export default function AlimentacaoPrevisaoPage() {
       const windowIds = windows.map(w => w.id);
       if (!windowIds.length) return {};
 
-      const [{ data: linked, error: linkedError }, { data: unlinked, error: unlinkedError }] =
-        await Promise.all([
-          supabase
-            .from("meal_consumptions")
-            .select("meal_window_id")
-            .in("meal_window_id", windowIds)
-            .limit(50000),
-          (supabase as any)
-            .from("meal_consumptions_unlinked")
-            .select("meal_window_id")
-            .in("meal_window_id", windowIds)
-            .limit(50000),
-        ]);
+      const [
+        { data: linked, error: linkedError },
+        { data: unlinked, error: unlinkedError },
+        { data: vouchers, error: voucherError },
+      ] = await Promise.all([
+        supabase
+          .from("meal_consumptions")
+          .select("meal_window_id")
+          .in("meal_window_id", windowIds)
+          .limit(50000),
+        (supabase as any)
+          .from("meal_consumptions_unlinked")
+          .select("meal_window_id")
+          .in("meal_window_id", windowIds)
+          .limit(50000),
+        (supabase as any)
+          .from("service_voucher_uses")
+          .select("context_id")
+          .eq("service_kind", "meals")
+          .in("context_id", windowIds)
+          .limit(50000),
+      ]);
 
       if (linkedError) throw linkedError;
       if (unlinkedError) throw unlinkedError;
+      if (voucherError) throw voucherError;
 
       const counts: Record<string, number> = {};
-      [...(linked ?? []), ...(unlinked ?? [])].forEach((c: any) => {
+      [
+        ...(linked ?? []),
+        ...(unlinked ?? []),
+        ...(vouchers ?? []).map((v: any) => ({ meal_window_id: v.context_id })),
+      ].forEach((c: any) => {
         counts[c.meal_window_id] = (counts[c.meal_window_id] || 0) + 1;
       });
       return counts;
