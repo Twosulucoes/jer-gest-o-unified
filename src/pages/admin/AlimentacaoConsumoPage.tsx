@@ -82,11 +82,15 @@ export default function AlimentacaoConsumoPage() {
     queryFn: async () => {
       if (!selectedEventId) return [];
 
+      // Sem filtro de is_active: janela desativada depois de consumos
+      // registrados nela precisa continuar listável — senão esses bipes
+      // reais somem da tela e dos KPIs (mesma correção já aplicada em
+      // AlimentacaoDashboardPage.tsx). Desativadas aparecem marcadas no
+      // seletor de janelas.
       const { data, error } = await supabase
         .from("meal_windows")
         .select("*, meal_locations(name)")
         .eq("event_id", selectedEventId)
-        .eq("is_active", true)
         .order("service_date")
         .order("start_time");
 
@@ -110,7 +114,13 @@ export default function AlimentacaoConsumoPage() {
     // evento/etapa atualmente carregadas aqui.
     const windowIdSet = new Set(windows.map((w: any) => w.id));
     const isRelevant = (payload: any) => {
-      const windowId = payload?.new?.meal_window_id ?? payload?.old?.meal_window_id;
+      // service_voucher_uses referencia a janela via context_id (não tem
+      // coluna meal_window_id) — aceita os dois nomes no payload.
+      const windowId =
+        payload?.new?.meal_window_id ??
+        payload?.old?.meal_window_id ??
+        payload?.new?.context_id ??
+        payload?.old?.context_id;
       return !windowId || windowIdSet.has(windowId);
     };
 
@@ -128,6 +138,15 @@ export default function AlimentacaoConsumoPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meal_consumptions_unlinked" },
+        (payload) => {
+          if (!isRelevant(payload)) return;
+          void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
+          void qc.invalidateQueries({ queryKey: ["meal_consumption_kpi_count"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "service_voucher_uses" },
         (payload) => {
           if (!isRelevant(payload)) return;
           void qc.invalidateQueries({ queryKey: ["meal_consumptions"] });
@@ -179,6 +198,23 @@ export default function AlimentacaoConsumoPage() {
 
       if (unlinkedError) throw unlinkedError;
 
+      // 3ª fonte de consumo: voucher de refeição resgatado via QR
+      // (service_kind='meals', janela via context_id — a tabela não tem FK
+      // p/ meal_windows). Mesma união das views (vw_meal_consumptions_all)
+      // e de AlimentacaoRelatoriosPage.tsx; sem isso, refeições por voucher
+      // não apareciam nesta lista nem nos KPIs.
+      const { data: voucherData, error: voucherError } = await (supabase as any)
+        .from("service_voucher_uses")
+        .select(
+          "id, used_at, used_by, context_id, service_vouchers!inner(participant_id, label, service_eventual_people(full_name), participants:participant_id(person:people!person_id(full_name, cpf, food_restrictions)))",
+        )
+        .eq("service_kind", "meals")
+        .in("context_id", windowIds)
+        .order("used_at", { ascending: false })
+        .limit(2000);
+
+      if (voucherError) throw voucherError;
+
       const linked = (linkedData ?? []).map((c: any) => ({
         ...c,
         source_type: "linked",
@@ -200,7 +236,32 @@ export default function AlimentacaoConsumoPage() {
         search_text: [c.qr_code, c.id].filter(Boolean).join(" ").toLowerCase(),
       }));
 
-      return [...linked, ...unlinked].sort(
+      const vouchers = (voucherData ?? []).map((v: any) => {
+        const sv = v.service_vouchers;
+        const participant = sv?.participants ?? null;
+        const holderName =
+          participant?.person?.full_name ??
+          sv?.service_eventual_people?.full_name ??
+          sv?.label ??
+          "Voucher";
+        return {
+          id: v.id,
+          meal_window_id: v.context_id,
+          consumed_at: v.used_at,
+          registered_by: v.used_by,
+          method: "voucher",
+          source_type: "voucher",
+          participant,
+          participant_id: sv?.participant_id ?? null,
+          qr_code: holderName,
+          search_text: [holderName, participant?.person?.cpf, sv?.participant_id, v.id]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase(),
+        };
+      });
+
+      return [...linked, ...unlinked, ...vouchers].sort(
         (a: any, b: any) =>
           new Date(b.consumed_at).getTime() - new Date(a.consumed_at).getTime(),
       );
@@ -284,7 +345,7 @@ export default function AlimentacaoConsumoPage() {
     ],
     queryFn: async () => {
       if (!selectedEventId || windows.length === 0) {
-        return { total: 0, linked: 0, unlinked: 0 };
+        return { total: 0, linked: 0, unlinked: 0, voucher: 0 };
       }
 
       const windowIds =
@@ -300,6 +361,11 @@ export default function AlimentacaoConsumoPage() {
         .from("meal_consumptions_unlinked")
         .select("id", { count: "exact", head: true });
 
+      let voucherQ = (supabase as any)
+        .from("service_voucher_uses")
+        .select("id", { count: "exact", head: true })
+        .eq("service_kind", "meals");
+
       linkedQ =
         selectedWindowId === "all"
           ? (linkedQ as any).in("meal_window_id", windowIds)
@@ -310,16 +376,26 @@ export default function AlimentacaoConsumoPage() {
           ? unlinkedQ.in("meal_window_id", windowIds)
           : unlinkedQ.eq("meal_window_id", selectedWindowId);
 
-      const [{ count: linkedCount, error: linkedError }, { count: unlinkedCount, error: unlinkedError }] =
-        await Promise.all([linkedQ, unlinkedQ]);
+      voucherQ =
+        selectedWindowId === "all"
+          ? voucherQ.in("context_id", windowIds)
+          : voucherQ.eq("context_id", selectedWindowId);
+
+      const [
+        { count: linkedCount, error: linkedError },
+        { count: unlinkedCount, error: unlinkedError },
+        { count: voucherCount, error: voucherError },
+      ] = await Promise.all([linkedQ, unlinkedQ, voucherQ]);
 
       if (linkedError) throw linkedError;
       if (unlinkedError) throw unlinkedError;
+      if (voucherError) throw voucherError;
 
       return {
-        total: (linkedCount ?? 0) + (unlinkedCount ?? 0),
+        total: (linkedCount ?? 0) + (unlinkedCount ?? 0) + (voucherCount ?? 0),
         linked: linkedCount ?? 0,
         unlinked: unlinkedCount ?? 0,
+        voucher: voucherCount ?? 0,
       };
     },
     enabled: !!selectedEventId && windows.length > 0,
@@ -328,6 +404,7 @@ export default function AlimentacaoConsumoPage() {
   const kpiCount = kpiCounts?.total ?? 0;
   const linkedTotal = kpiCounts?.linked ?? 0;
   const unlinkedTotal = kpiCounts?.unlinked ?? 0;
+  const voucherTotal = kpiCounts?.voucher ?? 0;
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -433,6 +510,9 @@ export default function AlimentacaoConsumoPage() {
                                       {stageHint}
                                     </span>
                                   )}
+                                  {w.is_active === false && (
+                                    <span className="text-warning text-xs"> · desativada</span>
+                                  )}
                                 </SelectItem>
                               );
                             })}
@@ -487,7 +567,7 @@ export default function AlimentacaoConsumoPage() {
       </Card>
 
       {selectedWindowId && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <KpiStatCard
             label="Refeição"
             value={
@@ -503,6 +583,8 @@ export default function AlimentacaoConsumoPage() {
           <KpiStatCard label="Vinculados" value={linkedTotal} tone="success" />
 
           <KpiStatCard label="Não vinculados" value={unlinkedTotal} tone="warning" />
+
+          <KpiStatCard label="Vouchers" value={voucherTotal} />
 
           <KpiStatCard
             label="Local"
@@ -547,6 +629,7 @@ export default function AlimentacaoConsumoPage() {
                     <SelectItem value="unlinked">Não vinculados</SelectItem>
                     <SelectItem value="qr_scan">QR Code</SelectItem>
                     <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="voucher">Voucher</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -601,6 +684,7 @@ export default function AlimentacaoConsumoPage() {
                 <TableBody>
                   {filteredConsumptions.map((c: any) => {
                     const isUnlinked = c.source_type === "unlinked";
+                    const isVoucher = c.source_type === "voucher";
                     const person = c.participant?.person;
                     const win = windows.find((w: any) => w.id === c.meal_window_id);
                     const mt = win ? mealTypesMap.get((win as any).meal_type_id) : null;
@@ -612,7 +696,9 @@ export default function AlimentacaoConsumoPage() {
                             <span className="font-medium text-sm">
                               {isUnlinked
                                 ? `QR não vinculado: ${c.qr_code}`
-                                : (person?.full_name ?? "—")}
+                                : isVoucher
+                                  ? (person?.full_name ?? `Voucher: ${c.qr_code}`)
+                                  : (person?.full_name ?? "—")}
                             </span>
                             <span className="text-[10px] text-muted-foreground font-mono uppercase">
                               {isUnlinked
@@ -671,9 +757,11 @@ export default function AlimentacaoConsumoPage() {
                           <Badge variant="outline" className="text-[10px] h-5">
                             {isUnlinked
                               ? "QR não vinculado"
-                              : c.method === "qr_scan" || c.method === "qr"
-                                ? "QR"
-                                : "Manual"}
+                              : isVoucher
+                                ? "Voucher"
+                                : c.method === "qr_scan" || c.method === "qr"
+                                  ? "QR"
+                                  : "Manual"}
                           </Badge>
                         </TableCell>
 
@@ -685,7 +773,9 @@ export default function AlimentacaoConsumoPage() {
 
                         {canReverse && (
                           <TableCell className="text-right">
-                            {!isUnlinked ? (
+                            {/* Estorno só existe para meal_consumptions —
+                                voucher usado se estorna na tela de Vouchers. */}
+                            {c.source_type === "linked" ? (
                               <Button
                                 variant="ghost"
                                 size="sm"

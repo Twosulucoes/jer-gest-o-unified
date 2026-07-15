@@ -14,10 +14,16 @@ import { dayRangeRoraima } from "@/lib/dayRangeRoraima";
 interface ConsumptionItem {
   id: string;
   consumed_at: string;
-  method: string;
-  participant: { person: { full_name: string } | null } | null;
-  meal_window: { meal_type: { name: string } | null } | null;
+  origem: string;
+  participante_nome: string | null;
+  refeicao_tipo: string | null;
 }
+
+const ORIGEM_LABEL: Record<string, string> = {
+  scan_qr: "QR",
+  busca_manual: "Manual",
+  voucher: "Voucher",
+};
 
 export default function AlimentacaoHistoricoPage() {
   const { activeEventId } = useEventContext();
@@ -29,21 +35,26 @@ export default function AlimentacaoHistoricoPage() {
   async function loadHistorico() {
     setLoading(true);
     const { startIso, endIsoExclusive } = dayRangeRoraima(today);
-    let query = supabase
-      .from("meal_consumptions")
-      .select("id, consumed_at, method, participant:participants(person:people(full_name)), meal_window:meal_windows!inner(event_id, event_stage_id, meal_type:meal_types(name))")
-      .eq("meal_windows.event_id", activeEventId)
+    // vw_consumo_completo unifica as TRÊS fontes de consumo (vinculado +
+    // QR avulso + voucher, ver vw_meal_consumptions_all) e já resolve nome
+    // do participante ("Consumo avulso: {qr}" quando não vinculado) e tipo
+    // de refeição. Antes esta tela lia só meal_consumptions e bipes avulsos/
+    // voucher nunca apareciam no histórico do operador.
+    let query = (supabase as any)
+      .from("vw_consumo_completo")
+      .select("id, consumed_at, origem, participante_nome, refeicao_tipo")
+      .eq("event_id", activeEventId)
       .gte("consumed_at", startIso)
       .lt("consumed_at", endIsoExclusive);
 
     if (activeStageId) {
-      query = query.eq("meal_windows.event_stage_id", activeStageId);
+      query = query.eq("event_stage_id", activeStageId);
     }
 
     const { data } = await query
       .order("consumed_at", { ascending: false })
       .limit(50);
-    setItems((data as any) || []);
+    setItems((data as ConsumptionItem[]) || []);
     setLoading(false);
   }
 
@@ -60,6 +71,8 @@ export default function AlimentacaoHistoricoPage() {
     const channel = supabase
       .channel(`meal_historico_${activeEventId}_${activeStageId ?? "all"}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions" }, () => loadHistorico())
+      .on("postgres_changes", { event: "*", schema: "public", table: "meal_consumptions_unlinked" }, () => loadHistorico())
+      .on("postgres_changes", { event: "*", schema: "public", table: "service_voucher_uses" }, () => loadHistorico())
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
@@ -80,9 +93,9 @@ export default function AlimentacaoHistoricoPage() {
           <Card key={item.id}>
             <CardContent className="p-3 flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">{item.participant?.person?.full_name || "—"}</p>
+                <p className="font-medium text-sm">{item.participante_nome || "—"}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(item.meal_window as any)?.meal_type?.name || "Refeição"} • {item.method === "qr" ? "QR" : "Manual"}
+                  {item.refeicao_tipo || "Refeição"} • {ORIGEM_LABEL[item.origem] ?? item.origem}
                 </p>
               </div>
               <span className="text-xs text-muted-foreground">
