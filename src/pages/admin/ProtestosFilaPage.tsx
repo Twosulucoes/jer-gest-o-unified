@@ -51,6 +51,7 @@ const STATUS_OPTIONS = [
   { value: "pendente", label: "Pendente" },
   { value: "protocolado", label: "Protocolado" },
   { value: "em_analise", label: "Em análise" },
+  { value: "em_diligencia", label: "Em diligência" },
   { value: "aguardando_documentos", label: "Aguardando docs" },
   { value: "decidido", label: "Decidido" },
   { value: "arquivado", label: "Arquivado" },
@@ -946,6 +947,7 @@ export default function ProtestosFilaPage() {
     const pendentes =
       countByStatus(list, "pendente") +
       countByStatus(list, "protocolado") +
+      countByStatus(list, "em_diligencia") +
       countByStatus(list, "aguardando_documentos");
     const emAnalise = countByStatus(list, "em_analise");
     const decididos = countByStatus(list, "decidido");
@@ -968,7 +970,7 @@ export default function ProtestosFilaPage() {
 
   const processosPendentes = useMemo(() => {
     return list.filter((item) =>
-      ["pendente", "protocolado", "aguardando_documentos"].includes(item.status)
+      ["pendente", "protocolado", "em_diligencia", "aguardando_documentos"].includes(item.status)
     );
   }, [list]);
 
