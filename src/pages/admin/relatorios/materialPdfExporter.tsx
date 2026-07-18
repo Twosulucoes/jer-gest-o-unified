@@ -2,6 +2,7 @@ import { pdf, Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/r
 import type { EventBrandingResolved } from "@/hooks/useEventBranding";
 import {
   ptLabel,
+  computeResumoQuantidade,
   type MaterialKitSummary,
   type MaterialDeliveryRow,
   type MaterialSchoolBreakdownRow,
@@ -60,9 +61,7 @@ function MaterialDocument({ data, meta }: { data: MaterialReportData; meta: Meta
   const dateStr = meta.generatedAt.toLocaleDateString("pt-BR");
   const timeStr = meta.generatedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-  const totalEntregues = data.kits.reduce((s, k) => s + k.delivered, 0);
-  const totalEstornadas = data.kits.reduce((s, k) => s + k.revoked, 0);
-  const totalNaoVinculadas = data.deliveries.filter((d) => !d.linked).length;
+  const resumo = computeResumoQuantidade(data.kits, data.deliveries);
   const kitsAtivos = data.kits.filter((k) => k.is_active).length;
 
   return (
@@ -80,25 +79,51 @@ function MaterialDocument({ data, meta }: { data: MaterialReportData; meta: Meta
         <Text style={s.meta}>RELATÓRIO DE ENTREGAS DE MATERIAL — {dateStr} às {timeStr}</Text>
         <View style={s.divider} />
 
-        {/* KPIs */}
-        <Text style={s.sectionTitle}>Indicadores Gerais</Text>
+        {/* Conferência de Quantidade */}
+        <Text style={s.sectionTitle}>Conferência de Quantidade</Text>
+        <Text style={{ fontSize: 8, color: "#666", marginBottom: 4 }}>
+          Todo bipe com material entregue conta, tenha ou não o crachá sido reconhecido.
+        </Text>
+        <View style={s.kpiRow}>
+          <View style={[s.kpi, { width: "31%" }]}>
+            <Text style={s.kpiLabel}>Total entregue (controle de quantidade)</Text>
+            <Text style={[s.kpiValue, { color: "#16a34a", fontSize: 16 }]}>{resumo.entreguesTotal}</Text>
+            <Text style={{ fontSize: 6, color: "#888" }}>
+              {resumo.identificadas} identificadas + {resumo.naoIdentificadas} não identificadas
+            </Text>
+          </View>
+          <View style={s.kpi}>
+            <Text style={s.kpiLabel}>Identificadas</Text>
+            <Text style={s.kpiValue}>{resumo.identificadas}</Text>
+            <Text style={{ fontSize: 6, color: "#888" }}>crachá reconhecido</Text>
+          </View>
+          <View style={s.kpi}>
+            <Text style={s.kpiLabel}>Não identificadas</Text>
+            <Text style={[s.kpiValue, { color: "#d97706" }]}>{resumo.naoIdentificadas}</Text>
+            <Text style={{ fontSize: 6, color: "#888" }}>crachá não cadastrado</Text>
+          </View>
+        </View>
         <View style={s.kpiRow}>
           <View style={s.kpi}>
-            <Text style={s.kpiLabel}>Kits Ativos</Text>
-            <Text style={s.kpiValue}>{kitsAtivos}</Text>
+            <Text style={s.kpiLabel}>Credenciados</Text>
+            <Text style={s.kpiValue}>{resumo.credenciados ?? "—"}</Text>
           </View>
           <View style={s.kpi}>
-            <Text style={s.kpiLabel}>Entregues</Text>
-            <Text style={s.kpiValue}>{totalEntregues}</Text>
-            <Text style={{ fontSize: 6, color: "#888" }}>inclui crachás não vinculados</Text>
-          </View>
-          <View style={s.kpi}>
-            <Text style={s.kpiLabel}>Não Vinculadas</Text>
-            <Text style={[s.kpiValue, { color: "#d97706" }]}>{totalNaoVinculadas}</Text>
+            <Text style={s.kpiLabel}>Diferença (entregue − credenciado)</Text>
+            <Text style={[s.kpiValue, (resumo.diferenca ?? 0) > 0 ? { color: "#d97706" } : {}]}>
+              {resumo.diferenca === null ? "—" : `${resumo.diferenca > 0 ? "+" : ""}${resumo.diferenca}`}
+            </Text>
+            {(resumo.diferenca ?? 0) > 0 && (
+              <Text style={{ fontSize: 6, color: "#d97706" }}>saíram mais kits que credenciados</Text>
+            )}
           </View>
           <View style={s.kpi}>
             <Text style={s.kpiLabel}>Estornadas</Text>
-            <Text style={s.kpiValue}>{totalEstornadas}</Text>
+            <Text style={s.kpiValue}>{resumo.estornadas}</Text>
+          </View>
+          <View style={s.kpi}>
+            <Text style={s.kpiLabel}>Kits Ativos</Text>
+            <Text style={s.kpiValue}>{kitsAtivos}</Text>
           </View>
         </View>
 
@@ -145,23 +170,27 @@ function MaterialDocument({ data, meta }: { data: MaterialReportData; meta: Meta
           Entregas Detalhadas ({data.deliveries.length})
         </Text>
         <View style={s.thRow}>
-          <Text style={[s.th, { width: "26%" }]}>Participante</Text>
-          <Text style={[s.th, { width: "20%" }]}>Escola</Text>
-          <Text style={[s.th, { width: "16%" }]}>Kit</Text>
-          <Text style={[s.th, { width: "13%" }]}>Tipo</Text>
-          <Text style={[s.th, { width: "15%" }]}>Data/Hora</Text>
-          <Text style={[s.th, { width: "10%", textAlign: "center" }]}>Status</Text>
+          <Text style={[s.th, { width: "12%" }]}>Identificação</Text>
+          <Text style={[s.th, { width: "22%" }]}>Participante</Text>
+          <Text style={[s.th, { width: "18%" }]}>Escola</Text>
+          <Text style={[s.th, { width: "14%" }]}>Kit</Text>
+          <Text style={[s.th, { width: "11%" }]}>Tipo</Text>
+          <Text style={[s.th, { width: "14%" }]}>Data/Hora</Text>
+          <Text style={[s.th, { width: "9%", textAlign: "center" }]}>Status</Text>
         </View>
         {data.deliveries.map((d, i) => (
           <View key={d.id} style={i % 2 === 0 ? s.tr : s.trAlt}>
-            <Text style={[d.linked ? s.td : s.tdAmber, { width: "26%" }]}>
+            <Text style={[d.linked ? s.td : s.tdAmber, { width: "12%" }]}>
+              {d.linked ? "Identificada" : "Não ident."}
+            </Text>
+            <Text style={[d.linked ? s.td : s.tdAmber, { width: "22%" }]}>
               {d.linked ? d.full_name || "—" : `Crachá não vinculado (${d.qr_code})`}
             </Text>
-            <Text style={[s.td, { width: "20%" }]}>{d.escola}</Text>
-            <Text style={[s.td, { width: "16%" }]}>{d.kit_name}</Text>
-            <Text style={[s.td, { width: "13%" }]}>{d.linked ? ptLabel(d.participant_type) : "—"}</Text>
-            <Text style={[s.td, { width: "15%" }]}>{fmtDateTime(d.delivered_at)}</Text>
-            <Text style={[d.status === "active" ? s.tdGreen : s.tdRed, { width: "10%", textAlign: "center" }]}>
+            <Text style={[s.td, { width: "18%" }]}>{d.escola}</Text>
+            <Text style={[s.td, { width: "14%" }]}>{d.kit_name}</Text>
+            <Text style={[s.td, { width: "11%" }]}>{d.linked ? ptLabel(d.participant_type) : "—"}</Text>
+            <Text style={[s.td, { width: "14%" }]}>{fmtDateTime(d.delivered_at)}</Text>
+            <Text style={[d.status === "active" ? s.tdGreen : s.tdRed, { width: "9%", textAlign: "center" }]}>
               {d.status === "active" ? "Entregue" : "Estornada"}
             </Text>
           </View>

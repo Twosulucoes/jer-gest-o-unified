@@ -70,7 +70,7 @@ export default function MaterialEntregasReportPage() {
   const eventId = useActiveEventId();
   const { activeEvent } = useEventContext();
   const { data: branding } = useEventBranding(eventId);
-  const { kits, deliveries, schoolBreakdown, isLoading, refetchAll } =
+  const { kits, deliveries, schoolBreakdown, resumoQuantidade, isLoading, refetchAll } =
     useMaterialEntregasRelatorio(eventId);
 
   const [kitFilter, setKitFilter] = useState<string>(TODOS);
@@ -194,6 +194,86 @@ export default function MaterialEntregasReportPage() {
         </div>
       </header>
 
+      {/* Conferência de Quantidade — números de controle do módulo */}
+      <Card className="border-primary/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <PackageCheck className="h-4 w-4" /> Conferência de Quantidade
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Todo bipe com material entregue conta, tenha ou não o crachá sido reconhecido.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-emerald-500/5 p-4">
+                <p className="text-xs text-muted-foreground">
+                  Total entregue — kits que saíram (controle de quantidade)
+                </p>
+                <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-600">
+                  {resumoQuantidade.entreguesTotal}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground tabular-nums">
+                    {resumoQuantidade.identificadas}
+                  </span>{" "}
+                  identificadas (com nome) +{" "}
+                  <span className="font-medium text-amber-600 tabular-nums">
+                    {resumoQuantidade.naoIdentificadas}
+                  </span>{" "}
+                  não identificadas (crachá não cadastrado)
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground">Credenciados</p>
+                  <p className="mt-0.5 text-xl font-bold tabular-nums">
+                    {resumoQuantidade.credenciados ?? "—"}
+                  </p>
+                </div>
+                <div
+                  className={`rounded-lg border p-3 ${
+                    (resumoQuantidade.diferenca ?? 0) > 0
+                      ? "border-amber-500/40 bg-amber-500/5"
+                      : ""
+                  }`}
+                >
+                  <p className="text-[11px] text-muted-foreground">Diferença (entregue − credenciado)</p>
+                  <p
+                    className={`mt-0.5 text-xl font-bold tabular-nums ${
+                      (resumoQuantidade.diferenca ?? 0) > 0 ? "text-amber-600" : ""
+                    }`}
+                  >
+                    {resumoQuantidade.diferenca === null
+                      ? "—"
+                      : `${resumoQuantidade.diferenca > 0 ? "+" : ""}${resumoQuantidade.diferenca}`}
+                  </p>
+                  {(resumoQuantidade.diferenca ?? 0) > 0 && (
+                    <p className="text-[10px] text-amber-600">saíram mais kits que credenciados — revisar</p>
+                  )}
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground">Estornadas</p>
+                  <p className="mt-0.5 text-xl font-bold tabular-nums text-red-600">
+                    {resumoQuantidade.estornadas}
+                  </p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-[11px] text-muted-foreground">Não identificadas</p>
+                  <p className="mt-0.5 text-xl font-bold tabular-nums text-amber-600">
+                    {resumoQuantidade.naoIdentificadas}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* KPIs */}
       <section>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -204,9 +284,9 @@ export default function MaterialEntregasReportPage() {
               <KpiCard icon={Package} label="Kits Ativos" value={totals.kitsAtivos} tint="bg-primary/10 text-primary" />
               <KpiCard
                 icon={PackageCheck}
-                label="Entregues"
+                label="Entregues (total)"
                 value={totals.entregues}
-                sub="inclui crachás não vinculados"
+                sub="identificadas + não identificadas"
                 tint="bg-emerald-500/10 text-emerald-600"
               />
               <KpiCard

@@ -68,6 +68,46 @@ export interface MaterialSchoolBreakdownRow {
   faltam: number | null;
 }
 
+/**
+ * Conferência de quantidade — os números "de controle" do módulo. Entrega de
+ * material serve para controlar quantidade: todo bipe com material saído conta
+ * como entrega, tenha ou não o crachá sido reconhecido. Este resumo deixa
+ * explícito o total e a quebra identificadas x não identificadas, além da
+ * conferência contra o universo credenciado.
+ */
+export interface MaterialResumoQuantidade {
+  /** Total de kits que saíram (identificadas + não identificadas). Nº de controle. */
+  entreguesTotal: number;
+  /** Crachá reconhecido — entrega com nome. */
+  identificadas: number;
+  /** Crachá bipado mas não cadastrado no sistema (pendente de reconciliação). */
+  naoIdentificadas: number;
+  /** Entregas estornadas (material devolvido/anulado). */
+  estornadas: number;
+  /** Universo credenciado (null quando a etapa não é conhecida). */
+  credenciados: number | null;
+  /** entreguesTotal - credenciados. Positivo = saíram mais kits que credenciados. */
+  diferenca: number | null;
+}
+
+/** Consolida os números de controle a partir dos dados já carregados. Puro —
+ *  reaproveitado pela tela e pelos exportadores (PDF/XLSX). */
+export function computeResumoQuantidade(
+  kits: MaterialKitSummary[],
+  deliveries: MaterialDeliveryRow[],
+): MaterialResumoQuantidade {
+  const entreguesTotal = kits.reduce((sum, k) => sum + k.delivered, 0);
+  const identificadas = deliveries.filter((d) => d.linked && d.status === "active").length;
+  const naoIdentificadas = deliveries.filter((d) => !d.linked).length;
+  const estornadas = kits.reduce((sum, k) => sum + k.revoked, 0);
+  const hasCredenciados = kits.some((k) => k.credentialed !== null);
+  const credenciados = hasCredenciados
+    ? kits.reduce((sum, k) => sum + (k.credentialed ?? 0), 0)
+    : null;
+  const diferenca = credenciados === null ? null : entreguesTotal - credenciados;
+  return { entreguesTotal, identificadas, naoIdentificadas, estornadas, credenciados, diferenca };
+}
+
 export function useMaterialEntregasRelatorio(eventId: string | null) {
   const qc = useQueryClient();
 
@@ -288,6 +328,11 @@ export function useMaterialEntregasRelatorio(eventId: string | null) {
     return rows;
   }, [kitsRaw, eligibilityByKit, credentialedRows, deliveries]);
 
+  const resumoQuantidade = useMemo(
+    () => computeResumoQuantidade(kits, deliveries),
+    [kits, deliveries],
+  );
+
   const refetchAll = async () => {
     await qc.invalidateQueries({ queryKey: ["material_relatorio_kits", eventId] });
     await qc.invalidateQueries({ queryKey: ["material_relatorio_deliveries"] });
@@ -299,6 +344,7 @@ export function useMaterialEntregasRelatorio(eventId: string | null) {
     kits,
     deliveries,
     schoolBreakdown,
+    resumoQuantidade,
     isLoading: loadingKits || loadingDeliveries || loadingUnlinked,
     refetchAll,
   };
