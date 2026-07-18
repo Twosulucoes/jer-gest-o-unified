@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { buildResumoQuantidade } from "@/pages/admin/relatorios/useMaterialEntregasRelatorio";
 import {
   Package,
   Plus,
@@ -778,6 +779,20 @@ export default function MaterialEntregaPage() {
   // ser reconciliado (ver seção "Crachás não vinculados" abaixo).
   const faltam = Math.max(0, credentialedCount - totalDeliveredLinked);
 
+  // Conferência de quantidade — mesma lógica do relatório (fonte única), aqui
+  // a partir dos contadores já apurados para o kit/etapa selecionados.
+  const resumoQuantidade = useMemo(
+    () =>
+      buildResumoQuantidade({
+        entreguesTotal: totalDelivered,
+        identificadas: totalDeliveredLinked,
+        naoIdentificadas: unlinkedDeliveries.length,
+        estornadas: revokedCount,
+        credenciados: stageId ? credentialedCount : null,
+      }),
+    [totalDelivered, totalDeliveredLinked, unlinkedDeliveries.length, revokedCount, stageId, credentialedCount],
+  );
+
   useStageModuleKpis([
     { label: "Entregues", value: totalDelivered, tone: "success" },
     ...(stageId
@@ -895,6 +910,83 @@ export default function MaterialEntregaPage() {
             <p className="text-[10px] text-muted-foreground">tentativas de reentrega</p>
           </button>
         </div>
+      )}
+
+      {/* Conferência de Quantidade — números de controle do kit/etapa */}
+      {activeKitId && (
+        <Card className="border-primary/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <PackageCheck className="h-4 w-4" /> Conferência de Quantidade
+              {activeKit && (
+                <span className="text-sm font-normal text-muted-foreground">· {activeKit.name}</span>
+              )}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Todo bipe com material entregue conta, tenha ou não o crachá sido reconhecido.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-lg border bg-emerald-500/5 p-4">
+              <p className="text-xs text-muted-foreground">
+                Total entregue — kits que saíram (controle de quantidade)
+              </p>
+              <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-600">
+                {resumoQuantidade.entreguesTotal}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground tabular-nums">
+                  {resumoQuantidade.identificadas}
+                </span>{" "}
+                identificadas (com nome) +{" "}
+                <span className="font-medium text-amber-600 tabular-nums">
+                  {resumoQuantidade.naoIdentificadas}
+                </span>{" "}
+                não identificadas (crachá não cadastrado)
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-lg border p-3">
+                <p className="text-[11px] text-muted-foreground">Credenciados</p>
+                <p className="mt-0.5 text-xl font-bold tabular-nums">
+                  {resumoQuantidade.credenciados ?? "—"}
+                </p>
+              </div>
+              <div
+                className={`rounded-lg border p-3 ${
+                  (resumoQuantidade.diferenca ?? 0) > 0 ? "border-amber-500/40 bg-amber-500/5" : ""
+                }`}
+              >
+                <p className="text-[11px] text-muted-foreground">Diferença (entregue − credenciado)</p>
+                <p
+                  className={`mt-0.5 text-xl font-bold tabular-nums ${
+                    (resumoQuantidade.diferenca ?? 0) > 0 ? "text-amber-600" : ""
+                  }`}
+                >
+                  {resumoQuantidade.diferenca === null
+                    ? "—"
+                    : `${resumoQuantidade.diferenca > 0 ? "+" : ""}${resumoQuantidade.diferenca}`}
+                </p>
+                {(resumoQuantidade.diferenca ?? 0) > 0 && (
+                  <p className="text-[10px] text-amber-600">saíram mais kits que credenciados — revisar</p>
+                )}
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-[11px] text-muted-foreground">Estornadas</p>
+                <p className="mt-0.5 text-xl font-bold tabular-nums text-red-600">
+                  {resumoQuantidade.estornadas}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-[11px] text-muted-foreground">Não identificadas</p>
+                <p className="mt-0.5 text-xl font-bold tabular-nums text-amber-600">
+                  {resumoQuantidade.naoIdentificadas}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Gestão de Kits */}
