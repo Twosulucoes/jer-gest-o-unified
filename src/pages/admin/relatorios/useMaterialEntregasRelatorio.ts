@@ -90,8 +90,22 @@ export interface MaterialResumoQuantidade {
   diferenca: number | null;
 }
 
+/** Núcleo puro: recebe as contagens já apuradas e deriva a diferença. Fonte
+ *  única do formato do resumo — usado tanto pelo relatório (que parte das
+ *  linhas) quanto pela tela de etapa (que já tem os contadores prontos). */
+export function buildResumoQuantidade(input: {
+  entreguesTotal: number;
+  identificadas: number;
+  naoIdentificadas: number;
+  estornadas: number;
+  credenciados: number | null;
+}): MaterialResumoQuantidade {
+  const diferenca = input.credenciados === null ? null : input.entreguesTotal - input.credenciados;
+  return { ...input, diferenca };
+}
+
 /** Consolida os números de controle a partir dos dados já carregados. Puro —
- *  reaproveitado pela tela e pelos exportadores (PDF/XLSX). */
+ *  reaproveitado pela tela de relatório e pelos exportadores (PDF/XLSX). */
 export function computeResumoQuantidade(
   kits: MaterialKitSummary[],
   deliveries: MaterialDeliveryRow[],
@@ -104,8 +118,13 @@ export function computeResumoQuantidade(
   const credenciados = hasCredenciados
     ? kits.reduce((sum, k) => sum + (k.credentialed ?? 0), 0)
     : null;
-  const diferenca = credenciados === null ? null : entreguesTotal - credenciados;
-  return { entreguesTotal, identificadas, naoIdentificadas, estornadas, credenciados, diferenca };
+  return buildResumoQuantidade({
+    entreguesTotal,
+    identificadas,
+    naoIdentificadas,
+    estornadas,
+    credenciados,
+  });
 }
 
 export function useMaterialEntregasRelatorio(eventId: string | null) {
