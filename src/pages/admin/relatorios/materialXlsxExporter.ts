@@ -1,5 +1,11 @@
 import ExcelJS from "exceljs";
-import { ptLabel, type MaterialKitSummary, type MaterialDeliveryRow, type MaterialSchoolBreakdownRow } from "./useMaterialEntregasRelatorio";
+import {
+  ptLabel,
+  computeResumoQuantidade,
+  type MaterialKitSummary,
+  type MaterialDeliveryRow,
+  type MaterialSchoolBreakdownRow,
+} from "./useMaterialEntregasRelatorio";
 
 interface MaterialReportData {
   kits: MaterialKitSummary[];
@@ -26,9 +32,7 @@ export async function exportMaterialXlsx(
   const wb = new ExcelJS.Workbook();
   wb.creator = "JER Gestão";
 
-  const totalEntregues = data.kits.reduce((s, k) => s + k.delivered, 0);
-  const totalEstornadas = data.kits.reduce((s, k) => s + k.revoked, 0);
-  const totalNaoVinculadas = data.deliveries.filter((d) => !d.linked).length;
+  const resumo = computeResumoQuantidade(data.kits, data.deliveries);
   const kitsAtivos = data.kits.filter((k) => k.is_active).length;
 
   // ── Aba 1: Resumo ───────────────────────────────────────────────
@@ -38,15 +42,28 @@ export async function exportMaterialXlsx(
   wsResumo.addRow([`Gerado em: ${meta.generatedAt.toLocaleString("pt-BR")}`]);
   wsResumo.addRow([]);
 
+  wsResumo.addRow(["CONFERÊNCIA DE QUANTIDADE"]).getCell(1).font = { bold: true, size: 12 };
+  wsResumo.addRow(["Todo bipe com material entregue conta, tenha ou não o crachá sido reconhecido."]);
   const kpiHeader = wsResumo.addRow(["Indicador", "Valor"]);
   kpiHeader.font = { bold: true };
   kpiHeader.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFEFEF" } }; });
 
+  const rTotal = wsResumo.addRow(["Total entregue — kits que saíram (controle de quantidade)", resumo.entreguesTotal]);
+  rTotal.font = { bold: true };
+  rTotal.getCell(2).font = { bold: true, color: { argb: "FF16A34A" } };
+  wsResumo.addRow(["  → identificadas (crachá reconhecido)", resumo.identificadas]);
+  wsResumo.addRow(["  → não identificadas (crachá não cadastrado)", resumo.naoIdentificadas]).getCell(2).font = {
+    color: { argb: "FFD97706" },
+  };
+  wsResumo.addRow(["Credenciados na etapa", resumo.credenciados ?? "—"]);
+  const rDif = wsResumo.addRow([
+    "Diferença (entregue − credenciado)",
+    resumo.diferenca === null ? "—" : resumo.diferenca,
+  ]);
+  if ((resumo.diferenca ?? 0) > 0) rDif.getCell(2).font = { bold: true, color: { argb: "FFD97706" } };
+  wsResumo.addRow(["Estornadas", resumo.estornadas]);
   wsResumo.addRow(["Kits Ativos", kitsAtivos]);
-  wsResumo.addRow(["Entregues (inclui crachás não vinculados)", totalEntregues]);
-  wsResumo.addRow(["Crachás não vinculados", totalNaoVinculadas]);
-  wsResumo.addRow(["Estornadas", totalEstornadas]);
-  wsResumo.columns = [{ width: 42 }, { width: 20 }];
+  wsResumo.columns = [{ width: 52 }, { width: 20 }];
 
   // ── Aba 2: Por Kit ──────────────────────────────────────────────
   const wsKit = wb.addWorksheet("Por Kit");
@@ -85,11 +102,12 @@ export async function exportMaterialXlsx(
   wsDet.addRow([meta.eventName]).getCell(1).font = { bold: true };
   wsDet.addRow([`Gerado em: ${meta.generatedAt.toLocaleString("pt-BR")}`]);
   wsDet.addRow([]);
-  const detHeader = wsDet.addRow(["Participante", "CPF / QR Code", "Escola", "Kit", "Tipo", "Data/Hora", "Método", "Status"]);
+  const detHeader = wsDet.addRow(["Identificação", "Participante", "CPF / QR Code", "Escola", "Kit", "Tipo", "Data/Hora", "Método", "Status"]);
   detHeader.font = { bold: true };
   detHeader.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFEFEF" } }; });
   for (const d of data.deliveries) {
     const row = wsDet.addRow([
+      d.linked ? "Identificada" : "Não identificada",
       d.linked ? d.full_name || "—" : "Crachá não vinculado",
       d.linked ? d.cpf || "—" : d.qr_code || "—",
       d.escola,
@@ -100,10 +118,10 @@ export async function exportMaterialXlsx(
       d.status === "active" ? "Entregue" : "Estornada",
     ]);
     if (!d.linked) row.getCell(1).font = { color: { argb: "FFD97706" } };
-    row.getCell(8).font = { color: { argb: d.status === "active" ? "FF16A34A" : "FFDC2626" } };
+    row.getCell(9).font = { color: { argb: d.status === "active" ? "FF16A34A" : "FFDC2626" } };
   }
   wsDet.columns = [
-    { width: 30 }, { width: 16 }, { width: 30 }, { width: 24 }, { width: 18 }, { width: 18 }, { width: 12 }, { width: 12 },
+    { width: 16 }, { width: 30 }, { width: 16 }, { width: 30 }, { width: 24 }, { width: 18 }, { width: 18 }, { width: 12 }, { width: 12 },
   ];
 
   const iso = meta.generatedAt.toISOString().slice(0, 10);
