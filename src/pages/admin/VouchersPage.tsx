@@ -406,15 +406,17 @@ export default function VouchersPage() {
     queryKey: ["batch-active-counts", eventId, stageId, batches.map(b => b.id)],
     queryFn: async () => {
       if (batches.length === 0) return {};
-      const { data, error } = await (supabase.from("service_vouchers") as any)
-        .select("batch_id, status")
-        .in("batch_id", batches.map(b => b.id));
+      // Agrega no servidor (GROUP BY via RPC) em vez de trazer linha a
+      // linha: o select direto sofria o limite padrão de 1.000 linhas do
+      // PostgREST e, com milhares de vouchers na etapa, subcontava lotes —
+      // fazendo-os aparecer como "Revogado / 0 ativos" mesmo estando ativos.
+      const { data, error } = await (supabase.rpc as any)("get_batch_voucher_counts", {
+        p_batch_ids: batches.map(b => b.id),
+      });
       if (error) throw error;
       const counts: Record<string, { active: number; total: number }> = {};
-      for (const v of (data ?? [])) {
-        if (!counts[v.batch_id]) counts[v.batch_id] = { active: 0, total: 0 };
-        counts[v.batch_id].total++;
-        if (v.status === "active") counts[v.batch_id].active++;
+      for (const row of (data ?? [])) {
+        counts[row.batch_id] = { active: Number(row.active), total: Number(row.total) };
       }
       return counts;
     },
