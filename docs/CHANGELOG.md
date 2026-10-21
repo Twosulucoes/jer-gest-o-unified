@@ -20,6 +20,15 @@
 
 ---
 
+## 2026-10-21 — Publicação da auditoria com o repositório público
+
+- Tarefas: nenhuma mudança de status (R-001 segue Pendente).
+- Achados: DOC-01 segue aberto (repositório público).
+- O que mudou: `docs/DECISOES.md` D-006 passa de Proposta para Aceita, com o risco aceito pelo responsável.
+- Por quê: o responsável pediu para publicar a branch e abrir o PR sem esperar o repositório ficar privado.
+- Verificação: visibilidade consultada na API do GitHub em 2026-10-15 (`private: false`).
+- Novas descobertas: nenhuma.
+
 ## 2026-10-14 — Auditoria inicial e criação da documentação viva
 
 - **Tarefas:** criado o ROADMAP com 54 tarefas (R-001 a R-054) em 6 fases; nenhuma concluída.

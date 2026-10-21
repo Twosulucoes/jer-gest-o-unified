@@ -68,13 +68,15 @@
 
 ## D-006
 
-**Publicação da auditoria enquanto o repositório for público** · 2026-10-14 · Proposta
+**Publicação da auditoria enquanto o repositório for público** · 2026-10-14 · Aceita (2026-10-21)
 
 - **Contexto:** a AUDITORIA descreve vulnerabilidades ainda abertas (funções do banco e Edge Functions sem
   autenticação, tomada de conta). Com o repositório público, publicar a branch expõe esse mapa a qualquer pessoa.
-- **Proposta:** só enviar a branch e abrir o PR depois que o repositório estiver privado (R-001). Até lá, os
-  arquivos ficam disponíveis ao responsável fora do GitHub.
-- **Aguardando:** decisão do responsável pelo projeto.
+- **Proposta original:** só enviar a branch e abrir o PR depois que o repositório estiver privado (R-001).
+- **Decisão (2026-10-21):** o responsável pelo projeto pediu para publicar mesmo com o repositório público
+  ("Publica assim mesmo"). Risco aceito por ele: o mapa de vulnerabilidades abertas fica visível no GitHub.
+- **Consequências:** a urgência da Fase 0 aumenta. R-001 (tornar o repositório privado) segue recomendado, e as
+  correções de R-003 a R-006 passam a ser as primeiras a executar. Segredos e PII continuam redigidos ([D-005](#d-005)).
 
 ## D-007
 
