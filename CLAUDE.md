@@ -92,6 +92,29 @@ ARQUIVOS NÃO TOCADOS (intencionalmente):
 
 ---
 
+## Documentação viva (obrigatório)
+
+O estado do sistema vive em quatro arquivos em `docs/`. Eles valem para toda sessão, desta e das futuras:
+
+| Arquivo | Para quê |
+|---|---|
+| [`docs/AUDITORIA.md`](docs/AUDITORIA.md) | Estado atual, por seção, com data da última verificação e achados com ID (`FE-`, `DB-`, `LIVE-`, `EF-`, `SEC-`, `INF-`, `QA-`, `DOC-`) |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Fila priorizada de tarefas `R-xxx` com status, prioridade, dependências e critério de pronto |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Entrada datada do que mudou e por quê (o `CHANGELOG.md` da raiz é histórico congelado) |
+| [`docs/DECISOES.md`](docs/DECISOES.md) | Decisões técnicas `D-xxx` e seus motivos |
+
+Regras:
+
+1. **Antes de começar qualquer tarefa**, leia `docs/ROADMAP.md` e proponha o próximo item da fila (seção "Próximo item da fila"). Se o pedido não estiver no ROADMAP, crie a tarefa antes de executar.
+2. **Ao concluir qualquer tarefa**, na mesma entrega (mesmo commit/PR): atualize o status no `ROADMAP.md` (e a tabela de progresso), adicione uma entrada datada no `docs/CHANGELOG.md` e atualize a seção afetada do `AUDITORIA.md` (status do achado, evidência, data de verificação; recalcule a cobertura funcional se um módulo mudou).
+3. **Nunca marque algo como pronto sem verificar**: rodar, testar ou consultar o banco/serviço, e citar a evidência (comando, saída, consulta, PR). O critério de pronto da tarefa precisa passar.
+4. **Descobriu algo novo durante o trabalho?** Registre como novo achado na `AUDITORIA.md` e como nova tarefa no `ROADMAP.md` (próximo ID livre; IDs nunca são reaproveitados).
+5. **Decisão técnica relevante** (escolha entre alternativas, mudança de padrão, aceitar um risco) vira entrada em `docs/DECISOES.md`.
+6. **Nunca copie segredos ou dados pessoais** (chaves, tokens, telefones, CPFs) para esses documentos, commits ou PRs: use `<redigido>` e aponte `arquivo:linha` ([D-005](docs/DECISOES.md#d-005)).
+7. Quando o banco de produção divergir do repositório, ele é a referência para o diagnóstico ([D-004](docs/DECISOES.md#d-004)).
+
+---
+
 ## Estrutura de Diretórios
 
 ```
@@ -126,13 +149,13 @@ supabase/
 ## Fluxo de Trabalho Padrão
 
 ```
-1. Ler o prompt da tarefa
+1. Ler o prompt da tarefa e o docs/ROADMAP.md; propor o próximo item da fila
 2. Mapear o que já existe relacionado ao tema (grep, find)
 3. Identificar o que pode ser aproveitado
 4. Propor o plano de execução (sem codar ainda) se houver ambiguidade
 5. Executar de forma incremental
-6. Rodar: bun run build
-7. Documentar as alterações
+6. Rodar: bun run build (e verificar o critério de pronto da tarefa)
+7. Documentar as alterações e atualizar ROADMAP + docs/CHANGELOG + AUDITORIA
 ```
 
 ---

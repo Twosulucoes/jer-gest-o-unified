@@ -30,7 +30,12 @@ const allMdFiles = import.meta.glob([
   "!**/node_modules/**",
   "!**/dist/**",
   "!**/public/**", // We don't want to scan public as documentation unless specified
-], { 
+  // Docs vivos descrevem vulnerabilidades abertas: não podem ir para o bundle público (ver docs/DECISOES.md D-007)
+  "!/docs/AUDITORIA.md",
+  "!/docs/ROADMAP.md",
+  "!/docs/CHANGELOG.md",
+  "!/docs/DECISOES.md",
+], {
   query: '?raw', 
   import: 'default',
   eager: true 
